@@ -1,0 +1,101 @@
+#include "dkli.dkh"
+#!
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "../_lib/config.dk"
+    #include "../_lib/icons.dk"
+
+    do @context.begin(@crud_context)
+
+    ref linea = @("&./")
+    entityId = @("$parameters/_entity_id")
+    errorMsg = @("$error/message")
+    isNewEnt = (entityId == "_new")
+    formActn = @ALIBEB_LINEA+entityId+"/"
+
+    codigo_linea = field.dstr(linea,'codigo','<A>')
+
+    header_act::
+    { 
+        #$ button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"#<@ICON_SAVE>"}
+    }
+
+    #! point general_act to header_act
+
+    new nav_config
+    {
+        @"title": ftext("#<ifstr(isNewEnt,'Agregar','Editar')> línea")
+        @"buttons*": general_act
+        @"urlexit": @ALIBEB_LINEA
+        member @"hidden" { @"print": @true }
+    }
+
+    #$ div(class="container")
+    {
+        form(method="POST" action="#<formActn>" id="form")
+        {
+            #! do uie.printV12FormBar(nav_config)
+
+            #$ div(id="work_area" class="container-section")
+            {
+                div(class="#<ifstr(@('error/message')!='','alert alert-danger','')>"){$"#<@('error/message')>"}
+
+                input(type="hidden" name="sys_pk" value="#<@@(linea, '#sys_pk')>")
+                input(type="hidden" name="sys_recver" value="#<@@(linea, '#sys_recver')>")
+
+                div(class="row mb-2")
+                {
+                    div(class="col-sm-2")
+                    {
+                        small(class="fw-bold"){$"Código:"}
+                        input(type="text" class="induxsoft-form-control mb-2" name="codigo" value="#<codigo_linea>" maxlength="15" placeholder="<A>")
+                    }
+                    div(class="col-sm-10")
+                    {
+                        small(class="fw-bold"){$"Descripción:"}
+                        input(type="text" class="induxsoft-form-control mb-2" name="descripcion" value="#<@@(linea,'$descripcion')>" required="true" maxlength="50")
+                    }
+                }
+                // div(class="row mb-2")
+                // {
+                //     div(class="col-sm-6")
+                //     {
+                //         small(class="fw-bold"){$"Color::"}
+                //         input(type="color" id="color_picker" class="induxsoft-form-control mb-2")
+                //         input(type="hidden" name="color" id="ipt_color" value="#<@@(linea,'#color')>")
+                //     }
+                // }
+                // div(class="row mb-2")
+                // {
+                //     div(class="col-12")
+                //     {
+                //         small{$"Notas:"}
+                //         textarea(class="induxsoft-form-control mb-2" name="notas"){$"#<@@(linea,'$notas')>"}
+                //     }
+                // }
+                div(class="form-check")
+                {
+                    input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_visible" "#<ifstr(@@(linea,'#visible')==1,'checked','')>"="true")
+                    label(class="form-check-label" "for"="check_visible"){$"Visible en punto de venta"}
+                    input(type="hidden" name="visible" id="ipt_visible" value="#<@@(linea,'#visible')>")
+                }
+                div(class="row mb-2 mt-3")
+                {
+                    div(class="col-12")
+                    {
+                        label(class="mb-1"){$"Instrucciones de preparación:"}
+                        textarea(class="induxsoft-form-control mb-2" name="uf_indicaciones" rows="16"){$"#<@@(linea,'$uf_indicaciones')>"}
+                    }
+                }
+            }
+            div(id="status_bar" class="container-section")
+            {
+                $""
+            }
+        }
+        script(src="#<@JS_LINEA>"){$""}
+    }
+}

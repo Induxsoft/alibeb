@@ -1,0 +1,50 @@
+# include "ddm.dkh"
+model "alimentos y bebidas"
+{
+	#include "induxsoft.abstracts.ddm"
+
+	entity "cclaseproducto" : "EnumModel" {}
+
+    entity "linea": "TableModel"
+    {
+        @"clase" ref:"cclaseproducto" required
+        @"codigo" string(15) unique required
+        @"color" int
+        @"comision1" decimal(18,8)
+        @"comision2" decimal(18,8)
+        @"comision3" decimal(18,8)
+        @"comision4" decimal(18,8)
+        @"comision5" decimal(18,8)
+        @"descripcion" string(50) unique required
+        @"notas" string(4096)
+        @"visible" bool
+        @"uf_indicaciones" string(4096)
+    }
+
+    // Información de la aplicación
+    entity "sys_app_catalog"
+    {
+        @"pack_id" string(32) required
+        @"app_id" string(32) key
+        @"app_title" string(255)
+        @"created" datetime required
+        @"app_info" mmemo
+    }
+    // Categoria de la aplicación
+    entity "sys_app_category"
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+    }
+    // Recursos de la aplicación
+    entity "sys_app_shortcut" 
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+        @"icon96x96" string(1024) required
+        @"src" string(1024) required
+        @"_blank" bool
+        @"appid" ref : "sys_app_catalog"
+        @"cat" ref :"sys_app_category"
+    }
+}

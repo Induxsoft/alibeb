@@ -1,0 +1,4 @@
+"id","title","icon16x16","href","_blank","appid","itemtype","req_context_item_id","act_type","shorttitle"
+"CA11","Agregar línea de alimentos o bebidas","","/!/alibeb/alibeb_lineas/_new/","0","alibeb.linea","alimento","0","action","Agregar línea"
+"CA12","Editar línea de alimentos o bebidas","","/!/alibeb/alibeb_lineas/@_src_context_item_id/","0","alibeb.linea","alimento","1","action","Editar línea"
+"CA13","Eliminar línea de alimentos o bebidas","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","alibeb.linea","alimento","1","action","Eliminar línea"

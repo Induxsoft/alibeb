@@ -1,0 +1,84 @@
+#include "dkli.dkh"
+#!
+module "list.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "dbr.apps.dkl"
+    #include "dbr.dkh"
+    #include "../_lib/config.dk"
+    #include "../_lib/scape_special_charactes2.dk"
+
+    do @context.begin(@crud_context)
+    ref lineas = @('&.')
+    do scape_special_charactes(lineas,"codigo,descripcion")
+
+    new table_definition
+    {
+        @"datatable*": lineas
+        @"table_footer": "Mostrando las primeras # líneas ordenadas por código"
+        member @"columns"
+        {
+            member @"codigo" { @"caption":"Código" }
+            member @"descripcion" { @"caption":"Descripción" }
+            member @"_actions" 
+            { 
+                @"caption":"Acciones" 
+                @"template":ftext('
+                    <div style="display:flex;gap:8px;justify-content:center;width:100%;" class="no-print">
+                        <a href="#<@ALIBEB_LINEA>${DataRow.sys_pk}/" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
+                        <button onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Eliminar</button>
+                    </div>')
+                @"no-print":@true
+            }
+        }
+    }
+
+    header_act::
+    { 
+        #$
+        a(href="#<@ALIBEB_LINEA>_new/" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Agregar"}
+    }
+
+    #! point general_act to header_act
+
+    new nav_config
+    {
+        @"title": "Líneas de recetas"
+        @"buttons*": general_act
+        @"urlexit": "/"
+        @"actions*": dbr.apps.itemactions(@('&database'),"alimento","action","",0)
+        @"reports*": dbr.apps.itemactions(@('&database'),"alimento","report","",0)
+        @"jscurrentcontext": "linea.getCurrentContext"
+    }
+
+    #$ div(class="container-fluid p-0")
+    {
+        #! do uie.printV12FormBar(nav_config)
+
+        #$ div(id="work_area" class="container-section mt-1 p-2 pt-0")
+        {
+            p{$"#<@('$error/message')>"}
+
+            form(action="./" method="GET" id="form_search" class="no-print my-1 d-flex py-1")
+            {
+                "filter-text"(
+                    "id"="ft_search"
+                    "text-field"="s"
+                    "placeholder"="Buscar por código o descripción"
+                    "form"="#form_search"
+                    "value"="#<@@(@@(@crud_context,'&http/request/get'),'$s')>"
+                    "auto-submit"="true"
+                    "class"="w-100"
+                ){$""}
+            }
+            #! do uie.dbeditable(table_definition, "tbl_linea_recetas")
+        }
+
+        #$ script(src="#<@JS_LINEA>"){$""}
+        script{$'
+            linea.tableId = "tbl_linea_recetas";
+        '}
+    }
+}

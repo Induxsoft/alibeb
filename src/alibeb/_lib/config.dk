@@ -1,0 +1,12 @@
+#include "dkli.dkh"
+#!
+module "config"
+{
+    // _PACKAGE
+    @ALIBEB_LINEA = "/!/alibeb/alibeb_lineas/"
+
+    // _STATIC
+    @JS_LINEA = "/$/alibeb/js/linea.js"
+
+    @default_max_rows=250
+}
