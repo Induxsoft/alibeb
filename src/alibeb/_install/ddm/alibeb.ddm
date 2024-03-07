@@ -3,7 +3,90 @@ model "alimentos y bebidas"
 {
 	#include "induxsoft.abstracts.ddm"
 
+    abstract "NmModel"
+    {
+        @"sys_pk" int key required autoincrement
+        @"sys_timestamp" datetime required
+        @"sys_recver" int
+        @"sys_deleted" bool
+        @"sys_lock" int
+    }
+
 	entity "cclaseproducto" : "EnumModel" {}
+    entity "cformacomisionproducto" : "EnumModel" {}
+    entity "ctipoproducto" : "EnumModel" {}
+    entity "cmetodosvaluacion" : "EnumModel" {}
+    entity "ctiposcomisionesproducto" : "EnumModel" {}
+    entity "ctasasiva" : "EnumModel" {}
+    entity "cimpadicionales" : "EnumModel" {}
+
+    entity "departamento" : "TableModel"
+    {
+        @"codigo" string(5) unique required
+        @"comision1" decimal(18,8)
+        @"comision2" decimal(18,8)
+        @"comision3" decimal(18,8)
+        @"comision4" decimal(18,8)
+        @"comision5" decimal(18,8)
+        @"descripcion" string(50) unique required
+    }
+    entity "divisa" : "TableModel"
+    {
+        @"codigo" string(5) unique required
+        @"descripcion" string(30) unique required
+        @"tcambio" decimal(18,8)
+    }
+    entity "marca" : "TableModel"
+    {
+        @"codigo" string(5) unique required
+        @"descripcion" string(50) unique required
+    }
+    entity "cfgimpuesto" : "TableModel"
+    {
+        @"i1compra" string(4096)
+        @"i1venta" string(4096)
+        @"i2compra" string(4096)
+        @"i2venta" string(4096)
+        @"i3compra" string(4096)
+        @"i3venta" string(4096)
+        @"i4compra" string(4096)
+        @"i4venta" string(4096)
+        @"nombre" string(25) unique required
+        @"uf_tipoi1" string(25)
+        @"uf_tipoi2" string(25)
+        @"uf_tipoi3" string(25)
+        @"uf_tipoi4" string(25)
+        @"tasa" bool
+        @"objetoimp" string(2)
+    }
+    entity "tipoproveedor" : "TableModel"
+    {
+        @"codigo" string(15) unique required
+        @"descripcion" string(50) unique required
+        @"notas" string(4096) 
+    }
+	entity "proveedor" : "TableModel"
+    {
+        @"codcuenta" string(50) unique
+        @"codigo" string(35) unique required
+        @"curp" string(35) unique
+        @"diascredito" int
+        @"diasentrega" int
+        @"email" string(50)
+        @"fax" string(50)
+        @"limitecredito" decimal(18,8)
+        @"nombre" string(150) unique required
+        @"notas" string(32000)
+        @"rfc" string(15)
+        @"saldo" decimal(18,8)
+        @"tasaiva" ref:"ctasasiva" required
+        @"telefonos" string(50)
+        @"website" string(150)
+        @"idivisa" ref:"divisa" required
+        @"tipo" ref:"tipoproveedor" required
+        @"uf_sys_baja" bool
+        @"uf_vueltaviajero" int
+    }
 
     entity "linea": "TableModel"
     {
@@ -19,6 +102,198 @@ model "alimentos y bebidas"
         @"notas" string(4096)
         @"visible" bool
         @"uf_indicaciones" string(4096)
+    }
+    entity "producto" : "TableModel"
+    {
+        @"adicional" bool
+        @"cdirecto" decimal(18,8)
+        @"cindirecto" decimal(18,8)
+        @"cmanoobra" decimal(18,8)
+        @"cmaquinaria" decimal(18,8)
+        @"codbar1" string(35) unique
+        @"codbar2" string(35) unique
+        @"codbar3" string(35) unique
+        @"codigo" string(35) unique required
+        @"color" int
+        @"comision" decimal(18,8)
+        @"comision1" decimal(18,8)
+        @"comision2" decimal(18,8)
+        @"comision3" decimal(18,8)
+        @"comision4" decimal(18,8)
+        @"comision5" decimal(18,8)
+        @"costopromedio" decimal(18,8)
+        @"costoultimo" decimal(18,8)
+        @"data1" string(500)
+        @"data2" string(500)
+        @"data3" string(500)
+        @"desc2" decimal(18,8)
+        @"desc3" decimal(18,8)
+        @"desc4" decimal(18,8)
+        @"desc5" decimal(18,8)
+        @"descripcion" string(150) unique required
+        @"diasentrega" int
+        @"existencia" decimal(18,8)
+        @"factorb" decimal(18,8)
+        @"factorc" decimal(18,8)
+        @"factord" decimal(18,8)
+        @"factore" decimal(18,8)
+        @"flaglimites" bool
+        @"flagutilidad" bool
+        @"formacomision" ref:"cformacomisionproducto"
+        @"iclase" ref:"cclaseproducto" required
+        @"itipo" ref:"ctipoproducto" required
+        @"lim2" decimal(18,8)
+        @"lim3" decimal(18,8)
+        @"lim4" decimal(18,8)
+        @"lim5" decimal(18,8)
+        @"maximo" decimal(18,8)
+        @"metodovaluacion" ref:"cmetodosvaluacion" required
+        @"minimo" decimal(18,8)
+        @"notas" memo
+        @"padic1" decimal(18,8)
+        @"padic2" decimal(18,8)
+        @"padic3" decimal(18,8)
+        @"padic4" decimal(18,8)
+        @"padic5" decimal(18,8)
+        @"ppuntos" decimal(18,8)
+        @"precio1" decimal(18,8)
+        @"precio2" decimal(18,8)
+        @"precio3" decimal(18,8)
+        @"precio4" decimal(18,8)
+        @"precio5" decimal(18,8)
+        @"puntoro" decimal(18,8)
+        @"reqlote" bool required
+        @"reqserie" bool required
+        @"saldo" decimal(18,8)
+        @"tipocomision" ref:"ctiposcomisionesproducto"
+        @"unidad" string(10) required
+        @"unidadb" string(10)
+        @"unidadc" string(10)
+        @"unidadd" string(10)
+        @"unidade" string(10)
+        @"util1" decimal(18,8)
+        @"util2" decimal(18,8)
+        @"util3" decimal(18,8)
+        @"util4" decimal(18,8)
+        @"util5" decimal(18,8)
+        @"utilmin" decimal(18,8)
+        @"vinculardata" bool
+        @"visible" bool
+        @"idepartamento" ref:"departamento"
+        @"idivisa" ref:"divisa" required
+        @"ilinea" ref:"linea" required
+        @"imarca" ref:"marca"
+        @"impuestos" ref:"cfgimpuesto" required
+        @"ivariables" int
+        @"proveedor1" ref:"proveedor"
+        @"proveedor2" ref:"proveedor"
+        @"proveedor3" ref:"proveedor"
+        @"uf_solicitarcantidad" bool
+        @"uf_sys_baja" bool
+        @"uf_complemento" bool
+        @"precio106" decimal(18,8)
+        @"precio107" decimal(18,8)
+        @"precio108" decimal(18,8)
+        @"precio109" decimal(18,8)
+        @"precio110" decimal(18,8)
+        @"precio111" decimal(18,8)
+        @"precio112" decimal(18,8)
+        @"precio113" decimal(18,8)
+        @"precio114" decimal(18,8)
+        @"precio115" decimal(18,8)
+        @"precio116" decimal(18,8)
+        @"precio117" decimal(18,8)
+        @"precio118" decimal(18,8)
+        @"precio119" decimal(18,8)
+        @"precio120" decimal(18,8)
+        @"util106" decimal(18,8)
+        @"util107" decimal(18,8)
+        @"util108" decimal(18,8)
+        @"util109" decimal(18,8)
+        @"util110" decimal(18,8)
+        @"util111" decimal(18,8)
+        @"util112" decimal(18,8)
+        @"util113" decimal(18,8)
+        @"util114" decimal(18,8)
+        @"util115" decimal(18,8)
+        @"util116" decimal(18,8)
+        @"util117" decimal(18,8)
+        @"util118" decimal(18,8)
+        @"util119" decimal(18,8)
+        @"util120" decimal(18,8)
+        @"uf_codigoparaproveedor1" string(50)
+        @"uf_codigoparaproveedor2" string(50)
+        @"uf_codigoparaproveedor3" string(50)
+        @"uf_pdv" decimal(18,8)
+        @"uf_dv_diasreorden" int
+        @"uf_dv_inventarioseguridaddias" int
+        @"uf_gruposimilares" int
+        @"uf_inhabilitado" bool
+        @"uf_fechainhabilitacion" datetime
+        @"uf_sat_proser" string(50) required
+        @"uf_sat_uniproser" string(50) required
+    }
+    entity "iensamble" : "TableModel"
+    {
+        @"cantdemasiado" decimal(18,8)
+        @"cantidad" decimal(18,8)
+        @"cantmucho" decimal(18,8)
+        @"cantpoco" decimal(18,8)
+        @"omitible" bool
+        @"elemento" ref:"producto" required
+        @"reemplazo" ref:"producto"
+        @"fk_producto_elementos" ref:"producto" required
+    }
+    entity "grupoproductos" : "TableModel"
+    {
+        @"comision1" decimal(18,8)
+        @"comision2" decimal(18,8)
+        @"comision3" decimal(18,8)
+        @"comision4" decimal(18,8)
+        @"comision5" decimal(18,8)
+        @"nombre" string(25) unique required
+        @"notas" string(4096)
+        @"tasa_iva" decimal(18,8)
+    }
+	entity "ivariable" : "TableModel"
+    {
+        @"cdirectoprom" decimal(18,8)
+        @"cindirectoprom" decimal(8,8)
+        @"cmanoobraprom" decimal(8,8)
+        @"cmaquinariaprom" decimal(8,8)
+        @"descripcion" string(35)
+        @"factor" decimal(18,8)
+        @"maximo" decimal(18,8)
+        @"minimo" decimal(18,8)
+        @"padicional" ref:"cimpadicionales"
+        @"grupo" ref:"grupoproductos"
+        @"fk_producto_ivariables" ref:"producto"
+    }
+    entity "almacen" : "TableModel"
+    {
+        @"codcuenta" string(50) unique
+        @"codigo" string(10) unique required
+        @"descripcion" string(50) unique required
+        @"email" string(50)
+        @"fax" string(150)
+        @"telefonos" string(150)
+        @"website" string(150)
+        @"uf_movremoto" bool
+        @"uf_inhabilitado" bool
+        @"uf_fechainhabilitacion" datetime
+        @"uf_formaproduccion" int
+    }
+	entity "cproduccion" : "TableModel"
+    {
+        @"codigo" string(5) unique required
+        @"descripcion" string(30) unique required
+        @"almacenmp" ref:"almacen" required
+        @"almacenpt" ref:"almacen" required
+    }
+	entity "cproduccion_producto_" : "NmModel"
+    {
+        @"iproductos" int ref:"producto" ["sys_pk"] required
+        @"icentrosproduccion" int ref:"cproduccion" ["sys_pk"] required
     }
 
     // Información de la aplicación

@@ -4,9 +4,11 @@ module "config"
 {
     // _PACKAGE
     @ALIBEB_LINEA = "/!/alibeb/alibeb_lineas/"
+    @ALIBEB_RECETAS = "/!/alibeb/alibeb_recetas/"
 
     // _STATIC
     @JS_LINEA = "/$/alibeb/js/linea.js"
+    @JS_RECETAS = "/$/alibeb/js/recetas.js"
 
     @default_max_rows=250
 }

@@ -21,6 +21,7 @@ module "Controller configs"
 	//No modifique a menos que sepa lo que está haciendo
 	do crudl.routes.pattern("/_program/")
 	do crudl.routes.entity("/alibeb_lineas/","alibeb_lineas")
+	do crudl.routes.entity("/alibeb_recetas/","alibeb_recetas")
 
 	@dbmvc_path="crudl/"
 	@auto_crud=@true

@@ -1,0 +1,290 @@
+#include "dkli.dkh"
+#!
+module "model"
+{
+    #include "webcl.dkh"
+
+    #include "../_lib/config.dk"
+    #include "../_lib/lib.dk"
+
+    @table_name = "producto"
+
+    function check_autocode(&db,table,field,&data)
+    {
+        varvalue = dbr.vars.getd(db,"FXCA124","|0000")
+        ref config = dbr.autocode.info(varvalue)
+        new_code = dbr.autocode.new(db,table,field,config)
+
+        data<"codigo">: new_code
+
+        exception
+        { }
+    }
+
+    function prodserv.crearProducto(&db, &params, &data)
+    {
+        // if @@(params,"$_entity_id") == "_new" && not(dbr.security.isauth(db,@AUT_CREATE_PRODUCTO)) { do rise_error(500,"No autorizado") }
+        // if @@(params,"$_entity_id") != "_new" && not(dbr.security.isauth(db,@AUT_UPDATE_PRODUCTO)) { do rise_error(500,"No autorizado") }
+
+        @table_name = "producto"
+        if field.exist(data,"codbar1") && trim(@@(data,"$codbar1")) == "" { data<"codbar1*"> : @null }
+        if field.exist(data,"codbar2") && trim(@@(data,"$codbar2")) == "" { data<"codbar2*"> : @null }
+        if field.exist(data,"codbar3") && trim(@@(data,"$codbar3")) == "" { data<"codbar3*"> : @null }
+        if field.exist(data,"idepartamento") && trim(@@(data,"$idepartamento")) == "" { data<"idepartamento*">:@null }
+        if field.exist(data,"imarca") && trim(@@(data,"$imarca")) == "" { data<"imarca*">:@null }
+        if field.exist(data,"proveedor1") && trim(@@(data,"$proveedor1")) == "" { data<"proveedor1*">:@null }
+        if field.exist(data,"proveedor2") && trim(@@(data,"$proveedor2")) == "" { data<"proveedor2*">:@null }
+        if field.exist(data,"proveedor3") && trim(@@(data,"$proveedor3")) == "" { data<"proveedor3*">:@null }
+        if field.exist(data,"uf_sat_proser") && trim(@@(data,"$uf_sat_proser")) == "" { data<"uf_sat_proser"> : "01010101" }
+        if field.exist(data,"uf_sat_uniproser") && trim(@@(data,"$uf_sat_uniproser")) == "" { data<"uf_sat_uniproser"> : "H87" }
+        
+        if @@(params,"$_entity_id") == "_new" { data<"existencia"> : 0 }
+        group = @@(data,"$similar_group")
+        do field.remove(data, "similar_group")
+
+        if @@(data,"codigo")=="" { do check_autocode(db,"producto","codigo",data) }
+        ref res = entity.create(db, params, data)
+
+        if trim(group) != ""
+        {
+            new prm { @"prod_pk": @@(res, "producto/sys_pk") }
+            ref rel = dbr.rec(db, "SELECT sys_pk, sys_recver, igrupos FROM grupoproductos_producto_ WHERE iproductos=@prod_pk", prm)
+            
+            if not(isnull(rel))
+            {
+                if @@(rel,"$igrupos") != group
+                {
+                    new _rel { @"igrupos": group }
+                    do dbr.update(db, "grupoproductos_producto_", _rel, "iproductos=@prod_pk", prm)
+                }
+            }
+            else 
+            {
+                new _rel {
+                    @"sys_pk": 0
+                    @"sys_recver": 0
+                    @"sys_timestamp*": now()
+                    @"igrupos": group
+                    @"iproductos": @@(res, "#producto/sys_pk")
+                }
+                do dbr.insert(db, "grupoproductos_producto_", _rel)
+            }
+        }
+        else 
+        {
+            new prm { @"prod_pk": @@(res, "producto/sys_pk") }
+            do dbr.execute(db, "DELETE FROM grupoproductos_producto_ WHERE iproductos=@prod_pk", prm)
+        }
+
+        return res
+        exception
+		{
+			do cu_error("producto")
+			do rise_error(last_error_code(), last_error())
+            do prodserv.prepareView(db, params, data)
+		}
+    }
+    function prodserv.read(&db, &params)
+    {
+        // if not(dbr.security.isauth(db,@AUT_READ_PRODUCTO)) { do rise_error(500,"No autorizado") }
+
+        sql_producto = "
+            SELECT 
+                IFNULL(p.idivisa,'') idivisa, IFNULL(p.ilinea,'') ilinea, IFNULL(p.idepartamento,'') idepartamento, IFNULL(p.imarca,'') imarca,
+                IFNULL(p.proveedor1,'') proveedor1, IFNULL(p.proveedor2,'') proveedor2, IFNULL(p.proveedor3,'') proveedor3,
+                p.sys_pk, p.sys_recver, p.iclase, p.codigo, p.descripcion, p.itipo, p.unidad, IFNULL(p.factorb,1) factorb, IFNULL(p.unidadB,'') unidadB,
+                p.metodovaluacion, p.impuestos, IFNULL(p.costoultimo,0) costoultimo, IFNULL(p.codbar1,'') codbar1, IFNULL(p.codbar2,'') codbar2,
+                IFNULL(p.codbar3,'') codbar3, IFNULL(p.reqserie,0) reqserie, IFNULL(p.reqlote,0) reqlote, IFNULL(p.unidadc,'') unidadc,
+                IFNULL(p.factorc,0) factorc, IFNULL(p.unidadd,'') unidadd, IFNULL(p.factord,0) factord, IFNULL(p.unidade,'') unidade,
+                IFNULL(p.factore,0) factore, IFNULL(p.maximo,0) maximo, IFNULL(p.puntoro,0) puntoro, IFNULL(p.minimo,0) minimo,
+                IFNULL(p.diasentrega,0) diasentrega, IFNULL(p.notas,'') notas, IFNULL(p.uf_sat_proser,'01010101') uf_sat_proser,
+                IFNULL(p.uf_sat_uniproser,'H87') uf_sat_uniproser, IFNULL(p.utilmin,0) utilmin, IFNULL(p.tipocomision,'') tipocomision,
+                IFNULL(p.formacomision,'') formacomision, IFNULL(p.comision,0) comision, IFNULL(p.ppuntos,0) ppuntos,
+                IFNULL(p.precio1,0) precio1, IFNULL(p.precio2,0) precio2, IFNULL(p.precio3,0) precio3, IFNULL(p.precio4,0) precio4, IFNULL(p.precio5,0) precio5,
+                IFNULL(p.visible,0) visible, IFNULL(p.uf_complemento,0) uf_complemento,
+                IFNULL(p.flagutilidad,0) flagutilidad, IFNULL(p.flaglimites,0) flaglimites,
+                IFNULL(p.comision1,0) comision1, IFNULL(p.comision2,0) comision2, IFNULL(p.comision3,0) comision3, IFNULL(p.comision4,0) comision4, IFNULL(p.comision5,0) comision5,
+                IFNULL(gp.sys_pk,'') similar_group
+            FROM producto p
+                LEFT JOIN grupoproductos_producto_ gp_p ON gp_p.iproductos = p.sys_pk
+                LEFT JOIN grupoproductos gp ON gp.sys_pk = gp_p.igrupos
+            WHERE p.sys_pk=@_entity_id LIMIT 1;
+        "
+
+        new data
+        {
+            @"producto*": dbr.rec(db, sql_producto, params)
+        }
+
+        do prodserv.prepareView(db, params, data)
+
+        return data
+    }
+    function prodserv.obtenerDivisas(&db, &params)
+    {
+        return dbr.list(db, "
+            SELECT sys_pk, codigo, descripcion FROM divisa
+            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
+        ", params)
+    }
+    function prodserv.obtenerDepartamentos(&db, &params)
+    {
+        return dbr.list(db, "
+            SELECT sys_pk, codigo, descripcion FROM departamento
+            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
+        ", params)
+    }
+    function prodserv.obtenerMarcas(&db, &params)
+    {
+        return dbr.list(db, "
+            SELECT sys_pk, codigo, descripcion FROM marca
+            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
+        ", params)
+    }
+    function prodserv.obtenerProveedores(&db, &params)
+    {
+        return dbr.list(db,"
+            SELECT sys_pk, codigo, nombre FROM proveedor
+            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR nombre LIKE CONCAT('%',@s,'%')));
+        ", params)
+    }
+    function prodserv.obtenerLineas(&db, &params)
+    {
+        query="SELECT sys_pk, clase, codigo, descripcion, IFNULL(notas,'') notas
+            FROM linea
+            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
+            ORDER BY codigo
+            LIMIT #<@default_max_rows>;"
+        return dbr.list(db, ftext(query), params)
+    }
+
+    function prodserv.list(&db, &params)
+    {
+        // if not(dbr.security.isauth(db,@AUT_ACCESS_PRODUCTO)) { do rise_error(500,"No autorizado") }
+
+        query = "
+            SELECT 
+                p.sys_pk, 
+                p.codigo, 
+                p.descripcion, 
+                p.unidad, 
+                IFNULL(p.existencia,0) existencia,
+                IFNULL(precio1,0) precio1, 
+                IFNULL(precio2,0) precio2, 
+                IFNULL(precio3,0) precio3, 
+                IFNULL(precio4,0) precio4, 
+                IFNULL(precio5,0) precio5,
+                IFNULL(p.saldo,0) saldo, 
+                IFNULL(p.costoultimo,0) costoultimo, 
+                l.descripcion linea
+            FROM producto p
+                INNER JOIN cclaseproducto cc ON p.iclase = cc.id
+                INNER JOIN divisa d ON p.idivisa = d.sys_pk
+                INNER JOIN linea l ON p.ilinea = l.sys_pk
+            WHERE cc.id = 2
+                AND IF(IFNULL(@s,'')='', true, (p.codigo LIKE CONCAT('%',@s,'%') OR p.descripcion LIKE CONCAT('%',@s,'%')))
+            ORDER BY p.codigo
+            LIMIT #<@default_max_rows>;
+        "
+        return dbr.list(db, ftext(query), params)
+    }
+    function prodserv.delete(&db, &params)
+    {
+        // if not(dbr.security.isauth(db,@AUT_DELETE_PRODUCTO)) { do rise_error(500,"No autorizado") }
+
+        do dbr.execute(db, "DELETE FROM grupoproductos_producto_ WHERE iproductos=@_entity_id", params)
+        do entity.delete(db, params)
+    }
+
+    function cu_error(table)
+    {
+        new fields {
+            @"codbar1": "El código de barras 1"
+            @"codbar2": "El código de barras 2"
+            @"codbar3": "El código de barras 3"
+            @"codigo": "El código"
+            @"descripcion": "La descripción"
+        }
+        do valide_duplicate(fields, table, last_error(), last_error_code())
+    }
+
+    function prodserv.blank(&db, &params)
+    {
+        // if not(dbr.security.isauth(db,@AUT_READ_PRODUCTO)) { do rise_error(500,"No autorizado") }
+
+        ref data = record.create()
+        do prodserv.prepareView(db, params, data)
+        return data
+    }
+    function prodserv.prepareView(&db, &params, &data)
+    {
+        sql_tipoprod = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM ctipoproducto ORDER BY id DESC;"
+        sql_metodval = "SELECT id, const FROM cmetodosvaluacion;"
+        sql_impuesto = "SELECT sys_pk, nombre FROM cfgimpuesto;"
+        sql_tipocomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM ctiposcomisionesproducto ORDER BY id;"
+        sql_formcomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM cformacomisionproducto ORDER BY id;"
+        sql_grupoprd = "SELECT sys_pk, nombre FROM grupoproductos ORDER BY nombre;"
+
+        using data
+        {
+            @"tipoprod*": dbr.list(db, sql_tipoprod, @null)
+            @"metodval*": dbr.list(db, sql_metodval, @null)
+            @"impuesto*": dbr.list(db, sql_impuesto, @null)
+            @"tipocomi*": dbr.list(db, sql_tipocomi, @null)
+            @"formcomi*": dbr.list(db, sql_formcomi, @null)
+            @"grupoprd*": prodserv.add_empty_value(dbr.list(db, sql_grupoprd, @null), "sys_pk", "nombre")
+        }
+
+        return data
+    }
+    function prodserv.add_empty_value(&list, keyfield, valuefield)
+    {
+        ref empty = record.create()
+        empty<keyfield>: ""
+        empty<valuefield>: ""
+
+        do list.ins(list, 0, empty)
+        return list
+    }
+
+    function prodserv.obtenerGaleria(&db, &params)
+    {
+        ref product = dbr.rec(db, "SELECT descripcion, REPLACE(TRIM(codigo),' ','-') codigo FROM producto WHERE sys_pk=@_entity_id", params)
+
+        sku = ""
+        if isnull(product) { do rise_error(0, "El producto no existe") }
+        sku = @@(product, "$codigo")
+
+        endpoint = @URL_IMAGES
+        endpoint = replace(endpoint, "@sku", sku)
+        endpoint = add_host_to_url(endpoint)
+        
+        response = http.request(endpoint, "GET", @null, '')
+        ref data = from.json(response)
+
+        new res
+        {
+            @"product*": product
+            @"images*": data
+        }
+
+        return res
+    }
+    function add_host_to_url(url)
+    {
+        method = ifstr(parse.bool(@@(@http_context,"request/headers/HTTPS")),"https","http")
+        host = @@(@http_context, "request/headers/HTTP_HOST")
+        port = @@(@http_context, "request/headers/SERVER_PORT")
+
+        url = path.concat(method+"://"+host+":"+port, url)
+
+        return (url + "?ids=" + @@(@http_context, "session/user/ids"))
+    }
+
+    point @create to prodserv.crearProducto
+    point @update to prodserv.crearProducto
+    point @delete to prodserv.delete
+    point @read to prodserv.read
+    point @list to prodserv.list
+    point @blank to prodserv.blank
+}

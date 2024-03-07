@@ -37,7 +37,15 @@ program "instalador"
     // Archivos de datos iniciales (Orden de instalación)
     ref files_to_import = from.json('[
         "cclaseproducto.csv",
+        "cmetodosvaluacion.csv",
+        "ctipoproducto.csv",
+        "cfgimpuesto.csv",
+        "ctiposcomisionesproducto.csv",
+        "cformacomisionproducto.csv",
+        "cimpadicionales.csv",
+        "cproduccion.csv",
         "linea.csv",
+        "divisa.csv",
         "varcategory.csv",
         "globalvar.csv"
     ]')

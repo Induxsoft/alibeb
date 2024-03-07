@@ -1,0 +1,45 @@
+#include "dkli.dkh"
+#!
+module "controller"
+{
+    switch @@(@http_context,"$request/get/_view")
+    {
+        case "divisa"
+        {
+            @table_name = "divisa"
+            point @list to prodserv.obtenerDivisas
+            break
+        }
+        case "departamento"
+        {
+            @table_name = "departamento"
+            point @list to prodserv.obtenerDepartamentos
+            break
+        }
+        case "marca"
+        {
+            @table_name = "marca"
+            point @list to prodserv.obtenerMarcas
+            break
+        }
+        case "proveedor"
+        {
+            @table_name = "proveedor"
+            point @list to prodserv.obtenerProveedores
+            break
+        }
+        case "linea"
+        {
+            @table_name = "linea"
+            point @list to prodserv.obtenerLineas
+            break
+        }
+        case "galeria"
+        {
+            @table_name = "producto"
+            point @read to prodserv.obtenerGaleria
+
+            @form_view = "galeria.dk"
+        }
+    }
+}
