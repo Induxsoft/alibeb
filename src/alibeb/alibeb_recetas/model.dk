@@ -124,35 +124,33 @@ module "model"
     {
         return dbr.list(db, "
             SELECT sys_pk, codigo, descripcion FROM divisa
-            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
+            WHERE IFNULL(sys_deleted,0)=0 
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
         ", params)
     }
     function prodserv.obtenerDepartamentos(&db, &params)
     {
         return dbr.list(db, "
             SELECT sys_pk, codigo, descripcion FROM departamento
-            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
-        ", params)
-    }
-    function prodserv.obtenerMarcas(&db, &params)
-    {
-        return dbr.list(db, "
-            SELECT sys_pk, codigo, descripcion FROM marca
-            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
+            WHERE IFNULL(sys_deleted,0)=0 
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
         ", params)
     }
     function prodserv.obtenerProveedores(&db, &params)
     {
         return dbr.list(db,"
             SELECT sys_pk, codigo, nombre FROM proveedor
-            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR nombre LIKE CONCAT('%',@s,'%')));
+            WHERE IFNULL(sys_deleted,0)=0 
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR nombre LIKE CONCAT('%',@s,'%')));
         ", params)
     }
     function prodserv.obtenerLineas(&db, &params)
     {
         query="SELECT sys_pk, clase, codigo, descripcion, IFNULL(notas,'') notas
             FROM linea
-            WHERE IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
+            WHERE IFNULL(sys_deleted,0)=0 
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
+                AND clase=2
             ORDER BY codigo
             LIMIT #<@default_max_rows>;"
         return dbr.list(db, ftext(query), params)
@@ -223,7 +221,6 @@ module "model"
         sql_impuesto = "SELECT sys_pk, nombre FROM cfgimpuesto;"
         sql_tipocomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM ctiposcomisionesproducto ORDER BY id;"
         sql_formcomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM cformacomisionproducto ORDER BY id;"
-        sql_grupoprd = "SELECT sys_pk, nombre FROM grupoproductos ORDER BY nombre;"
 
         using data
         {
@@ -232,7 +229,6 @@ module "model"
             @"impuesto*": dbr.list(db, sql_impuesto, @null)
             @"tipocomi*": dbr.list(db, sql_tipocomi, @null)
             @"formcomi*": dbr.list(db, sql_formcomi, @null)
-            @"grupoprd*": prodserv.add_empty_value(dbr.list(db, sql_grupoprd, @null), "sys_pk", "nombre")
         }
 
         return data

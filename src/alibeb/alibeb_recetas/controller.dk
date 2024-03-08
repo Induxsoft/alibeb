@@ -16,12 +16,6 @@ module "controller"
             point @list to prodserv.obtenerDepartamentos
             break
         }
-        case "marca"
-        {
-            @table_name = "marca"
-            point @list to prodserv.obtenerMarcas
-            break
-        }
         case "proveedor"
         {
             @table_name = "proveedor"

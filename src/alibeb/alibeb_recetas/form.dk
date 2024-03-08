@@ -18,7 +18,6 @@ module "form.dk"
     ref metodval = @("&./metodval")
     ref impuesto = @("&./impuesto")
     ref tipocomi = @("&./tipocomi")
-    ref grupoprd = @("&./grupoprd")
     ref formcomi = @("&./formcomi")
     ref formascm = filter_forma_comision(formcomi, @@(producto,'#tipocomision'))
 
@@ -35,6 +34,8 @@ module "form.dk"
     ref prov1 = lib.get_proveedor(database, @@(producto,"$proveedor1"))
     ref prov2 = lib.get_proveedor(database, @@(producto,"$proveedor2"))
     ref prov3 = lib.get_proveedor(database, @@(producto,"$proveedor3"))
+
+    codigoprd = field.dstr(producto,"codigo","<A>")
 
     header_act::
     { 
@@ -110,43 +111,40 @@ module "form.dk"
                         {
                             div(class="row mb-2")
                             {
-                                div(class="col-sm-3")
+                                div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Código:"}
-                                    input(type="text" class="induxsoft-form-control" name="codigo" value="#<@@(producto,'$codigo')>" maxlength="35" placeholder="<A>")
+                                    input(type="text" class="induxsoft-form-control" name="codigo" value="#<codigoprd>" maxlength="35" placeholder="<A>")
                                 }
-                                div(class="col-sm-9")
+                                div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Descripción:"}
                                     input(type="text" class="induxsoft-form-control" name="descripcion" value="#<@@(producto,'$descripcion')>" required="true" maxlength="150")
                                 }
-                            }
-                            div(class="row mb-2")
-                            {
-                                div(class="col-sm-6")
+                                div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Línea:"}
-                                    "input-key"(id="ik_linea" name="ilinea" "data-value"='#<to.json(linea)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@PRODSERV_SEARCH_LINEA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una línea" "box-placeholder-text"="Buscar línea" "box-nodata-text"="No se encontraron líneas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}"){$""}
-                                }
-                                div(class="col-sm-6")
-                                {
-                                    small{$"Departamento:"}
-                                    "input-key"(id="ik_departamento" name="idepartamento" "data-value"='#<to.json(depar)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@PRODSERV_SEARCH_DEPARTAMENTO>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione un departamento" "box-placeholder-text"="Buscar departamento" "box-nodata-text"="No se encontraron departamentos"){$""}
+                                    "input-key"(id="ik_linea" name="ilinea" "data-value"='#<to.json(linea)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_LINEA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una línea" "box-placeholder-text"="Buscar línea" "box-nodata-text"="No se encontraron líneas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}"){$""}
                                 }
                             }
                             div(class="row mb-2")
                             {
-                                div(class="col-sm-6")
+                                div(class="col-sm-4")
+                                {
+                                    small{$"Departamento:"}
+                                    "input-key"(id="ik_departamento" name="idepartamento" "data-value"='#<to.json(depar)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_DEPARTAMENTO>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione un departamento" "box-placeholder-text"="Buscar departamento" "box-nodata-text"="No se encontraron departamentos"){$""}
+                                }
+                                div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Tipo:"}
                                     #! ref def_tp = lib.def_tipos_producto(tipoprod, @@(producto,'itipo'))
                                     if isServ { def_tp<"attributes/disabled">:"" }
                                     do uie.dbSelect(def_tp)
                                 }
-                                #$ div(class="col-sm-6")
+                                #$ div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Moneda:"}
-                                    "input-key"(id="ik_divisa" name="idivisa" "data-value"='#<to.json(divsa)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@PRODSERV_SEARCH_DIVISA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una moneda" "box-placeholder-text"="Buscar moneda" "box-nodata-text"="No se encontraron monedas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}"){$""}
+                                    "input-key"(id="ik_divisa" name="idivisa" "data-value"='#<to.json(divsa)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_DIVISA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una moneda" "box-placeholder-text"="Buscar moneda" "box-nodata-text"="No se encontraron monedas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}"){$""}
                                 }
                                 
                             }
@@ -275,26 +273,83 @@ module "form.dk"
                                     "edit-tr"
                                     {
                                         "edit-th"(type="Text" field="grupo"){$"Grupo"}
-                                        "edit-th"(type="___" field="descripcion"){$"Descripción"}
-                                        "edit-th"(type="___" field="factor"){$"Factor"}
-                                        "edit-th"(type="___" field="maximo"){$"Máximo"}
-                                        "edit-th"(type="___" field="minimo"){$"Mínimo"}
-                                        "edit-th"(type="___" field="padicional"){$"Importe adicional"}
-                                        "edit-th"(type="___" field="cdirectoprom"){$"Costo directo"}
-                                        "edit-th"(type="___" field="cmanoobraprom"){$"Costo mano obra"}
-                                        "edit-th"(type="___" field="cindirectoprom"){$"Costo indirecto"}
+                                        "edit-th"(type="Text" field="descripcion"){$"Descripción"}
+                                        "edit-th"(type="Number" field="factor"){$"Factor"}
+                                        "edit-th"(type="Number" field="maximo"){$"Máximo"}
+                                        "edit-th"(type="Number" field="minimo"){$"Mínimo"}
+                                        "edit-th"(type="Select" field="padicional"){$"Importe adicional"}
+                                        "edit-th"(type="NoEditable" field="cdirectoprom"){$"Costo directo"}
+                                        "edit-th"(type="NoEditable" field="cmanoobraprom"){$"Costo mano obra"}
+                                        "edit-th"(type="NoEditable" field="cindirectoprom"){$"Costo indirecto"}
                                     }
                                 }
                             }
                         }
                         div(class="mt-2 d-flex align-items-center gap-2")
                         {
-                            small{$"Costo de materias primas:"}
+                            small{$"Costo promedio de materias primas:"}
                             div{input(class="induxsoft-form-control" id="RC_costo_materia_prima" disabled="true")}
                         }
                     }
 
-                    // PANEL PRECIO Y CONTROL
+                    // PANEL PRODUCCIÓN Y COSTOS
+                    div(class="tab-pane fade" id="produccion" role="tabpanel" "aria-labelledby"="produccion-tab")
+                    {
+                        div(class="row p-0 m-0 mt-4")
+                        {
+                            div(class="col-sm-6")
+                            {
+                                div(class="p-1 border" style="background-color: #EDEDED;"){ h6(class="m-0"){$"Análisis de costos"} }
+                                div(class="pt-2 border border-top-0 p-3")
+                                {
+                                    small(class="fw-bold"){$"Costo directo"}
+                                    div(class="d-flex justify-content-end py-3")
+                                    {
+                                        div(class="row w-100 align-items-center")
+                                        {
+                                            div(class="col-6 mb-2 text-end"){ small{$"Materias primas:"} }
+                                            div(class="col-6 mb-2"){ input(class="induxsoft-form-control" disabled="true") }
+                                            div(class="col-6 text-end"){ small{$"Mano de obra:"} }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true") }
+                                        }
+                                    }
+                                    small(class="fw-bold"){$"Costo indirecto"}
+                                    div(class="d-flex justify-content-end py-3")
+                                    {
+                                        div(class="row w-100 align-items-center")
+                                        {
+                                            div(class="col-6 text-end"){ small{$""} }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true") }
+                                        }
+                                    }
+                                    small(class="fw-bold"){$"Costo total de producción"}
+                                    div(class="d-flex justify-content-end py-3")
+                                    {
+                                        div(class="row w-100 align-items-center")
+                                        {
+                                            div(class="col-6 text-end"){ small{$"Total:"} }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true") }
+                                        }
+                                    }
+                                }
+                            }
+                            div(class="col-sm-6")
+                            {
+                                div(class="p-1 border" style="background-color: #EDEDED;"){ h6(class="m-0"){$"Centros de producción"} }
+                                div(class="pt-2 border border-top-0 p-3")
+                                {
+                                    "check-list"(
+                                        "id"="cl_centros_prod"
+                                        "data"=""
+                                        "can-add"="true"
+                                        "hide-header"="true"
+                                    ){$""}
+                                }
+                            }
+                        }
+                    }
+
+                    // PANEL PRECIOS
                     div(class="tab-pane fade" id="control" role="tabpanel" "aria-labelledby"="control-tab")
                     {
                         #! sinComi = (@@(producto,'#tipocomision') == 0)
@@ -323,7 +378,7 @@ module "form.dk"
                                         input(type="number" class="induxsoft-form-control mb-2 input-number-text" name="costoultimo" value="#<@@(producto,'#costoultimo')>" step="0.00000001" max="999999999.9999999")
                                     }
                                 }
-                                #$ div(class="col-sm-3")
+                                div(class="col-sm-3")
                                 {
                                     small{$"Utilidad mínima:"}
                                     div(class="input-symbol-container")
@@ -371,51 +426,179 @@ module "form.dk"
                         }
                         div(class="border-bottom py-4")
                         {
-                            div(class="row mb-4")
+                            div(class="tab-content border border-bottom-0 p-3" id="tabContent2")
                             {
-                                div(class="col-5 col-sm-3")
+                                div(class="tab-pane fade show active" id="list_price" role="tabpanel" "aria-labelledby"="list_price-tab")
                                 {
-                                    h6{$"Precios antes de impuestos"}
-                                    div(class="input-symbol-container")
+                                    h6{$"Precios (antes de impuestos)"}
+                                    div(class="row")
                                     {
-                                        small(class="input-symbol-prefix"){$"$"}
-                                        input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio1" value="#<@@(producto,'#precio1')>" step="0.00000001" max="999999999.9999999")
-                                    }
-                                    div(class="input-symbol-container")
-                                    {
-                                        small(class="input-symbol-prefix"){$"$"}
-                                        input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio2" value="#<@@(producto,'#precio2')>" step="0.00000001" max="999999999.9999999")
-                                    }
-                                    div(class="input-symbol-container")
-                                    {
-                                        small(class="input-symbol-prefix"){$"$"}
-                                        input(type="number" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio3" value="#<@@(producto,'#precio3')>" step="0.00000001" max="999999999.9999999")
-                                    }
-                                    div(class="input-symbol-container")
-                                    {
-                                        small(class="input-symbol-prefix"){$"$"}
-                                        input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio4" value="#<@@(producto,'#precio4')>" step="0.00000001" max="999999999.9999999")
-                                    }
-                                    div(class="input-symbol-container")
-                                    {
-                                        small(class="input-symbol-prefix"){$"$"}
-                                        input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio5" value="#<@@(producto,'#precio5')>" step="0.00000001" max="999999999.9999999")
+                                        div(class="col-sm-4")
+                                        {
+                                            div(class="input-symbol-container")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio1" value="#<@@(producto,'#precio1')>" step="0.00000001" max="999999999.9999999")
+                                            }
+                                            div(class="input-symbol-container")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio2" value="#<@@(producto,'#precio2')>" step="0.00000001" max="999999999.9999999")
+                                            }
+                                            div(class="input-symbol-container")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="number" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio3" value="#<@@(producto,'#precio3')>" step="0.00000001" max="999999999.9999999")
+                                            }
+                                            div(class="input-symbol-container")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio4" value="#<@@(producto,'#precio4')>" step="0.00000001" max="999999999.9999999")
+                                            }
+                                            div(class="input-symbol-container")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio5" value="#<@@(producto,'#precio5')>" step="0.00000001" max="999999999.9999999")
+                                            }
+                                        }
                                     }
                                 }
-                                div(class="col-2 col-sm-1 d-flex flex-wrap flex-row pb-2 pt-4" style="align-content:space-between;")
+                                div(class="tab-pane fade" id="ingrediente_adic" role="tabpanel" "aria-labelledby"="ingrediente_adic-tab")
                                 {
-                                    div(class="w-100 flex-grow-1"){small(class="d-block"){$"P. Máximo"}}
-                                    div{small(class="d-block"){$"P. Mínimo"}}
+                                    div(class="form-check mb-1")
+                                    {
+                                        input(class="form-check-input induxsoft-corners" type="checkbox" id="check_ingadic" "#<ifstr(@@(producto,'#adicional')==1,'checked','')>"="true")
+                                        label(class="form-check-label" "for"="check_ingadic"){small{$"Se puede considerear como ingrediente adicional"}}
+                                        input(type="hidden" name="adicional" id="ipt_adicional" value="#<@@(producto,'#adicional')>")
+                                    }
+                                    div(class="row p-0 m-0")
+                                    {
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Precio 1 (como ingrediente adicional)"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="padic1" value="#<@@(producto,'#padic1')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Precio 2 (como ingrediente adicional)"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="padic2" value="#<@@(producto,'#padic2')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Precio 3 (como ingrediente adicional)"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="padic3" value="#<@@(producto,'#padic3')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Precio 4 (como ingrediente adicional)"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="padic4" value="#<@@(producto,'#padic4')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Precio 5 (como ingrediente adicional)"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="padic5" value="#<@@(producto,'#padic5')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                    }
                                 }
-                                div(class="col-5 col-sm-3 #<ifstr(sinComi || not(comiXPrice),'d-none','')>" id="comisiones_precio_container")
+                                div(class="tab-pane fade" id="comisionprecio" role="tabpanel" "aria-labelledby"="comisionprecio-tab")
                                 {
-                                    h6{$"Comisiones por precio"}
-                                    input(type="number" class="induxsoft-form-control mb-2" name="comision1" value="#<@@(producto,'#comision1')>" step="0.00000001" max="999999999.9999999")
-                                    input(type="number" class="induxsoft-form-control mb-2" name="comision2" value="#<@@(producto,'#comision2')>" step="0.00000001" max="999999999.9999999")
-                                    input(type="number" class="induxsoft-form-control mb-2" name="comision3" value="#<@@(producto,'#comision3')>" step="0.00000001" max="999999999.9999999")
-                                    input(type="number" class="induxsoft-form-control mb-2" name="comision4" value="#<@@(producto,'#comision4')>" step="0.00000001" max="999999999.9999999")
-                                    input(type="number" class="induxsoft-form-control mb-2" name="comision5" value="#<@@(producto,'#comision5')>" step="0.00000001" max="999999999.9999999")
+                                    h6{$"Comisiones"}
+                                    div(class="row p-0 m-0")
+                                    {
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Comisión al precio 1 de la lista"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="comision1" value="#<@@(producto,'#comision1')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Comisión al precio 2 de la lista"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="comision2" value="#<@@(producto,'#comision2')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Comisión al precio 3 de la lista"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="comision3" value="#<@@(producto,'#comision3')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Comisión al precio 4 de la lista"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="comision4" value="#<@@(producto,'#comision4')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                        div(class="col-sm-7")
+                                        {
+                                            div(class="d-flex gap-2 align-items-center mb-2")
+                                            {
+                                                small{$"Comisión al precio 5 de la lista"}
+                                                div{ input(type="number" class="induxsoft-form-control" name="comision5" value="#<@@(producto,'#comision5')>" step="0.00000001" max="999999999.9999999") }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // div(class="col-5 col-sm-3 #<ifstr(sinComi || not(comiXPrice),'d-none','')>" id="comisiones_precio_container")
+                                    // {
+                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision1" value="#<@@(producto,'#comision1')>" step="0.00000001" max="999999999.9999999")
+                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision2" value="#<@@(producto,'#comision2')>" step="0.00000001" max="999999999.9999999")
+                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision3" value="#<@@(producto,'#comision3')>" step="0.00000001" max="999999999.9999999")
+                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision4" value="#<@@(producto,'#comision4')>" step="0.00000001" max="999999999.9999999")
+                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision5" value="#<@@(producto,'#comision5')>" step="0.00000001" max="999999999.9999999")
+                                    // }
                                 }
+                            }
+                            div(class="row m-0 p-0 mb-4")
+                            {
+                                style{$'
+                                    .nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active.nl-bottom{ border-color: #FFF #dee2e6 #dee2e6; }
+                                    .nav-tabs .nav-link.nl-bottom{ 
+                                        margin-top: -1px; 
+                                        border-bottom-left-radius: 0.25rem;
+                                        border-bottom-right-radius: 0.25rem;
+                                    }
+                                '}
+                                ul(class="nav nav-tabs border-bottom-0 border-top" id="myTab" role="tablist")
+                                {
+                                    li(class="nav-item" role="presentation") {
+                                        button(class="nav-link nl-bottom active btn-sm" id="list_price-tab" "data-bs-toggle"="tab" "data-bs-target"="#list_price" type="button" role="tab" "aria-controls"="list_price" "aria-selected"="true"){$"Precio de lista"}
+                                    }
+                                    li(class="nav-item" role="presentation") {
+                                        button(class="nav-link nl-bottom btn-sm" id="ingrediente_adic-tab" "data-bs-toggle"="tab" "data-bs-target"="#ingrediente_adic" type="button" role="tab" "aria-controls"="ingrediente_adic" "aria-selected"="false"){$"Ingrediente adicional"}
+                                    }
+                                    li(class="nav-item" role="presentation") {
+                                        button(class="nav-link nl-bottom btn-sm" id="comisionprecio-tab" "data-bs-toggle"="tab" "data-bs-target"="#comisionprecio" type="button" role="tab" "aria-controls"="comisionprecio" "aria-selected"="false"){$"Comisiones"}
+                                    }
+                                }
+                                // div(class="col-2 col-sm-1 d-flex flex-wrap flex-row pb-2 pt-4" style="align-content:space-between;")
+                                // {
+                                //     div(class="w-100 flex-grow-1"){small(class="d-block"){$"P. Máximo"}}
+                                //     div{small(class="d-block"){$"P. Mínimo"}}
+                                // }
                             }
                             div(class="form-check")
                             {
@@ -432,21 +615,12 @@ module "form.dk"
                         }
                     }
 
-                    // PANEL INVENTARIO Y SUMINISTROS
+                    // PANEL INVENTARIO
                     div(class="tab-pane fade" id="inventario" role="tabpanel" "aria-labelledby"="inventario-tab")
                     {
                         div(class="py-4")
                         {
-                            div(class="row mb-4")
-                            {
-                                div(class="col-sm-6")
-                                {
-                                    small{$"Grupo de similares:"}
-                                    #! do uie.dbSelect(lib.def_grupos_similares(grupoprd, @@(producto,'similar_group')))
-                                }
-                            }
-
-                            #$ h6{$"Equivalencia de unidades"}
+                            h6{$"Equivalencia de unidades"}
                             div(class="row mb-2")
                             {
                                 div(class="col-sm-6")
@@ -528,13 +702,13 @@ module "form.dk"
                                 div(class="col-sm-6")
                                 {
                                     small{$"Proveedor 1:"}
-                                    "input-key"(id="ik_proveedor1" name="proveedor1" "data-value"='#<to.json(prov1)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@PRODSERV_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
+                                    "input-key"(id="ik_proveedor1" name="proveedor1" "data-value"='#<to.json(prov1)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
                                 
                                     small{$"Proveedor 2:"}
-                                    "input-key"(id="ik_proveedor2" name="proveedor2" "data-value"='#<to.json(prov2)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@PRODSERV_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
+                                    "input-key"(id="ik_proveedor2" name="proveedor2" "data-value"='#<to.json(prov2)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
 
                                     small{$"Proveedor 3:"}
-                                    "input-key"(id="ik_proveedor3" name="proveedor3" "data-value"='#<to.json(prov3)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@PRODSERV_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
+                                    "input-key"(id="ik_proveedor3" name="proveedor3" "data-value"='#<to.json(prov3)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
                                 }
                                 div(class="col-sm-6")
                                 {
@@ -549,12 +723,11 @@ module "form.dk"
                                 }
                             }
 
-                            h6(class="pt-4"){$"Información adicional"}
                             div(class="form-check")
                             {
-                                input(class="form-check-input induxsoft-corners" type="checkbox" id="check_compl_concepto" "#<ifstr(@@(producto,'#uf_complemento')==1,'checked','')>"="true")
-                                label(class="form-check-label" "for"="check_compl_concepto"){$"Incluir complemento concepto en Comprobante Fiscal Digital"}
-                                input(type="hidden" name="uf_complemento" id="ipt_complemento" value="#<@@(producto,'#uf_complemento')>")
+                                input(class="form-check-input induxsoft-corners" type="checkbox" id="check_solicitarcantidad" "#<ifstr(@@(producto,'#uf_solicitarcantidad')==1,'checked','')>"="true")
+                                label(class="form-check-label" "for"="check_solicitarcantidad"){$"Solicitar cantidad al comandar"}
+                                input(type="hidden" name="uf_solicitarcantidad" id="ipt_complemento" value="#<@@(producto,'#uf_solicitarcantidad')>")
                             }
                         }
                     }
