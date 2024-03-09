@@ -2,23 +2,6 @@
 #!
 module "lib"
 {
-    function lib.def_clases_producto(&datatable, value)
-    {
-        new def
-        {
-            @"datatable*": datatable
-            member "attributes"
-            {
-                @"name": "iclase"
-                @"class": "induxsoft-form-select"
-                @"required": "true"
-            }
-            @"text_field": "const"
-            @"value_field": "id"
-            @"selected": value
-        }
-        return def
-    }
     function lib.def_tipo_comision(&datatable, value)
     {
         new def
@@ -97,22 +80,6 @@ module "lib"
                 @"name": "impuestos"
                 @"class": "induxsoft-form-select"
                 @"required": "true"
-            }
-            @"text_field": "nombre"
-            @"value_field": "sys_pk"
-            @"selected": value
-        }
-        return def
-    }
-    function lib.def_grupos_similares(&datatable, value)
-    {
-        new def
-        {
-            @"datatable*": datatable
-            member "attributes"
-            {
-                @"name": "similar_group"
-                @"class": "induxsoft-form-select"
             }
             @"text_field": "nombre"
             @"value_field": "sys_pk"
@@ -208,5 +175,31 @@ module "lib"
         }
 
         return variation
+    }
+
+    function proccessEnsambles(&ensambles,minrows)
+    {
+        // calcular la representacion de cada fila
+        cantidad_total = 0
+        for i = 0; i < list.count(ensambles)
+        {
+            ref ensamble = list.obj(ensambles,i)
+            cantidad_total = cantidad_total + @@(ensamble,"#cantidad")
+        }
+        for i = 0; i < list.count(ensambles)
+        {
+            ref ensamble = list.obj(ensambles,i)
+            ensamble<"representacion">: (div(@@(ensamble,"#cantidad"),cantidad_total)*100)
+        }
+        // si no hay más de minrows filas autorellenar con filas vacias
+        if list.count(ensambles) < minrows
+        {
+            for i = list.count(ensambles); i < minrows
+            {
+                new row {}
+                do list.add(ensambles, row)
+            }
+        }
+        return ensambles
     }
 }

@@ -10,10 +10,12 @@ module "config"
     @ALIBEB_SEARCH_DIVISA  = "/!/ALIBEB/alibeb_recetas/?_view=divisa&s=@search"
     @ALIBEB_SEARCH_DEPARTAMENTO  = "/!/ALIBEB/alibeb_recetas/?_view=departamento&s=@search"
     @ALIBEB_SEARCH_PROVEEDOR  = "/!/ALIBEB/alibeb_recetas/?_view=proveedor&s=@search"
+    @ALIBEB_SEARCH_PRODUCTO  = "/!/ALIBEB/alibeb_recetas/?_view=producto&s=@search"
 
     // _STATIC
     @JS_LINEA = "/$/alibeb/js/linea.js"
     @JS_RECETAS = "/$/alibeb/js/recetas.js"
+    @JS_MAIN = "/$/alibeb/js/main.js"
 
     @default_max_rows=250
 }

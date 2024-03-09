@@ -13,7 +13,11 @@ module "form.dk"
 
     do @context.begin(@crud_context)
 
+    minrowsRecConst=15
+    minrowsRecVarbl=15
+
     ref producto = ifnull(@("&./producto"), record.create())
+    ref ensamble = proccessEnsambles(@("&./ensamble"),minrowsRecConst)
     ref tipoprod = @("&./tipoprod")
     ref metodval = @("&./metodval")
     ref impuesto = @("&./impuesto")
@@ -40,14 +44,14 @@ module "form.dk"
     header_act::
     { 
         #$
-        button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_submit"){ $'#<@ICON_SAVE>' }
+        button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_submit" title="Guardar"){ $'#<@ICON_SAVE>' }
     }
 
     #! point general_act to header_act
 
     new nav_config
     {
-        @"title": ifstr(isNewEnt,'Agregar','Editar') + ' producto o servicio'
+        @"title": ifstr(isNewEnt,'Agregar','Editar') + ' receta'
         @"buttons*": general_act
         @"urlexit": @ALIBEB_RECETAS
         member @"hidden"
@@ -124,7 +128,7 @@ module "form.dk"
                                 div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Línea:"}
-                                    "input-key"(id="ik_linea" name="ilinea" "data-value"='#<to.json(linea)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_LINEA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una línea" "box-placeholder-text"="Buscar línea" "box-nodata-text"="No se encontraron líneas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}"){$""}
+                                    "input-key"(id="ik_linea" name="ilinea" "data-value"='#<to.json(linea)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_LINEA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una línea" "box-placeholder-text"="Buscar línea" "box-nodata-text"="No se encontraron líneas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}#description_container{padding-right: 0 !important;}"){$""}
                                 }
                             }
                             div(class="row mb-2")
@@ -132,7 +136,7 @@ module "form.dk"
                                 div(class="col-sm-4")
                                 {
                                     small{$"Departamento:"}
-                                    "input-key"(id="ik_departamento" name="idepartamento" "data-value"='#<to.json(depar)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_DEPARTAMENTO>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione un departamento" "box-placeholder-text"="Buscar departamento" "box-nodata-text"="No se encontraron departamentos"){$""}
+                                    "input-key"(id="ik_departamento" name="idepartamento" "data-value"='#<to.json(depar)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_DEPARTAMENTO>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione un departamento" "box-placeholder-text"="Buscar departamento" "box-nodata-text"="No se encontraron departamentos" "control-styles"="#search_container{padding-left: 0 !important;}#description_container{padding-right: 0 !important;}"){$""}
                                 }
                                 div(class="col-sm-4")
                                 {
@@ -144,7 +148,7 @@ module "form.dk"
                                 #$ div(class="col-sm-4")
                                 {
                                     small(class="fw-bold"){$"Moneda:"}
-                                    "input-key"(id="ik_divisa" name="idivisa" "data-value"='#<to.json(divsa)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_DIVISA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una moneda" "box-placeholder-text"="Buscar moneda" "box-nodata-text"="No se encontraron monedas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}"){$""}
+                                    "input-key"(id="ik_divisa" name="idivisa" "data-value"='#<to.json(divsa)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="descripcion" "data-source"="#<@ALIBEB_SEARCH_DIVISA>" columns="codigo,descripcion" colcaptions="Código,Descripción" "box-title-text"="Seleccione una moneda" "box-placeholder-text"="Buscar moneda" "box-nodata-text"="No se encontraron monedas" required="true" "control-styles"="#search_container{padding-left: 0 !important;}#description_container{padding-right: 0 !important;}"){$""}
                                 }
                                 
                             }
@@ -221,37 +225,51 @@ module "form.dk"
                         div(class="table-controls d-flex align-items-center justify-content-end border mt-4")
                         {
                             small(class="flex-grow-1 ps-3 text-secondary"){$"Elementos que incluye la receta"}
-                            button(class="btn btn-sm" title="Agregar"){$"#<@ICON_ADD_ROW>"}
-                            button(class="btn btn-sm" title="Eliminar"){$"#<@ICON_REMOVE_ROW>"}
+                            button(class="btn btn-sm" type="button" title="Agregar" onclick="recetas.searchProdRecetaConst()"){$"#<@ICON_ADD_ROW>"}
+                            button(class="btn btn-sm" type="button" title="Eliminar" onclick="recetas.deleteProdRecetaConst()"){$"#<@ICON_REMOVE_ROW>"}
                         }
                         div(style="height: 60vh; display: flex;" class="border border-top-0")
                         {
-                            "edit-table"(id="table_receta_constante" style="width: 100%;" style="width: 100%;" "control-styles"="tr td{font-size:.8rem;} th{font-size:.9rem; outline: none !important;} table{ background-color:#FFF !important; } #__table_input{ font-size: unset !important; }tbody tr:hover{background-color:#EDEDED;}input[type='checkbox']{accent-color:#EDEDED;}")
+                            "edit-table"(id="table_receta_constante" style="width: 100%;" data='#<to.json(ensamble)>' style="width: 100%;" "control-styles"="tr td{font-size:.8rem;} th{font-size:.9rem; outline: none !important;} table{ background-color:#FFF !important; } #__table_input{ font-size: unset !important; }tbody tr:hover{background-color:#EDEDED;}input[type='checkbox']{accent-color:#EDEDED;}")
                             {
                                 "edit-thead"
                                 {
                                     "edit-tr"
                                     {
-                                        "edit-th"(type="Text" field="codigo"){$"Código"}
-                                        "edit-th"(type="Text" field="descripcion"){$"Descripción"}
+                                        "edit-th"(type="Text" field="codigo" button="true"){$"Código"}
+                                        "edit-th"(type="Text" field="descripcion" button="true"){$"Descripción"}
                                         "edit-th"(type="Text" field="unidad"){$"Unidad"}
-                                        "edit-th"(type="Number" field="cantidad"){$"Cantidad"}
-                                        "edit-th"(type="NoEditable" field="costoultimo"){$"Costo"}
-                                        "edit-th"(type="NoEditable" field="importe"){$"Importe"}
-                                        "edit-th"(type="NoEditable" field="representacion"){$"% Representación"}
-                                        "edit-th"(type="Number" field="cantdemasiado"){$"Demasiado"}
-                                        "edit-th"(type="Number" field="cantmucho"){$"Mucho"}
-                                        "edit-th"(type="Number" field="cantpoco"){$"Poco"}
-                                        "edit-th"(type="Check" field="omitible"){$"Omitible"}
+                                        "edit-th"(type="Number" field="cantidad" textalign="end" format="true" decs="2"){$"Cantidad"}
+                                        "edit-th"(type="NoEditable" field="costoultimo" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo"}
+                                        "edit-th"(type="NoEditable" field="importe" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Importe"}
+                                        "edit-th"(type="NoEditable" field="representacion" textalign="end" format="true" decs="2"){$"% Representación"}
+                                        "edit-th"(type="Number" field="cantdemasiado" textalign="end" format="true" decs="2"){$"Demasiado"}
+                                        "edit-th"(type="Number" field="cantmucho" textalign="end" format="true" decs="2"){$"Mucho"}
+                                        "edit-th"(type="Number" field="cantpoco" textalign="end" format="true" decs="2"){$"Poco"}
+                                        "edit-th"(type="Check" field="omitible" textalign="center"){$"Omitible"}
                                         "edit-th"(type="Text" field="reemplazo"){$"Reemplazo"}
                                     }
                                 }
                             }
+                            "input-key"(
+                                id="ik_producto"
+                                "data-key"="sys_pk"
+                                "data-search"="codigo"
+                                "data-text"="descripcion"
+                                "data-source"="#<@ALIBEB_SEARCH_PRODUCTO>" 
+                                columns="codigo,descripcion"
+                                colcaptions="Código,Descripción"
+                                "box-title-text"="Seleccione un producto"
+                                "box-placeholder-text"="Buscar producto"
+                                "box-nodata-text"="No se encontraron productos"
+                                "control-styles"="#container{ display: none !important; }"
+                                "hidden-input"="false"
+                            ){$""}
                         }
                         div(class="mt-2 d-flex align-items-center gap-2")
                         {
                             small{$"Costo de materias primas:"}
-                            div{input(class="induxsoft-form-control" id="RC_costo_materia_prima" disabled="true")}
+                            div{input(class="induxsoft-form-control" id="RC_cdirecto" disabled="true")}
                         }
                     }
 
@@ -288,7 +306,7 @@ module "form.dk"
                         div(class="mt-2 d-flex align-items-center gap-2")
                         {
                             small{$"Costo promedio de materias primas:"}
-                            div{input(class="induxsoft-form-control" id="RC_costo_materia_prima" disabled="true")}
+                            div{input(class="induxsoft-form-control" id="RV_costo" disabled="true")}
                         }
                     }
 
@@ -308,9 +326,9 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 mb-2 text-end"){ small{$"Materias primas:"} }
-                                            div(class="col-6 mb-2"){ input(class="induxsoft-form-control" disabled="true") }
+                                            div(class="col-6 mb-2"){ input(class="induxsoft-form-control" disabled="true" name="cdirecto" value="#<@@(producto,'#cdirecto')>") }
                                             div(class="col-6 text-end"){ small{$"Mano de obra:"} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true") }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true" name="cmanoobra" value="#<@@(producto,'#cmanoobra')>") }
                                         }
                                     }
                                     small(class="fw-bold"){$"Costo indirecto"}
@@ -319,7 +337,7 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 text-end"){ small{$""} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true") }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true" id="ipt_constoindirecto") }
                                         }
                                     }
                                     small(class="fw-bold"){$"Costo total de producción"}
@@ -328,7 +346,7 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 text-end"){ small{$"Total:"} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true") }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" id="ipt_costototprod" disabled="true") }
                                         }
                                     }
                                 }
@@ -353,7 +371,11 @@ module "form.dk"
                     div(class="tab-pane fade" id="control" role="tabpanel" "aria-labelledby"="control-tab")
                     {
                         #! sinComi = (@@(producto,'#tipocomision') == 0)
-                        comiXPrice = (@@(producto,'#formacomision') == 2)
+                        _formaComi = @@(producto,'#formacomision')
+                        showpanelC = (not(sinComi) && _formaComi==2)
+
+                        // comiXPrice = (@@(producto,'#formacomision') == 2)
+                        // comiXVnddr = (@@(producto,'#formacomision') == 3)
 
                         #$ div(class="border-bottom py-4")
                         {
@@ -415,7 +437,7 @@ module "form.dk"
                                 #$ div(class="col-sm-3")
                                 {
                                     small{$"Comisión"}
-                                    input(type="number" class="induxsoft-form-control mb-2" name="comision" value="#<@@(producto,'#comision')>" step="0.00000001" max="999999999.9999999" "#<ifstr(sinComi || comiXPrice, 'disabled', '')>"="")
+                                    input(type="number" class="induxsoft-form-control mb-2" name="comision" value="#<@@(producto,'#comision')>" step="0.00000001" max="999999999.9999999" "#<ifstr(sinComi || _formaComi==2 || _formaComi==3, 'disabled', '')>"="")
                                 }
                                 div(class="col-sm-3")
                                 {
@@ -518,7 +540,7 @@ module "form.dk"
                                 div(class="tab-pane fade" id="comisionprecio" role="tabpanel" "aria-labelledby"="comisionprecio-tab")
                                 {
                                     h6{$"Comisiones"}
-                                    div(class="row p-0 m-0")
+                                    div(class="row p-0 m-0" id="comisiones_precio_container")
                                     {
                                         div(class="col-sm-7")
                                         {
@@ -591,7 +613,7 @@ module "form.dk"
                                         button(class="nav-link nl-bottom btn-sm" id="ingrediente_adic-tab" "data-bs-toggle"="tab" "data-bs-target"="#ingrediente_adic" type="button" role="tab" "aria-controls"="ingrediente_adic" "aria-selected"="false"){$"Ingrediente adicional"}
                                     }
                                     li(class="nav-item" role="presentation") {
-                                        button(class="nav-link nl-bottom btn-sm" id="comisionprecio-tab" "data-bs-toggle"="tab" "data-bs-target"="#comisionprecio" type="button" role="tab" "aria-controls"="comisionprecio" "aria-selected"="false"){$"Comisiones"}
+                                        button(class="nav-link nl-bottom btn-sm #<ifstr(showpanelC,'','d-none')>" id="comisionprecio-tab" "data-bs-toggle"="tab" "data-bs-target"="#comisionprecio" type="button" role="tab" "aria-controls"="comisionprecio" "aria-selected"="false"){$"Comisiones"}
                                     }
                                 }
                                 // div(class="col-2 col-sm-1 d-flex flex-wrap flex-row pb-2 pt-4" style="align-content:space-between;")
@@ -696,30 +718,19 @@ module "form.dk"
                                 }
                             }
 
-                            h6(class="pt-4"){$"Lista de unidades"}
-                            div(class="row")
+                            h6(class="pt-4"){$"Lista de proveedores"}
+                            div(class="row mb-4")
                             {
                                 div(class="col-sm-6")
                                 {
                                     small{$"Proveedor 1:"}
-                                    "input-key"(id="ik_proveedor1" name="proveedor1" "data-value"='#<to.json(prov1)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
+                                    "input-key"(id="ik_proveedor1" name="proveedor1" "data-value"='#<to.json(prov1)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores" "control-styles"="#search_container{padding-left: 0 !important;}#description_container{padding-right: 0 !important;}"){$""}
                                 
                                     small{$"Proveedor 2:"}
-                                    "input-key"(id="ik_proveedor2" name="proveedor2" "data-value"='#<to.json(prov2)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
+                                    "input-key"(id="ik_proveedor2" name="proveedor2" "data-value"='#<to.json(prov2)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores" "control-styles"="#search_container{padding-left: 0 !important;}#description_container{padding-right: 0 !important;}"){$""}
 
                                     small{$"Proveedor 3:"}
-                                    "input-key"(id="ik_proveedor3" name="proveedor3" "data-value"='#<to.json(prov3)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores"){$""}
-                                }
-                                div(class="col-sm-6")
-                                {
-                                    small{$"Código del producto:"}
-                                    input(type="text" class="induxsoft-form-control mb-2" name="uf_codigoparaproveedor1" value="#<@@(producto,'$uf_codigoparaproveedor1')>")
-                                    
-                                    small{$"Código del producto:"}
-                                    input(type="text" class="induxsoft-form-control mb-2" name="uf_codigoparaproveedor2" value="#<@@(producto,'$uf_codigoparaproveedor2')>")
-
-                                    small{$"Código del producto:"}
-                                    input(type="text" class="induxsoft-form-control mb-2" name="uf_codigoparaproveedor3" value="#<@@(producto,'$uf_codigoparaproveedor3')>")
+                                    "input-key"(id="ik_proveedor3" name="proveedor3" "data-value"='#<to.json(prov3)>' "data-key"="sys_pk" "data-search"="codigo" "data-text"="nombre" "data-source"="#<@ALIBEB_SEARCH_PROVEEDOR>" columns="codigo,nombre" colcaptions="Código,Nombre" "box-title-text"="Seleccione un proveedor" "box-placeholder-text"="Buscar proveedor" "box-nodata-text"="No se encontraron proveedores" "control-styles"="#search_container{padding-left: 0 !important;}#description_container{padding-right: 0 !important;}"){$""}
                                 }
                             }
 
@@ -775,11 +786,12 @@ module "form.dk"
             .input-symbol-text { padding-left: 20px !important; }
         '}
         script(src="#<@JS_MAIN>"){$""}
-        script(src="#<@JS_PRODUCTO>"){$""}
+        script(src="#<@JS_RECETAS>"){$""}
         script{$'
-            producto.urlFormActn = "#<formActn>";
-            producto.urlBack = "#<@ALIBEB_RECETAS>";
-            producto.formcomi = #<to.json(formcomi)>;
+            recetas.urlFormActn = "#<formActn>";
+            recetas.urlBack = "#<@ALIBEB_RECETAS>";
+            recetas.formcomi = #<to.json(formcomi)>;
+            recetas.minrowsRecConst = #<minrowsRecConst>;
         '}
     }
 }

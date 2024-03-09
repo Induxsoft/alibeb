@@ -7,31 +7,37 @@ module "controller"
         case "divisa"
         {
             @table_name = "divisa"
-            point @list to prodserv.obtenerDivisas
+            point @list to alibeb.obtenerDivisas
             break
         }
         case "departamento"
         {
             @table_name = "departamento"
-            point @list to prodserv.obtenerDepartamentos
+            point @list to alibeb.obtenerDepartamentos
             break
         }
         case "proveedor"
         {
             @table_name = "proveedor"
-            point @list to prodserv.obtenerProveedores
+            point @list to alibeb.obtenerProveedores
+            break
+        }
+        case "producto"
+        {
+            @table_name = "producto"
+            point @list to alibeb.obtenerProductos
             break
         }
         case "linea"
         {
             @table_name = "linea"
-            point @list to prodserv.obtenerLineas
+            point @list to alibeb.obtenerLineas
             break
         }
         case "galeria"
         {
             @table_name = "producto"
-            point @read to prodserv.obtenerGaleria
+            point @read to alibeb.obtenerGaleria
 
             @form_view = "galeria.dk"
         }

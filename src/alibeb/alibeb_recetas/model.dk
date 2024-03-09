@@ -12,7 +12,15 @@ module "model"
     function check_autocode(&db,table,field,&data)
     {
         varvalue = dbr.vars.getd(db,"FXCA124","|0000")
+
+        if contains(varvalue,"@Linea")
+        {
+            var = dbr.str(db, "SELECT codigo FROM linea WHERE sys_pk=@ilinea", data)
+            varvalue = replace(varvalue,"@Linea",var)
+        }
+
         ref config = dbr.autocode.info(varvalue)
+        config<"start">: 2
         new_code = dbr.autocode.new(db,table,field,config)
 
         data<"codigo">: new_code
@@ -21,7 +29,7 @@ module "model"
         { }
     }
 
-    function prodserv.crearProducto(&db, &params, &data)
+    function alibeb.crearProducto(&db, &params, &data)
     {
         // if @@(params,"$_entity_id") == "_new" && not(dbr.security.isauth(db,@AUT_CREATE_PRODUCTO)) { do rise_error(500,"No autorizado") }
         // if @@(params,"$_entity_id") != "_new" && not(dbr.security.isauth(db,@AUT_UPDATE_PRODUCTO)) { do rise_error(500,"No autorizado") }
@@ -39,75 +47,46 @@ module "model"
         if field.exist(data,"uf_sat_uniproser") && trim(@@(data,"$uf_sat_uniproser")) == "" { data<"uf_sat_uniproser"> : "H87" }
         
         if @@(params,"$_entity_id") == "_new" { data<"existencia"> : 0 }
-        group = @@(data,"$similar_group")
-        do field.remove(data, "similar_group")
-
         if @@(data,"codigo")=="" { do check_autocode(db,"producto","codigo",data) }
-        ref res = entity.create(db, params, data)
 
-        if trim(group) != ""
-        {
-            new prm { @"prod_pk": @@(res, "producto/sys_pk") }
-            ref rel = dbr.rec(db, "SELECT sys_pk, sys_recver, igrupos FROM grupoproductos_producto_ WHERE iproductos=@prod_pk", prm)
-            
-            if not(isnull(rel))
-            {
-                if @@(rel,"$igrupos") != group
-                {
-                    new _rel { @"igrupos": group }
-                    do dbr.update(db, "grupoproductos_producto_", _rel, "iproductos=@prod_pk", prm)
-                }
-            }
-            else 
-            {
-                new _rel {
-                    @"sys_pk": 0
-                    @"sys_recver": 0
-                    @"sys_timestamp*": now()
-                    @"igrupos": group
-                    @"iproductos": @@(res, "#producto/sys_pk")
-                }
-                do dbr.insert(db, "grupoproductos_producto_", _rel)
-            }
-        }
-        else 
-        {
-            new prm { @"prod_pk": @@(res, "producto/sys_pk") }
-            do dbr.execute(db, "DELETE FROM grupoproductos_producto_ WHERE iproductos=@prod_pk", prm)
-        }
+        ref res = entity.create(db, params, data)
 
         return res
         exception
 		{
-			do cu_error("producto")
+			do cu_error("receta")
 			do rise_error(last_error_code(), last_error())
-            do prodserv.prepareView(db, params, data)
+            do alibeb.prepareView(db, params, data)
 		}
     }
-    function prodserv.read(&db, &params)
+    function alibeb.read(&db, &params)
     {
         // if not(dbr.security.isauth(db,@AUT_READ_PRODUCTO)) { do rise_error(500,"No autorizado") }
 
         sql_producto = "
-            SELECT 
-                IFNULL(p.idivisa,'') idivisa, IFNULL(p.ilinea,'') ilinea, IFNULL(p.idepartamento,'') idepartamento, IFNULL(p.imarca,'') imarca,
-                IFNULL(p.proveedor1,'') proveedor1, IFNULL(p.proveedor2,'') proveedor2, IFNULL(p.proveedor3,'') proveedor3,
-                p.sys_pk, p.sys_recver, p.iclase, p.codigo, p.descripcion, p.itipo, p.unidad, IFNULL(p.factorb,1) factorb, IFNULL(p.unidadB,'') unidadB,
-                p.metodovaluacion, p.impuestos, IFNULL(p.costoultimo,0) costoultimo, IFNULL(p.codbar1,'') codbar1, IFNULL(p.codbar2,'') codbar2,
-                IFNULL(p.codbar3,'') codbar3, IFNULL(p.reqserie,0) reqserie, IFNULL(p.reqlote,0) reqlote, IFNULL(p.unidadc,'') unidadc,
-                IFNULL(p.factorc,0) factorc, IFNULL(p.unidadd,'') unidadd, IFNULL(p.factord,0) factord, IFNULL(p.unidade,'') unidade,
-                IFNULL(p.factore,0) factore, IFNULL(p.maximo,0) maximo, IFNULL(p.puntoro,0) puntoro, IFNULL(p.minimo,0) minimo,
-                IFNULL(p.diasentrega,0) diasentrega, IFNULL(p.notas,'') notas, IFNULL(p.uf_sat_proser,'01010101') uf_sat_proser,
-                IFNULL(p.uf_sat_uniproser,'H87') uf_sat_uniproser, IFNULL(p.utilmin,0) utilmin, IFNULL(p.tipocomision,'') tipocomision,
-                IFNULL(p.formacomision,'') formacomision, IFNULL(p.comision,0) comision, IFNULL(p.ppuntos,0) ppuntos,
+            SELECT
+                p.sys_pk, p.sys_recver, p.codigo, p.descripcion, IFNULL(p.ilinea,'') ilinea, 
+                IFNULL(p.idepartamento,'') idepartamento, p.itipo, IFNULL(p.idivisa,'') idivisa,
+                IFNULL(p.codbar1,'') codbar1, IFNULL(p.codbar2,'') codbar2, IFNULL(p.codbar3,'') codbar3,
+                IFNULL(p.visible,0) visible, p.unidad, IFNULL(p.factorb,1) factorb, IFNULL(p.unidadB,'') unidadB,
+                IFNULL(cdirecto,0) cdirecto, IFNULL(cmanoobra,0) cmanoobra,
+                p.metodovaluacion, p.impuestos, IFNULL(p.costoultimo,0) costoultimo, IFNULL(p.utilmin,0) utilmin,
+                IFNULL(p.tipocomision,'') tipocomision, IFNULL(p.formacomision,'') formacomision,
+                IFNULL(p.comision,0) comision, IFNULL(p.ppuntos,0) ppuntos,
                 IFNULL(p.precio1,0) precio1, IFNULL(p.precio2,0) precio2, IFNULL(p.precio3,0) precio3, IFNULL(p.precio4,0) precio4, IFNULL(p.precio5,0) precio5,
-                IFNULL(p.visible,0) visible, IFNULL(p.uf_complemento,0) uf_complemento,
-                IFNULL(p.flagutilidad,0) flagutilidad, IFNULL(p.flaglimites,0) flaglimites,
+                IFNULL(p.adicional,0) adicional,
+                IFNULL(padic1,0) padic1, IFNULL(padic2,0) padic2, IFNULL(padic3,0) padic3, IFNULL(padic4,0) padic4, IFNULL(padic5,0) padic5,
                 IFNULL(p.comision1,0) comision1, IFNULL(p.comision2,0) comision2, IFNULL(p.comision3,0) comision3, IFNULL(p.comision4,0) comision4, IFNULL(p.comision5,0) comision5,
-                IFNULL(gp.sys_pk,'') similar_group
+                IFNULL(p.flagutilidad,0) flagutilidad, IFNULL(p.flaglimites,0) flaglimites,
+                IFNULL(p.unidadc,'') unidadc, IFNULL(p.unidadd,'') unidadd, IFNULL(p.unidade,'') unidade,
+                IFNULL(p.factorc,0) factorc, IFNULL(p.factord,0) factord,  IFNULL(p.factore,0) factore,
+                IFNULL(p.maximo,0) maximo, IFNULL(p.puntoro,0) puntoro,  IFNULL(p.minimo,0) minimo, IFNULL(p.diasentrega,0) diasentrega,
+                IFNULL(p.proveedor1,'') proveedor1, IFNULL(p.proveedor2,'') proveedor2, IFNULL(p.proveedor3,'') proveedor3,
+                IFNULL(p.uf_solicitarcantidad,0) uf_solicitarcantidad,
+                IFNULL(p.notas,'') notas,
+                IFNULL(p.uf_sat_proser,'01010101') uf_sat_proser,
+                IFNULL(p.uf_sat_uniproser,'H87') uf_sat_uniproser,
             FROM producto p
-                LEFT JOIN grupoproductos_producto_ gp_p ON gp_p.iproductos = p.sys_pk
-                LEFT JOIN grupoproductos gp ON gp.sys_pk = gp_p.igrupos
             WHERE p.sys_pk=@_entity_id LIMIT 1;
         "
 
@@ -116,11 +95,11 @@ module "model"
             @"producto*": dbr.rec(db, sql_producto, params)
         }
 
-        do prodserv.prepareView(db, params, data)
+        do alibeb.prepareView(db, params, data)
 
         return data
     }
-    function prodserv.obtenerDivisas(&db, &params)
+    function alibeb.obtenerDivisas(&db, &params)
     {
         return dbr.list(db, "
             SELECT sys_pk, codigo, descripcion FROM divisa
@@ -128,7 +107,7 @@ module "model"
                 AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
         ", params)
     }
-    function prodserv.obtenerDepartamentos(&db, &params)
+    function alibeb.obtenerDepartamentos(&db, &params)
     {
         return dbr.list(db, "
             SELECT sys_pk, codigo, descripcion FROM departamento
@@ -136,7 +115,7 @@ module "model"
                 AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
         ", params)
     }
-    function prodserv.obtenerProveedores(&db, &params)
+    function alibeb.obtenerProveedores(&db, &params)
     {
         return dbr.list(db,"
             SELECT sys_pk, codigo, nombre FROM proveedor
@@ -144,7 +123,7 @@ module "model"
                 AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR nombre LIKE CONCAT('%',@s,'%')));
         ", params)
     }
-    function prodserv.obtenerLineas(&db, &params)
+    function alibeb.obtenerLineas(&db, &params)
     {
         query="SELECT sys_pk, clase, codigo, descripcion, IFNULL(notas,'') notas
             FROM linea
@@ -155,8 +134,19 @@ module "model"
             LIMIT #<@default_max_rows>;"
         return dbr.list(db, ftext(query), params)
     }
+    function alibeb.obtenerProductos(&db,&params)
+    {
+        sql = "
+            SELECT p.sys_pk, p.codigo, p.descripcion, p.unidad, IFNULL(p.costoultimo,0) costoultimo
+            FROM producto p
+            WHERE IFNULL(p.sys_deleted,0) = 0
+                AND IF(IFNULL(@s,'')='', true, (p.codigo LIKE CONCAT('%',@s,'%') OR p.descripcion LIKE CONCAT('%',@s,'%')))
+            ORDER BY p.descripcion;
+        "
+        return dbr.list(db, sql, params)
+    }
 
-    function prodserv.list(&db, &params)
+    function alibeb.list(&db, &params)
     {
         // if not(dbr.security.isauth(db,@AUT_ACCESS_PRODUCTO)) { do rise_error(500,"No autorizado") }
 
@@ -186,7 +176,7 @@ module "model"
         "
         return dbr.list(db, ftext(query), params)
     }
-    function prodserv.delete(&db, &params)
+    function alibeb.delete(&db, &params)
     {
         // if not(dbr.security.isauth(db,@AUT_DELETE_PRODUCTO)) { do rise_error(500,"No autorizado") }
 
@@ -205,22 +195,33 @@ module "model"
         }
         do valide_duplicate(fields, table, last_error(), last_error_code())
     }
-
-    function prodserv.blank(&db, &params)
+    function alibeb.blank(&db, &params)
     {
         // if not(dbr.security.isauth(db,@AUT_READ_PRODUCTO)) { do rise_error(500,"No autorizado") }
 
         ref data = record.create()
-        do prodserv.prepareView(db, params, data)
+        do alibeb.prepareView(db, params, data)
         return data
     }
-    function prodserv.prepareView(&db, &params, &data)
+    function alibeb.prepareView(&db, &params, &data)
     {
         sql_tipoprod = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM ctipoproducto ORDER BY id DESC;"
         sql_metodval = "SELECT id, const FROM cmetodosvaluacion;"
         sql_impuesto = "SELECT sys_pk, nombre FROM cfgimpuesto;"
         sql_tipocomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM ctiposcomisionesproducto ORDER BY id;"
         sql_formcomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM cformacomisionproducto ORDER BY id;"
+        sql_ensamble = "
+            SELECT
+                ie.sys_pk, ie.sys_recver, ie.elemento,
+                p.codigo, p.descripcion, p.unidad, IFNULL(ie.cantidad,0) cantidad, IFNULL(p.costoultimo,0) costoultimo, 
+                IFNULL(p.costoultimo,0) importe, '100' AS representacion, IFNULL(ie.cantdemasiado,0) cantdemasiado, 
+                IFNULL(ie.cantmucho,0) cantmucho, IFNULL(ie.cantpoco,0) cantpoco, IFNULL(omitible,0) omitible,
+                IFNULL(p3.descripcion,'') reemplazo, IFNULL(p3.sys_pk,-99) pk_reemplazo
+            FROM iensamble ie INNER JOIN producto p ON ie.elemento=p.sys_pk
+                INNER JOIN producto p2 ON ie.fk_producto_elementos = p2.sys_pk
+                LEFT JOIN producto p3 ON ie.reemplazo = p3.sys_pk
+            WHERE p2.sys_pk=@sys_pk;
+        "
 
         using data
         {
@@ -229,11 +230,12 @@ module "model"
             @"impuesto*": dbr.list(db, sql_impuesto, @null)
             @"tipocomi*": dbr.list(db, sql_tipocomi, @null)
             @"formcomi*": dbr.list(db, sql_formcomi, @null)
+            @"ensamble*": dbr.list(db, sql_ensamble, @@(data,"&producto"))
         }
 
         return data
     }
-    function prodserv.add_empty_value(&list, keyfield, valuefield)
+    function alibeb.add_empty_value(&list, keyfield, valuefield)
     {
         ref empty = record.create()
         empty<keyfield>: ""
@@ -243,7 +245,7 @@ module "model"
         return list
     }
 
-    function prodserv.obtenerGaleria(&db, &params)
+    function alibeb.obtenerGaleria(&db, &params)
     {
         ref product = dbr.rec(db, "SELECT descripcion, REPLACE(TRIM(codigo),' ','-') codigo FROM producto WHERE sys_pk=@_entity_id", params)
 
@@ -277,10 +279,10 @@ module "model"
         return (url + "?ids=" + @@(@http_context, "session/user/ids"))
     }
 
-    point @create to prodserv.crearProducto
-    point @update to prodserv.crearProducto
-    point @delete to prodserv.delete
-    point @read to prodserv.read
-    point @list to prodserv.list
-    point @blank to prodserv.blank
+    point @create to alibeb.crearProducto
+    point @update to alibeb.crearProducto
+    point @delete to alibeb.delete
+    point @read to alibeb.read
+    point @list to alibeb.list
+    point @blank to alibeb.blank
 }
