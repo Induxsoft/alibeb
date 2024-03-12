@@ -15,7 +15,8 @@ module "model"
 
         if contains(varvalue,"@Linea")
         {
-            var = dbr.str(db, "SELECT codigo FROM linea WHERE sys_pk=@ilinea", data)
+            new prm { @"ilinea": @@(data,"ilinea") }
+            var = dbr.str(db, "SELECT codigo FROM linea WHERE sys_pk=@ilinea", prm)
             varvalue = replace(varvalue,"@Linea",var)
         }
 
@@ -47,19 +48,95 @@ module "model"
         if field.exist(data,"uf_sat_uniproser") && trim(@@(data,"$uf_sat_uniproser")) == "" { data<"uf_sat_uniproser"> : "H87" }
         
         if @@(params,"$_entity_id") == "_new" { data<"existencia"> : 0 }
-        if @@(data,"codigo")=="" { do check_autocode(db,"producto","codigo",data) }
+        if @@(data,"codigo")=="" || @@(data,"codigo")=="<A>" { do check_autocode(db,"producto","codigo",data) }
 
-        data<"iclase">: 2
+        data<"iclase">: 2 //cReceta
+        data<"reqlote">: 0
+        data<"reqserie">: 0
 
+        ref iensamble = ifnull(@@(data,"&iensamble"), list.create())
+        ref ivariable = ifnull(@@(data,"&ivariable"), list.create())
+        ref cproduccion = ifnull(@@(data,"&cproduccion"), list.create())
+
+        if list.count(cproduccion) < 1 { do rise_error(0, "Debe indicar al menos un centro de producción.") }
+
+        for i = 0; i < list.count(iensamble)
+        {
+            ref ensamble = list.obj(iensamble,i)
+            ensamble<"omitible">: (tolower(@@(ensamble,"omitible"))!="no")
+            if @@(ensamble,"$reemplazo") == "" { do field.remove(ensamble,"reemplazo") }
+        }
+        for i = 0; i < list.count(ivariable)
+        {
+            ref variable = list.obj(ivariable,i)
+            variable<"padicional">: trim(list.str(split(@@(variable,"padicional"),"-"),0))
+        }
+
+        // if field.exist(data,"iensamble") { do field.remove(data,"iensamble") }
+        // if field.exist(data,"ivariable") { do field.remove(data,"ivariable") }
+        if field.exist(data,"cproduccion") { do field.remove(data,"cproduccion") }
+
+        using @childs
+        {
+            member "iensamble"
+            {
+                @"joinfield": "fk_producto_elementos"
+                @"keyfield": "sys_pk"
+                @"table": "iensamble"
+                @"select_query": "SELECT NULL;"
+                @"fields": "cantdemasiado,cantidad,cantmucho,cantpoco,omitible,elemento,reemplazo"
+            }
+            member "ivariable"
+            {
+                @"joinfield": "fk_producto_ivariables"
+                @"keyfield": "sys_pk"
+                @"table": "ivariable"
+                @"select_query": "SELECT NULL;"
+                @"fields": "cdirectoprom,cindirectoprom,cmanoobraprom,descripcion,factor,maximo,minimo,padicional,grupo"
+            }
+            // member "cproduccion"
+            // {
+            //     @"joinfield": "iproductos"
+            //     @"keyfield": "sys_pk"
+            //     @"table": "cproduccion_producto_"
+            //     @"select_query": "SELECT NOW();"
+            //     @"fields": "iconsumo"
+            // }
+        }
+
+        @use_transaction = @false
+        
+        do dbr.begin(db)
         ref res = entity.create(db, params, data)
+        do insertcproduccion(db,cproduccion,res)
+        do dbr.commit(db)
 
         return res
         exception
 		{
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
 			do cu_error("receta")
-			do rise_error(last_error_code(), last_error())
+            do errordet(@false)
+			do rise_error(last_error_code(),last_error())
             do alibeb.prepareView(db, params, data)
 		}
+    }
+    function insertcproduccion(&db,&cproduccion,&producto)
+    {
+        new prm { @"producto": @@(producto,"#producto/sys_pk")  }
+        do dbr.execute(db, "DELETE FROM cproduccion_producto_ WHERE iproductos = @producto", prm)
+        
+        for i = 0; i < list.count(cproduccion)
+        {
+            ref cprod = list.obj(cproduccion,i)
+            new data
+            {
+                @"sys_timestamp*": dbr.sql("NOW()")
+                @"iproductos": @@(prm,"producto")
+                @"icentrosproduccion": @@(cprod,"#icentrosproduccion")
+            }
+            do dbr.insert(db,"cproduccion_producto_", data)
+        }
     }
     function alibeb.read(&db, &params)
     {
@@ -71,7 +148,7 @@ module "model"
                 IFNULL(p.idepartamento,'') idepartamento, p.itipo, IFNULL(p.idivisa,'') idivisa,
                 IFNULL(p.codbar1,'') codbar1, IFNULL(p.codbar2,'') codbar2, IFNULL(p.codbar3,'') codbar3,
                 IFNULL(p.visible,0) visible, p.unidad, IFNULL(p.factorb,1) factorb, IFNULL(p.unidadB,'') unidadB,
-                IFNULL(cdirecto,0) cdirecto, IFNULL(cmanoobra,0) cmanoobra, IFNULL(cindirecto,0) cindirecto
+                IFNULL(cdirecto,0) cdirecto, IFNULL(cmanoobra,0) cmanoobra, IFNULL(cindirecto,0) cindirecto,
                 p.metodovaluacion, p.impuestos, IFNULL(p.costoultimo,0) costoultimo, IFNULL(p.utilmin,0) utilmin,
                 IFNULL(p.tipocomision,'') tipocomision, IFNULL(p.formacomision,'') formacomision,
                 IFNULL(p.comision,0) comision, IFNULL(p.ppuntos,0) ppuntos,
@@ -87,7 +164,7 @@ module "model"
                 IFNULL(p.uf_solicitarcantidad,0) uf_solicitarcantidad,
                 IFNULL(p.notas,'') notas,
                 IFNULL(p.uf_sat_proser,'01010101') uf_sat_proser,
-                IFNULL(p.uf_sat_uniproser,'H87') uf_sat_uniproser,
+                IFNULL(p.uf_sat_uniproser,'H87') uf_sat_uniproser
             FROM producto p
             WHERE p.sys_pk=@_entity_id LIMIT 1;
         "
@@ -137,7 +214,7 @@ module "model"
             WHERE IFNULL(sys_deleted,0)=0 
                 AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
                 AND clase=2
-            ORDER BY descripcion
+            ORDER BY codigo
             LIMIT #<@default_max_rows>;"
         return dbr.list(db, ftext(query), params)
     }
@@ -157,8 +234,8 @@ module "model"
     {
         sql = "
             SELECT gp.sys_pk grupo, gp.nombre grupo_desc,
-                AVG(IFNULL(p.costoultimo,0)) cdirectoprom, AVG(IFNULL(p.cindirecto,0)) cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) cmanoobraprom,
-                AVG(IFNULL(p.costoultimo,0)) _cdirectoprom, AVG(IFNULL(p.cindirecto,0)) _cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) _cmanoobraprom
+                AVG(IFNULL(p.cdirecto,0)) cdirectoprom, AVG(IFNULL(p.cindirecto,0)) cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) cmanoobraprom,
+                AVG(IFNULL(p.cdirecto,0)) _cdirectoprom, AVG(IFNULL(p.cindirecto,0)) _cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) _cmanoobraprom
             FROM grupoproductos gp
                 LEFT JOIN grupoproductos_producto_ gp_p ON gp_p.igrupos = gp.sys_pk
                 LEFT JOIN producto p ON gp_p.iproductos = p.sys_pk
@@ -203,8 +280,22 @@ module "model"
     {
         // if not(dbr.security.isauth(db,@AUT_DELETE_PRODUCTO)) { do rise_error(500,"No autorizado") }
 
+        @use_transaction = @false
+        
+        do dbr.begin(db)
         do dbr.execute(db, "DELETE FROM grupoproductos_producto_ WHERE iproductos=@_entity_id", params)
+        do dbr.execute(db, "DELETE FROM iensamble WHERE fk_producto_elementos=@_entity_id", params)
+        do dbr.execute(db, "DELETE FROM ivariable WHERE fk_producto_ivariables=@_entity_id", params)
+        do dbr.execute(db, "DELETE FROM cproduccion_producto_ WHERE iproductos=@_entity_id", params)
         do entity.delete(db, params)
+        do dbr.commit(db)
+        
+        exception
+		{
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
+            do errordet(@false)
+			do rise_error(last_error_code(),last_error())
+		}
     }
 
     function cu_error(table)
@@ -236,11 +327,11 @@ module "model"
         sql_cimpadic = "SELECT CONCAT(id,' - ',SUBSTR(const,2)) id, SUBSTR(const,2) const FROM cimpadicionales ORDER BY id;"
         sql_ensamble = "
             SELECT
-                ie.sys_pk, ie.sys_recver, ie.elemento,
+                0 AS sys_pk, 0 AS sys_recver, ie.elemento,
                 p.codigo, p.descripcion, p.unidad, IFNULL(ie.cantidad,0) cantidad, IFNULL(p.costoultimo,0) costoultimo, 
                 IFNULL(p.costoultimo,0) importe, '100' AS representacion, IFNULL(ie.cantdemasiado,0) cantdemasiado, 
-                IFNULL(ie.cantmucho,0) cantmucho, IFNULL(ie.cantpoco,0) cantpoco, IFNULL(omitible,0) omitible,
-                IFNULL(p3.descripcion,'') reemplazo, IFNULL(p3.sys_pk,-99) pk_reemplazo
+                IFNULL(ie.cantmucho,0) cantmucho, IFNULL(ie.cantpoco,0) cantpoco, IF(IFNULL(omitible,0)=0,'No','Si') omitible,
+                IFNULL(p3.sys_pk,'') reemplazo, IFNULL(p3.descripcion,'') reemplazo_desc
             FROM iensamble ie INNER JOIN producto p ON ie.elemento=p.sys_pk
                 INNER JOIN producto p2 ON ie.fk_producto_elementos = p2.sys_pk
                 LEFT JOIN producto p3 ON ie.reemplazo = p3.sys_pk
@@ -252,15 +343,15 @@ module "model"
                 AVG(IFNULL(p.cdirecto,0)) cdirectoprom, AVG(IFNULL(p.cindirecto,0)) cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) cmanoobraprom,
                 AVG(IFNULL(p.cdirecto,0)) _cdirectoprom, AVG(IFNULL(p.cindirecto,0)) _cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) _cmanoobraprom
             FROM ivariable iv
-                INNER JOIN grupoproductos gp ON iv.grupo = gp.sys_pk
-                INNER JOIN grupoproductos_producto_ gp_p ON gp_p.igrupos = gp.sys_pk
-                INNER JOIN producto p ON gp_p.iproductos = p.sys_pk
+                LEFT JOIN grupoproductos gp ON iv.grupo = gp.sys_pk
+                LEFT JOIN grupoproductos_producto_ gp_p ON gp_p.igrupos = gp.sys_pk
+                LEFT JOIN producto p ON gp_p.iproductos = p.sys_pk
                 LEFT JOIN cimpadicionales cia ON iv.padicional=cia.id
             WHERE iv.fk_producto_ivariables=@sys_pk
             GROUP BY iv.grupo;
         "
         sql_cproducc = "
-            SELECT cp.codigo id, cp.descripcion text, IF(IFNULL(cpp.prod,-99)=-99,0,1) done
+            SELECT cp.sys_pk, cp.codigo id, cp.descripcion text, IF(IFNULL(cpp.prod,-99)=-99,0,1) done
             FROM cproduccion cp
                 LEFT JOIN (SELECT icentrosproduccion prod FROM cproduccion_producto_ WHERE iproductos=@sys_pk) cpp ON cpp.prod=cp.sys_pk
             ORDER BY cp.descripcion;

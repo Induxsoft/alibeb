@@ -35,7 +35,7 @@ module "list.dk"
                 @"caption":"Acciones" 
                 @"template":ftext('
                     <div style="display:flex;gap:8px;justify-content:center;width:100%;" class="no-print">
-                        <a href="${`#<@PRODSERV_ADD_EDIT_PRODUCTO>`.replace(`@id`,DataRow.sys_pk)}" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
+                        <a href="#<@ALIBEB_RECETAS>${DataRow.sys_pk}/" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
                         <button onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Eliminar</button>
                     </div>')
                 @"no-print":@true

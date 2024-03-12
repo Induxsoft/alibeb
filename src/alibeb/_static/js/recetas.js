@@ -8,6 +8,8 @@ var recetas =
     replace_rect_v: true,
     minrowsRecConst: 10,
     minrowsRecVarbl: 10,
+    inputk_grupos: null,
+    inputk_product_reemplazo: null,
 
     init()
     {
@@ -17,12 +19,7 @@ var recetas =
         this.inputk_product_reemplazo = document.querySelector('#ik_producto_reeplazo');
         this.inputk_grupos = document.querySelector('#ik_grupos');
 
-        const check_flagu = document.querySelector('#check_flagutil');
-        const check_flagl = document.querySelector('#check_flaglimites');
-        const ipt_flagutl = document.querySelector('#ipt_flagutilidad');
-        const ipt_flaglim = document.querySelector('#ipt_flaglimites');
-        const check_viewp = document.querySelector('#check_view_pv');
-        const ipt_visible = document.querySelector('#ipt_visible');
+        const btn_submit = document.querySelector('#btn_submit');
         const ipt_unidad = document.querySelector('input[name="unidad"]');
         const ipt_factorb = document.querySelector('input[name="factorb"]');
         const ipt_unidadb = document.querySelector('input[name="unidadB"]');
@@ -33,6 +30,13 @@ var recetas =
         const ipt_utilmin = document.querySelector('input[name="utilmin"]');
         const ipt_costoultimo = document.querySelector('input[name="costoultimo"]');
         const check_ingadic = document.querySelector('#check_ingadic');
+        const ipt_checks = document.querySelectorAll('input[type="checkbox"]');
+
+        ipt_checks.forEach(check => {
+            const iptid = (check.getAttribute('ipt')??'___');
+            const input = document.getElementById(iptid);
+            if (input) check.addEventListener('change', () => this.set_ipt_check_value(input, check));
+        });
 
         ['ipt_costomanoobra','ipt_costoindirecto'].forEach(id=>{
             const input = document.getElementById(id);
@@ -42,11 +46,9 @@ var recetas =
         this.setTableEvents();
         this.setTableConfigs();
 
-        if (check_flagu && ipt_flagutl) check_flagu.addEventListener('change', e => { this.set_ipt_check_value(ipt_flagutl, check_flagu) });
-        if (check_flagl && ipt_flaglim) check_flagl.addEventListener('change', e => { this.set_ipt_check_value(ipt_flaglim, check_flagl) });
-        if (check_viewp && ipt_visible) check_viewp.addEventListener('change', e => { this.set_ipt_check_value(ipt_visible, check_viewp) });
+        if (btn_submit) btn_submit.addEventListener('click', e => { this.create_update_receta(e,form_cntnr); });
 
-        if (form_cntnr) form_cntnr.addEventListener('submit', e => this.create_update_product(e));
+
         if (formacomision) formacomision.addEventListener('change', e => this.change_comision_field(formacomision));
         if (tipocomision) tipocomision.addEventListener('change', e => this.select_comision_type(tipocomision));
         if (ipt_utilmin && ipt_costoultimo) ipt_utilmin.addEventListener('keyup', e => this.calcule_utilidad(ipt_utilmin, ipt_costoultimo));
@@ -86,7 +88,7 @@ var recetas =
             this.table_rec_cons.onTdPaint = (td,idx,indexcol,field) => this.setCellColors(td,indexcol,this.table_rec_cons);
             this.table_rec_cons.setInputKey("codigo",this.inputk_product);
             this.table_rec_cons.setInputKey("descripcion",this.inputk_product);
-            this.table_rec_cons.setInputKey("reemplazo",this.inputk_product_reemplazo);
+            this.table_rec_cons.setInputKey("reemplazo_desc",this.inputk_product_reemplazo);
             this.inputk_product.addEventListener('change', producto => this.addProdRecCon(producto));
             this.inputk_product_reemplazo.addEventListener('change', producto => this.addProdReemRecCon(producto));
             this.table_rec_cons._printRows();
@@ -106,10 +108,11 @@ var recetas =
     {
         inputElement.value = (checkElement.checked ? 1 : 0);
     },
-    create_update_product(event)
+    create_update_receta(event,form_cntnr)
     {
+        form_cntnr.checkValidity();
         event.preventDefault();
-
+        
         const reqCall = control => 
         {
             let panel = control.closest('div[role="tabpanel"]');
@@ -117,16 +120,31 @@ var recetas =
                 let tab = document.querySelector(`button[id="${panel.getAttribute('aria-labelledby')}"]`);
                 if (tab) tab.click();
                 control.focus();
+                setTimeout(()=>form_cntnr.reportValidity(),250);
             }
         }
 
         let data = main.getValues('form', true, reqCall);
+        
         if (data==null) return;
 
         let d = {}
         Object.keys(data).forEach(k => {
             if (k.trim()!='') d[k]=data[k];
         });
+
+        const cl_cprodccion = document.querySelector('#cl_centros_prod');
+
+        d['iensamble'] = this.getTableList(this.table_rec_cons,'elemento');
+        d['ivariable'] = this.getTableList(this.table_rec_vari,'grupo');
+        d['cproduccion'] = cl_cprodccion.getData(true).items.filter(i => i.done).map(i => { return {icentrosproduccion:i.sys_pk} });
+
+        if (d.cproduccion.length < 1){
+            alert('Selccione un centro de producción para la receta actual.');
+            let tab = document.querySelector('#produccion-tab');
+            if (tab) tab.click();
+            return;
+        }
         
         InduxsoftCrudlModel.InvokeService(this.urlFormActn, d,
             success => { window.location.href = this.urlBack; },
@@ -236,8 +254,8 @@ var recetas =
         let data = this.table_rec_cons.DataArray[idx];
         if (data)
         {
-            data['reemplazo'] = producto.descripcion;
-            data['reemplazo_pk'] = producto.sys_pk;
+            data['reemplazo_desc'] = producto.descripcion;
+            data['reemplazo'] = producto.sys_pk;
             this.table_rec_cons.UpdateRow(idx);
         }
     },

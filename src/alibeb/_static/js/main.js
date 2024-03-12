@@ -17,10 +17,11 @@ var main = {
                 else v = control.getAttribute('value');
 
                 if (v.trim() == '' && control.hasAttribute('required')) {
-                    alert('El campo: ' + control.name + ' es requerido');
+                    
                     control.focus();
                     values = null;
                     if (requiredCallBack) requiredCallBack(control);
+                    alert('El campo: ' + control.name + ' es requerido');
                 }
 
                 if (values && (control.getAttribute('type')??'').toLowerCase() == 'number' || ((control.getAttribute('hidden-type')??'') == 'number')) 

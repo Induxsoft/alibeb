@@ -47,7 +47,7 @@ module "form.dk"
     header_act::
     { 
         #$
-        button(type="submit" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_submit" title="Guardar"){ $'#<@ICON_SAVE>' }
+        button(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_submit" title="Guardar"){ $'#<@ICON_SAVE>' }
     }
 
     #! point general_act to header_act
@@ -182,12 +182,12 @@ module "form.dk"
                         {
                             div(class="form-check")
                             {
-                                input(class="form-check-input induxsoft-corners" type="checkbox" id="check_view_pv" "#<ifstr(@@(producto,'#visible')==1,'checked','')>"="true")
-                                label(class="form-check-label" "for"="check_view_pv"){$"Visible en Punto de Venta"}
-                                input(type="hidden" name="visible" id="ipt_visible" value="#<@@(producto,'#visible')>")
+                                input(class="form-check-input induxsoft-corners" type="checkbox" ipt="ipt_visible" id="check_view_pv" "#<ifstr(field.dnum(producto,'visible',1)==1,'checked','')>"="true")
+                                label(class="form-check-label" "for"="check_view_pv"){small{$"Visible en Punto de Venta"}}
+                                input(type="hidden" name="visible" id="ipt_visible" value="#<field.dnum(producto,'visible',1)>")
                             }
                         }
-                        div(class="border-bottom py-3 row")
+                        div(class="py-3 row")
                         {
                             div(class="col-sm-6")
                             {
@@ -253,7 +253,7 @@ module "form.dk"
                                         "edit-th"(type="Number" field="cantmucho" textalign="end" format="true" decs="2"){$"Mucho"}
                                         "edit-th"(type="Number" field="cantpoco" textalign="end" format="true" decs="2"){$"Poco"}
                                         "edit-th"(type="Check" field="omitible" textalign="center"){$"Omitible"}
-                                        "edit-th"(type="Text" field="reemplazo" button="true"){$"Reemplazo"}
+                                        "edit-th"(type="Text" field="reemplazo_desc" button="true"){$"Reemplazo"}
                                     }
                                 }
                             }
@@ -360,9 +360,17 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 mb-2 text-end"){ small{$"Materias primas:"} }
-                                            div(class="col-6 mb-2"){ input(class="induxsoft-form-control" id="ipt_costodirecto" disabled="true" name="cdirecto" value="#<@@(producto,'#cdirecto')>") }
+                                            div(class="col-6 mb-2 input-symbol-container")
+                                            { 
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(class="induxsoft-form-control input-number-text" id="ipt_costodirecto" disabled="true" name="cdirecto" value="#<@@(producto,'#cdirecto')>") 
+                                            }
                                             div(class="col-6 text-end"){ small{$"Mano de obra:"} }
-                                            div(class="col-6"){ input(type="number" class="induxsoft-form-control" id="ipt_costomanoobra" name="cmanoobra" value="#<@@(producto,'#cmanoobra')>") }
+                                            div(class="input-symbol-container col-6")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="number" class="induxsoft-form-control input-number-text" id="ipt_costomanoobra" name="cmanoobra" value="#<@@(producto,'#cmanoobra')>")
+                                            }
                                         }
                                     }
                                     small(class="fw-bold"){$"Costo indirecto"}
@@ -371,7 +379,11 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 text-end"){ small{$""} }
-                                            div(class="col-6"){ input(type="number" class="induxsoft-form-control" id="ipt_costoindirecto" value="#<@@(producto,'#cindirecto')>") }
+                                            div(class="input-symbol-container col-6")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(type="number" class="induxsoft-form-control input-number-text" id="ipt_costoindirecto" name="cindirecto" value="#<@@(producto,'#cindirecto')>") 
+                                            }
                                         }
                                     }
                                     small(class="fw-bold"){$"Costo total de producción"}
@@ -380,7 +392,11 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 text-end"){ small{$"Total:"} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" id="ipt_costototprod" disabled="true" value="#<@@(producto,'#cdirecto')+@@(producto,'#cmanoobra')+@@(producto,'#cindirecto')>") }
+                                            div(class="input-symbol-container col-6")
+                                            {
+                                                small(class="input-symbol-prefix"){$"$"}
+                                                input(class="induxsoft-form-control input-number-text" id="ipt_costototprod" disabled="true" value="#<@@(producto,'#cdirecto')+@@(producto,'#cmanoobra')+@@(producto,'#cindirecto')>") 
+                                            }
                                         }
                                     }
                                 }
@@ -494,12 +510,12 @@ module "form.dk"
                                             div(class="input-symbol-container")
                                             {
                                                 small(class="input-symbol-prefix"){$"$"}
-                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio1" value="#<@@(producto,'#precio1')>" step="0.00000001" max="999999999.9999999")
+                                                input(type="number" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio1" value="#<@@(producto,'#precio1')>" step="0.00000001" max="999999999.9999999")
                                             }
                                             div(class="input-symbol-container")
                                             {
                                                 small(class="input-symbol-prefix"){$"$"}
-                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio2" value="#<@@(producto,'#precio2')>" step="0.00000001" max="999999999.9999999")
+                                                input(type="number" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio2" value="#<@@(producto,'#precio2')>" step="0.00000001" max="999999999.9999999")
                                             }
                                             div(class="input-symbol-container")
                                             {
@@ -509,12 +525,12 @@ module "form.dk"
                                             div(class="input-symbol-container")
                                             {
                                                 small(class="input-symbol-prefix"){$"$"}
-                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio4" value="#<@@(producto,'#precio4')>" step="0.00000001" max="999999999.9999999")
+                                                input(type="number" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio4" value="#<@@(producto,'#precio4')>" step="0.00000001" max="999999999.9999999")
                                             }
                                             div(class="input-symbol-container")
                                             {
                                                 small(class="input-symbol-prefix"){$"$"}
-                                                input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio5" value="#<@@(producto,'#precio5')>" step="0.00000001" max="999999999.9999999")
+                                                input(type="number" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio5" value="#<@@(producto,'#precio5')>" step="0.00000001" max="999999999.9999999")
                                             }
                                         }
                                         div(class="col-2 col-sm-1 d-flex flex-wrap flex-row pb-2 pt-2" style="align-content:space-between;")
@@ -529,7 +545,7 @@ module "form.dk"
                                     #! adicional = @@(producto,'#adicional')
                                     #$ div(class="form-check mb-1")
                                     {
-                                        input(class="form-check-input induxsoft-corners" type="checkbox" id="check_ingadic" "#<ifstr(@@(producto,'#adicional')==1,'checked','')>"="true")
+                                        input(class="form-check-input induxsoft-corners" type="checkbox" ipt="ipt_adicional" id="check_ingadic" "#<ifstr(@@(producto,'#adicional')==1,'checked','')>"="true")
                                         label(class="form-check-label" "for"="check_ingadic"){small{$"Se puede considerar como ingrediente adicional"}}
                                         input(type="hidden" name="adicional" id="ipt_adicional" value="#<@@(producto,'#adicional')>")
                                     }
@@ -540,7 +556,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 1 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic1" value="#<@@(producto,'#padic1')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"} 
+                                                    input(type="number" class="induxsoft-form-control input-number-text ipt-adicional" name="padic1" value="#<@@(producto,'#padic1')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -548,7 +568,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 2 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic2" value="#<@@(producto,'#padic2')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"} 
+                                                    input(type="number" class="induxsoft-form-control input-number-text ipt-adicional" name="padic2" value="#<@@(producto,'#padic2')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -556,7 +580,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 3 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic3" value="#<@@(producto,'#padic3')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text ipt-adicional" name="padic3" value="#<@@(producto,'#padic3')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -564,7 +592,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 4 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic4" value="#<@@(producto,'#padic4')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"} 
+                                                    input(type="number" class="induxsoft-form-control input-number-text ipt-adicional" name="padic4" value="#<@@(producto,'#padic4')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -572,7 +604,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 5 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic5" value="#<@@(producto,'#padic5')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text ipt-adicional" name="padic5" value="#<@@(producto,'#padic5')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") 
+                                                }
                                             }
                                         }
                                     }
@@ -587,7 +623,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Comisión al precio 1 de la lista"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="comision1" value="#<@@(producto,'#comision1')>" step="0.00000001" max="999999999.9999999") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text" name="comision1" value="#<@@(producto,'#comision1')>" step="0.00000001" max="999999999.9999999") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -595,7 +635,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Comisión al precio 2 de la lista"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="comision2" value="#<@@(producto,'#comision2')>" step="0.00000001" max="999999999.9999999") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text" name="comision2" value="#<@@(producto,'#comision2')>" step="0.00000001" max="999999999.9999999") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -603,7 +647,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Comisión al precio 3 de la lista"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="comision3" value="#<@@(producto,'#comision3')>" step="0.00000001" max="999999999.9999999") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text" name="comision3" value="#<@@(producto,'#comision3')>" step="0.00000001" max="999999999.9999999") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -611,7 +659,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Comisión al precio 4 de la lista"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="comision4" value="#<@@(producto,'#comision4')>" step="0.00000001" max="999999999.9999999") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text" name="comision4" value="#<@@(producto,'#comision4')>" step="0.00000001" max="999999999.9999999") 
+                                                }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -619,7 +671,11 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Comisión al precio 5 de la lista"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="comision5" value="#<@@(producto,'#comision5')>" step="0.00000001" max="999999999.9999999") }
+                                                div(class="input-symbol-container")
+                                                {
+                                                    small(class="input-symbol-prefix"){$"$"}
+                                                    input(type="number" class="induxsoft-form-control input-number-text" name="comision5" value="#<@@(producto,'#comision5')>" step="0.00000001" max="999999999.9999999") 
+                                                }
                                             }
                                         }
                                     }
@@ -650,14 +706,14 @@ module "form.dk"
                             }
                             div(class="form-check")
                             {
-                                input(class="form-check-input induxsoft-corners" type="checkbox" id="check_flagutil" "#<ifstr(@@(producto,'#flagutilidad')==1,'checked','')>"="true")
-                                label(class="form-check-label" "for"="check_flagutil"){$"Mantener sincronizado el precio con respecto a la utilidad"}
+                                input(class="form-check-input induxsoft-corners" type="checkbox" ipt="ipt_flagutilidad" id="check_flagutil" "#<ifstr(@@(producto,'#flagutilidad')==1,'checked','')>"="true")
+                                label(class="form-check-label" "for"="check_flagutil"){small{$"Mantener sincronizado el precio con respecto a la utilidad"}}
                                 input(type="hidden" name="flagutilidad" id="ipt_flagutilidad" value="#<@@(producto,'#flagutilidad')>")
                             }
                             div(class="form-check")
                             {
-                                input(class="form-check-input induxsoft-corners" type="checkbox" id="check_flaglimites" "#<ifstr(@@(producto,'#flaglimites')==1,'checked','')>"="true")
-                                label(class="form-check-label" "for"="check_flaglimites"){$"Precios por volumen (Límites)"}
+                                input(class="form-check-input induxsoft-corners" type="checkbox" ipt="ipt_flaglimites" id="check_flaglimites" "#<ifstr(@@(producto,'#flaglimites')==1,'checked','')>"="true")
+                                label(class="form-check-label" "for"="check_flaglimites"){small{$"Precios por volumen (Límites)"}}
                                 input(type="hidden" name="flaglimites" id="ipt_flaglimites" value="#<@@(producto,'#flaglimites')>")
                             }
                         }
@@ -762,9 +818,9 @@ module "form.dk"
 
                             div(class="form-check")
                             {
-                                input(class="form-check-input induxsoft-corners" type="checkbox" id="check_solicitarcantidad" "#<ifstr(@@(producto,'#uf_solicitarcantidad')==1,'checked','')>"="true")
-                                label(class="form-check-label" "for"="check_solicitarcantidad"){$"Solicitar cantidad al comandar"}
-                                input(type="hidden" name="uf_solicitarcantidad" id="ipt_complemento" value="#<@@(producto,'#uf_solicitarcantidad')>")
+                                input(class="form-check-input induxsoft-corners" type="checkbox" ipt="ipt_solcantidad" id="check_solicitarcantidad" "#<ifstr(@@(producto,'#uf_solicitarcantidad')==1,'checked','')>"="true")
+                                label(class="form-check-label" "for"="check_solicitarcantidad"){small{$"Solicitar cantidad al comandar"}}
+                                input(type="hidden" name="uf_solicitarcantidad" id="ipt_solcantidad" value="#<@@(producto,'#uf_solicitarcantidad')>")
                             }
                         }
                     }

@@ -263,9 +263,9 @@ model "alimentos y bebidas"
 	entity "ivariable" : "TableModel"
     {
         @"cdirectoprom" decimal(18,8)
-        @"cindirectoprom" decimal(8,8)
-        @"cmanoobraprom" decimal(8,8)
-        @"cmaquinariaprom" decimal(8,8)
+        @"cindirectoprom" decimal(18,8)
+        @"cmanoobraprom" decimal(18,8)
+        @"cmaquinariaprom" decimal(18,8)
         @"descripcion" string(35)
         @"factor" decimal(18,8)
         @"maximo" decimal(18,8)
