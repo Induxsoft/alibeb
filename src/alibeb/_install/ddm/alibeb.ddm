@@ -255,6 +255,11 @@ model "alimentos y bebidas"
         @"notas" string(4096)
         @"tasa_iva" decimal(18,8)
     }
+    entity "grupoproductos_producto_" : "NmModel"
+    {
+        @"iproductos" ref:"producto" required
+        @"igrupos" ref:"grupoproductos" required
+    }
 	entity "ivariable" : "TableModel"
     {
         @"cdirectoprom" decimal(18,8)
@@ -292,8 +297,8 @@ model "alimentos y bebidas"
     }
 	entity "cproduccion_producto_" : "NmModel"
     {
-        @"iproductos" int ref:"producto" ["sys_pk"] required
-        @"icentrosproduccion" int ref:"cproduccion" ["sys_pk"] required
+        @"iproductos" ref:"producto" required
+        @"icentrosproduccion" ref:"cproduccion" required
     }
 
     // Información de la aplicación

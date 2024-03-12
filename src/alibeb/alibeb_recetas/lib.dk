@@ -191,15 +191,68 @@ module "lib"
             ref ensamble = list.obj(ensambles,i)
             ensamble<"representacion">: (div(@@(ensamble,"#cantidad"),cantidad_total)*100)
         }
-        // si no hay más de minrows filas autorellenar con filas vacias
-        if list.count(ensambles) < minrows
+        // si no hay más de {minrows} filas autorellenar con filas vacias
+        do autoFillRows(ensambles,minrows)
+        return ensambles
+    }
+    function getTotal(&list,field)
+    {
+        total = 0
+        for i = 0; i < list.count(list)
         {
-            for i = list.count(ensambles); i < minrows
+            ref obj = list.obj(list,i)
+            total = total + @@(obj,"#"+field)
+        }
+        return total
+    }
+    function proccessVariables(&variables,minrows)
+    {
+        // calcular los costos a partir del campo factor y maximo
+        for i = 0; i < list.count(variables)
+        {
+            ref variable = list.obj(variables,i)
+            fac = field.dnum(variable,"factor",1)
+            max = field.dnum(variable,"maximo",1)
+            if max==0 { max=1 }
+            mul = (fac * max)
+            variable<"cdirectoprom">: (mul * field.dnum(variable,"_cdirectoprom",0))
+            variable<"cmanoobraprom">: (mul * field.dnum(variable,"_cmanoobraprom",0))
+            variable<"cindirectoprom">: (mul * field.dnum(variable,"_cindirectoprom",0))
+        }
+        // si no hay más de {minrows} filas autorellenar con filas vacias
+        do autoFillRows(variables,minrows)
+        return variables
+    }
+    function autoFillRows(&list,minrows)
+    {
+        if list.count(list) < minrows
+        {
+            for i = list.count(list); i < minrows
             {
                 new row {}
-                do list.add(ensambles, row)
+                do list.add(list, row)
             }
         }
-        return ensambles
+    }
+    function list_to_record(&listObj, keyfield, valuefield)
+    {
+        ref record = record.create()
+        
+        for i = 0; i < list.count(listObj) {
+            ref obj = list.obj(listObj, i)
+            record<@@(obj,"$"+str(keyfield))>: @@(obj, "$"+str(valuefield))
+        }
+
+        return record
+    }
+    function get_checklistdata(&items,title)
+    {
+        new data
+        {
+            @"text": title
+            @"items*": items
+        }
+
+        return data
     }
 }

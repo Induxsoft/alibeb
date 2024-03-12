@@ -18,15 +18,18 @@ module "form.dk"
 
     ref producto = ifnull(@("&./producto"), record.create())
     ref ensamble = proccessEnsambles(@("&./ensamble"),minrowsRecConst)
+    ref variable = proccessVariables(@("&./variable"),minrowsRecVarbl)
     ref tipoprod = @("&./tipoprod")
     ref metodval = @("&./metodval")
     ref impuesto = @("&./impuesto")
     ref tipocomi = @("&./tipocomi")
     ref formcomi = @("&./formcomi")
     ref formascm = filter_forma_comision(formcomi, @@(producto,'#tipocomision'))
+    ref cimpadic = list_to_record(@("&./cimpadic"), "id", "const")
+    ref cproducc = get_checklistdata(@("&./cproducc"),"Centros de producción")
 
     ref database = @("&database")
-
+    
     entityId = @("$parameters/_entity_id")
     errorMsg = @("$error/message")
     isNewEnt = (entityId == "_new")
@@ -59,6 +62,9 @@ module "form.dk"
             @"print": @true
         }
     }
+
+    total_ensamble = getTotal(ensamble,"importe")
+    total_variable = getTotal(variable,"cdirectoprom")
 
     #$ div(class="container")
     {
@@ -225,8 +231,8 @@ module "form.dk"
                         div(class="table-controls d-flex align-items-center justify-content-end border mt-4")
                         {
                             small(class="flex-grow-1 ps-3 text-secondary"){$"Elementos que incluye la receta"}
-                            button(class="btn btn-sm" type="button" title="Agregar" onclick="recetas.searchProdRecetaConst()"){$"#<@ICON_ADD_ROW>"}
-                            button(class="btn btn-sm" type="button" title="Eliminar" onclick="recetas.deleteProdRecetaConst()"){$"#<@ICON_REMOVE_ROW>"}
+                            button(class="btn btn-sm" type="button" title="Agregar" onclick="recetas.searchProdRecCon()"){$"#<@ICON_ADD_ROW>"}
+                            button(class="btn btn-sm" type="button" title="Eliminar" onclick="recetas.deleteProdRecCon()"){$"#<@ICON_REMOVE_ROW>"}
                         }
                         div(style="height: 60vh; display: flex;" class="border border-top-0")
                         {
@@ -242,23 +248,37 @@ module "form.dk"
                                         "edit-th"(type="Number" field="cantidad" textalign="end" format="true" decs="2"){$"Cantidad"}
                                         "edit-th"(type="NoEditable" field="costoultimo" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo"}
                                         "edit-th"(type="NoEditable" field="importe" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Importe"}
-                                        "edit-th"(type="NoEditable" field="representacion" textalign="end" format="true" decs="2"){$"% Representación"}
+                                        "edit-th"(type="NoEditable" field="representacion" textalign="end" format="true" decs="2" sufix="%"){$"Representación"}
                                         "edit-th"(type="Number" field="cantdemasiado" textalign="end" format="true" decs="2"){$"Demasiado"}
                                         "edit-th"(type="Number" field="cantmucho" textalign="end" format="true" decs="2"){$"Mucho"}
                                         "edit-th"(type="Number" field="cantpoco" textalign="end" format="true" decs="2"){$"Poco"}
                                         "edit-th"(type="Check" field="omitible" textalign="center"){$"Omitible"}
-                                        "edit-th"(type="Text" field="reemplazo"){$"Reemplazo"}
+                                        "edit-th"(type="Text" field="reemplazo" button="true"){$"Reemplazo"}
                                     }
                                 }
                             }
                             "input-key"(
-                                id="ik_producto"
+                                "id"="ik_producto"
+                                "data-key"="sys_pk"
+                                "data-search"="codigo"
+                                "data-text"="descripcion"
+                                "data-source"="#<@ALIBEB_SEARCH_PRODUCTO>"
+                                "columns"="codigo,descripcion"
+                                "colcaptions"="Código,Descripción"
+                                "box-title-text"="Seleccione un producto"
+                                "box-placeholder-text"="Buscar producto"
+                                "box-nodata-text"="No se encontraron productos"
+                                "control-styles"="#container{ display: none !important; }"
+                                "hidden-input"="false"
+                            ){$""}
+                            "input-key"(
+                                "id"="ik_producto_reeplazo"
                                 "data-key"="sys_pk"
                                 "data-search"="codigo"
                                 "data-text"="descripcion"
                                 "data-source"="#<@ALIBEB_SEARCH_PRODUCTO>" 
-                                columns="codigo,descripcion"
-                                colcaptions="Código,Descripción"
+                                "columns"="codigo,descripcion"
+                                "colcaptions"="Código,Descripción"
                                 "box-title-text"="Seleccione un producto"
                                 "box-placeholder-text"="Buscar producto"
                                 "box-nodata-text"="No se encontraron productos"
@@ -269,7 +289,7 @@ module "form.dk"
                         div(class="mt-2 d-flex align-items-center gap-2")
                         {
                             small{$"Costo de materias primas:"}
-                            div{input(class="induxsoft-form-control" id="RC_cdirecto" disabled="true")}
+                            div{input(class="induxsoft-form-control" id="RC_cdirecto" disabled="true" value="#<total_ensamble>")}
                         }
                     }
 
@@ -279,46 +299,60 @@ module "form.dk"
                         div(class="table-controls d-flex align-items-center justify-content-end border mt-4")
                         {
                             small(class="flex-grow-1 ps-3 text-secondary"){$"Elementos variables de la receta"}
-                            button(class="btn btn-sm" title="Agregar"){$"#<@ICON_ADD_ROW>"}
-                            button(class="btn btn-sm" title="Eliminar"){$"#<@ICON_REMOVE_ROW>"}
+                            button(class="btn btn-sm" type="button" title="Agregar" onclick="recetas.searchProdRecVar()"){$"#<@ICON_ADD_ROW>"}
+                            button(class="btn btn-sm" type="button" title="Eliminar" onclick="recetas.deleteProdRecVar()"){$"#<@ICON_REMOVE_ROW>"}
                         }
                         div(style="height: 60vh; display: flex;" class="border border-top-0")
                         {
-                            "edit-table"(id="table_receta_variable" style="width: 100%;" style="width: 100%;" "control-styles"="tr td{font-size:.8rem;} th{font-size:.9rem; outline: none !important;} table{ background-color:#FFF !important; } #__table_input{ font-size: unset !important; }tbody tr:hover{background-color:#EDEDED;}input[type='checkbox']{accent-color:#EDEDED;}")
+                            "edit-table"(id="table_receta_variable" style="width: 100%;" data='#<to.json(variable)>' style="width: 100%;" "control-styles"="tr td{font-size:.8rem;} th{font-size:.9rem; outline: none !important;} table{ background-color:#FFF !important; } #__table_input{ font-size: unset !important; }tbody tr:hover{background-color:#EDEDED;}input[type='checkbox']{accent-color:#EDEDED;}")
                             {
                                 "edit-thead"
                                 {
                                     "edit-tr"
                                     {
-                                        "edit-th"(type="Text" field="grupo"){$"Grupo"}
+                                        "edit-th"(type="Text" field="grupo_desc" button="true"){$"Grupo"}
                                         "edit-th"(type="Text" field="descripcion"){$"Descripción"}
-                                        "edit-th"(type="Number" field="factor"){$"Factor"}
-                                        "edit-th"(type="Number" field="maximo"){$"Máximo"}
-                                        "edit-th"(type="Number" field="minimo"){$"Mínimo"}
-                                        "edit-th"(type="Select" field="padicional"){$"Importe adicional"}
-                                        "edit-th"(type="NoEditable" field="cdirectoprom"){$"Costo directo"}
-                                        "edit-th"(type="NoEditable" field="cmanoobraprom"){$"Costo mano obra"}
-                                        "edit-th"(type="NoEditable" field="cindirectoprom"){$"Costo indirecto"}
+                                        "edit-th"(type="Number" field="factor" textalign="end"){$"Factor"}
+                                        "edit-th"(type="Number" field="maximo" textalign="end" format="true" decs="2"){$"Máximo"}
+                                        "edit-th"(type="Number" field="minimo" textalign="end" format="true" decs="2"){$"Mínimo"}
+                                        "edit-th"(type="Select" field="padicional" 'options'='#<to.json(cimpadic)>'){$"Importe adicional"}
+                                        "edit-th"(type="NoEditable" field="cdirectoprom" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo directo"}
+                                        "edit-th"(type="NoEditable" field="cmanoobraprom" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo mano obra"}
+                                        "edit-th"(type="NoEditable" field="cindirectoprom" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo indirecto"}
                                     }
                                 }
                             }
+                            "input-key"(
+                                "id"="ik_grupos"
+                                "data-key"="grupo"
+                                "data-search"="grupo"
+                                "data-text"="grupo_desc"
+                                "data-source"="#<@ALIBEB_SEARCH_GRUPOPROD>"
+                                "columns"="grupo,grupo_desc"
+                                "colcaptions"="Sys_PK,Grupo"
+                                "box-title-text"="Seleccione un grupo de recetas"
+                                "box-placeholder-text"="Buscar grupo de recetas"
+                                "box-nodata-text"="No se encontraron grupos de recetas"
+                                "control-styles"="#container{ display: none !important; }"
+                                "hidden-input"="false"
+                            ){$""}
                         }
                         div(class="mt-2 d-flex align-items-center gap-2")
                         {
                             small{$"Costo promedio de materias primas:"}
-                            div{input(class="induxsoft-form-control" id="RV_costo" disabled="true")}
+                            div{input(class="induxsoft-form-control" id="RV_costo" disabled="true" value="#<total_variable>")}
                         }
                     }
 
                     // PANEL PRODUCCIÓN Y COSTOS
                     div(class="tab-pane fade" id="produccion" role="tabpanel" "aria-labelledby"="produccion-tab")
                     {
-                        div(class="row p-0 m-0 mt-4")
+                        div(class="row p-0 m-0 mt-4" style="height: 60vh;")
                         {
-                            div(class="col-sm-6")
+                            div(class="col-sm-6 d-flex flex-column")
                             {
                                 div(class="p-1 border" style="background-color: #EDEDED;"){ h6(class="m-0"){$"Análisis de costos"} }
-                                div(class="pt-2 border border-top-0 p-3")
+                                div(class="pt-2 border border-top-0 p-3 flex-grow-1")
                                 {
                                     small(class="fw-bold"){$"Costo directo"}
                                     div(class="d-flex justify-content-end py-3")
@@ -326,9 +360,9 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 mb-2 text-end"){ small{$"Materias primas:"} }
-                                            div(class="col-6 mb-2"){ input(class="induxsoft-form-control" disabled="true" name="cdirecto" value="#<@@(producto,'#cdirecto')>") }
+                                            div(class="col-6 mb-2"){ input(class="induxsoft-form-control" id="ipt_costodirecto" disabled="true" name="cdirecto" value="#<@@(producto,'#cdirecto')>") }
                                             div(class="col-6 text-end"){ small{$"Mano de obra:"} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true" name="cmanoobra" value="#<@@(producto,'#cmanoobra')>") }
+                                            div(class="col-6"){ input(type="number" class="induxsoft-form-control" id="ipt_costomanoobra" name="cmanoobra" value="#<@@(producto,'#cmanoobra')>") }
                                         }
                                     }
                                     small(class="fw-bold"){$"Costo indirecto"}
@@ -337,7 +371,7 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 text-end"){ small{$""} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" disabled="true" id="ipt_constoindirecto") }
+                                            div(class="col-6"){ input(type="number" class="induxsoft-form-control" id="ipt_costoindirecto" value="#<@@(producto,'#cindirecto')>") }
                                         }
                                     }
                                     small(class="fw-bold"){$"Costo total de producción"}
@@ -346,20 +380,20 @@ module "form.dk"
                                         div(class="row w-100 align-items-center")
                                         {
                                             div(class="col-6 text-end"){ small{$"Total:"} }
-                                            div(class="col-6"){ input(class="induxsoft-form-control" id="ipt_costototprod" disabled="true") }
+                                            div(class="col-6"){ input(class="induxsoft-form-control" id="ipt_costototprod" disabled="true" value="#<@@(producto,'#cdirecto')+@@(producto,'#cmanoobra')+@@(producto,'#cindirecto')>") }
                                         }
                                     }
                                 }
                             }
-                            div(class="col-sm-6")
+                            div(class="col-sm-6 d-flex flex-column")
                             {
                                 div(class="p-1 border" style="background-color: #EDEDED;"){ h6(class="m-0"){$"Centros de producción"} }
-                                div(class="pt-2 border border-top-0 p-3")
+                                div(class="pt-2 border border-top-0 p-3 flex-grow-1" style="max-height:57vh;overflow-y:auto;")
                                 {
                                     "check-list"(
                                         "id"="cl_centros_prod"
-                                        "data"=""
-                                        "can-add"="true"
+                                        "data"='#<to.json(cproducc)>'
+                                        "can-add"="false"
                                         "hide-header"="true"
                                     ){$""}
                                 }
@@ -455,7 +489,7 @@ module "form.dk"
                                     h6{$"Precios (antes de impuestos)"}
                                     div(class="row")
                                     {
-                                        div(class="col-sm-4")
+                                        div(class="col-10 col-sm-4")
                                         {
                                             div(class="input-symbol-container")
                                             {
@@ -483,14 +517,20 @@ module "form.dk"
                                                 input(type="text" class="induxsoft-form-control mb-2 input-number-text precio-util" name="precio5" value="#<@@(producto,'#precio5')>" step="0.00000001" max="999999999.9999999")
                                             }
                                         }
+                                        div(class="col-2 col-sm-1 d-flex flex-wrap flex-row pb-2 pt-2" style="align-content:space-between;")
+                                        {
+                                            div(class="w-100 flex-grow-1"){small(class="d-block"){$"P. Máximo"}}
+                                            div{small(class="d-block"){$"P. Mínimo"}}
+                                        }
                                     }
                                 }
                                 div(class="tab-pane fade" id="ingrediente_adic" role="tabpanel" "aria-labelledby"="ingrediente_adic-tab")
                                 {
-                                    div(class="form-check mb-1")
+                                    #! adicional = @@(producto,'#adicional')
+                                    #$ div(class="form-check mb-1")
                                     {
                                         input(class="form-check-input induxsoft-corners" type="checkbox" id="check_ingadic" "#<ifstr(@@(producto,'#adicional')==1,'checked','')>"="true")
-                                        label(class="form-check-label" "for"="check_ingadic"){small{$"Se puede considerear como ingrediente adicional"}}
+                                        label(class="form-check-label" "for"="check_ingadic"){small{$"Se puede considerar como ingrediente adicional"}}
                                         input(type="hidden" name="adicional" id="ipt_adicional" value="#<@@(producto,'#adicional')>")
                                     }
                                     div(class="row p-0 m-0")
@@ -500,7 +540,7 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 1 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="padic1" value="#<@@(producto,'#padic1')>" step="0.00000001" max="999999999.9999999") }
+                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic1" value="#<@@(producto,'#padic1')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -508,7 +548,7 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 2 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="padic2" value="#<@@(producto,'#padic2')>" step="0.00000001" max="999999999.9999999") }
+                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic2" value="#<@@(producto,'#padic2')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -516,7 +556,7 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 3 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="padic3" value="#<@@(producto,'#padic3')>" step="0.00000001" max="999999999.9999999") }
+                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic3" value="#<@@(producto,'#padic3')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -524,7 +564,7 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 4 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="padic4" value="#<@@(producto,'#padic4')>" step="0.00000001" max="999999999.9999999") }
+                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic4" value="#<@@(producto,'#padic4')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
                                             }
                                         }
                                         div(class="col-sm-7")
@@ -532,7 +572,7 @@ module "form.dk"
                                             div(class="d-flex gap-2 align-items-center mb-2")
                                             {
                                                 small{$"Precio 5 (como ingrediente adicional)"}
-                                                div{ input(type="number" class="induxsoft-form-control" name="padic5" value="#<@@(producto,'#padic5')>" step="0.00000001" max="999999999.9999999") }
+                                                div{ input(type="number" class="induxsoft-form-control ipt-adicional" name="padic5" value="#<@@(producto,'#padic5')>" step="0.00000001" max="999999999.9999999" "#<ifstr(adicional,'','disabled')>"="") }
                                             }
                                         }
                                     }
@@ -583,15 +623,6 @@ module "form.dk"
                                             }
                                         }
                                     }
-                                    
-                                    // div(class="col-5 col-sm-3 #<ifstr(sinComi || not(comiXPrice),'d-none','')>" id="comisiones_precio_container")
-                                    // {
-                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision1" value="#<@@(producto,'#comision1')>" step="0.00000001" max="999999999.9999999")
-                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision2" value="#<@@(producto,'#comision2')>" step="0.00000001" max="999999999.9999999")
-                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision3" value="#<@@(producto,'#comision3')>" step="0.00000001" max="999999999.9999999")
-                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision4" value="#<@@(producto,'#comision4')>" step="0.00000001" max="999999999.9999999")
-                                    //     input(type="number" class="induxsoft-form-control mb-2" name="comision5" value="#<@@(producto,'#comision5')>" step="0.00000001" max="999999999.9999999")
-                                    // }
                                 }
                             }
                             div(class="row m-0 p-0 mb-4")
@@ -616,11 +647,6 @@ module "form.dk"
                                         button(class="nav-link nl-bottom btn-sm #<ifstr(showpanelC,'','d-none')>" id="comisionprecio-tab" "data-bs-toggle"="tab" "data-bs-target"="#comisionprecio" type="button" role="tab" "aria-controls"="comisionprecio" "aria-selected"="false"){$"Comisiones"}
                                     }
                                 }
-                                // div(class="col-2 col-sm-1 d-flex flex-wrap flex-row pb-2 pt-4" style="align-content:space-between;")
-                                // {
-                                //     div(class="w-100 flex-grow-1"){small(class="d-block"){$"P. Máximo"}}
-                                //     div{small(class="d-block"){$"P. Mínimo"}}
-                                // }
                             }
                             div(class="form-check")
                             {
@@ -643,7 +669,7 @@ module "form.dk"
                         div(class="py-4")
                         {
                             h6{$"Equivalencia de unidades"}
-                            div(class="row mb-2")
+                            div(class="row mb-2 border-bottom pb-4")
                             {
                                 div(class="col-sm-6")
                                 {
@@ -792,6 +818,7 @@ module "form.dk"
             recetas.urlBack = "#<@ALIBEB_RECETAS>";
             recetas.formcomi = #<to.json(formcomi)>;
             recetas.minrowsRecConst = #<minrowsRecConst>;
+            recetas.minrowsRecVarbl = #<minrowsRecVarbl>;
         '}
     }
 }

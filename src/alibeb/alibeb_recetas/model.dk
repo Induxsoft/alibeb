@@ -49,6 +49,8 @@ module "model"
         if @@(params,"$_entity_id") == "_new" { data<"existencia"> : 0 }
         if @@(data,"codigo")=="" { do check_autocode(db,"producto","codigo",data) }
 
+        data<"iclase">: 2
+
         ref res = entity.create(db, params, data)
 
         return res
@@ -69,7 +71,7 @@ module "model"
                 IFNULL(p.idepartamento,'') idepartamento, p.itipo, IFNULL(p.idivisa,'') idivisa,
                 IFNULL(p.codbar1,'') codbar1, IFNULL(p.codbar2,'') codbar2, IFNULL(p.codbar3,'') codbar3,
                 IFNULL(p.visible,0) visible, p.unidad, IFNULL(p.factorb,1) factorb, IFNULL(p.unidadB,'') unidadB,
-                IFNULL(cdirecto,0) cdirecto, IFNULL(cmanoobra,0) cmanoobra,
+                IFNULL(cdirecto,0) cdirecto, IFNULL(cmanoobra,0) cmanoobra, IFNULL(cindirecto,0) cindirecto
                 p.metodovaluacion, p.impuestos, IFNULL(p.costoultimo,0) costoultimo, IFNULL(p.utilmin,0) utilmin,
                 IFNULL(p.tipocomision,'') tipocomision, IFNULL(p.formacomision,'') formacomision,
                 IFNULL(p.comision,0) comision, IFNULL(p.ppuntos,0) ppuntos,
@@ -101,27 +103,32 @@ module "model"
     }
     function alibeb.obtenerDivisas(&db, &params)
     {
-        return dbr.list(db, "
+        return dbr.list(db, ftext("
             SELECT sys_pk, codigo, descripcion FROM divisa
             WHERE IFNULL(sys_deleted,0)=0 
-                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
-        ", params)
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
+            LIMIT #<@default_max_rows>;
+        "), params)
     }
     function alibeb.obtenerDepartamentos(&db, &params)
     {
-        return dbr.list(db, "
+        return dbr.list(db, ftext("
             SELECT sys_pk, codigo, descripcion FROM departamento
             WHERE IFNULL(sys_deleted,0)=0 
-                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')));
-        ", params)
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
+            ORDER BY descripcion
+            LIMIT #<@default_max_rows>;
+        "), params)
     }
     function alibeb.obtenerProveedores(&db, &params)
     {
-        return dbr.list(db,"
+        return dbr.list(db,ftext("
             SELECT sys_pk, codigo, nombre FROM proveedor
             WHERE IFNULL(sys_deleted,0)=0 
-                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR nombre LIKE CONCAT('%',@s,'%')));
-        ", params)
+                AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR nombre LIKE CONCAT('%',@s,'%')))
+            ORDER BY nombre
+            LIMIT #<@default_max_rows>;
+        "), params)
     }
     function alibeb.obtenerLineas(&db, &params)
     {
@@ -130,7 +137,7 @@ module "model"
             WHERE IFNULL(sys_deleted,0)=0 
                 AND IF(IFNULL(@s,'')='', true, (codigo LIKE CONCAT('%',@s,'%') OR descripcion LIKE CONCAT('%',@s,'%')))
                 AND clase=2
-            ORDER BY codigo
+            ORDER BY descripcion
             LIMIT #<@default_max_rows>;"
         return dbr.list(db, ftext(query), params)
     }
@@ -141,7 +148,23 @@ module "model"
             FROM producto p
             WHERE IFNULL(p.sys_deleted,0) = 0
                 AND IF(IFNULL(@s,'')='', true, (p.codigo LIKE CONCAT('%',@s,'%') OR p.descripcion LIKE CONCAT('%',@s,'%')))
-            ORDER BY p.descripcion;
+            ORDER BY p.descripcion
+            LIMIT #<@default_max_rows>;
+        "
+        return dbr.list(db, ftext(sql), params)
+    }
+    function alibeb.obtenerGrupoProd(&db,&params)
+    {
+        sql = "
+            SELECT gp.sys_pk grupo, gp.nombre grupo_desc,
+                AVG(IFNULL(p.costoultimo,0)) cdirectoprom, AVG(IFNULL(p.cindirecto,0)) cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) cmanoobraprom,
+                AVG(IFNULL(p.costoultimo,0)) _cdirectoprom, AVG(IFNULL(p.cindirecto,0)) _cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) _cmanoobraprom
+            FROM grupoproductos gp
+                LEFT JOIN grupoproductos_producto_ gp_p ON gp_p.igrupos = gp.sys_pk
+                LEFT JOIN producto p ON gp_p.iproductos = p.sys_pk
+            WHERE IFNULL(gp.sys_deleted,0) = 0
+                AND IF(IFNULL(@s,'')='', true, gp.nombre LIKE CONCAT('%',@s,'%'))
+            GROUP BY gp.sys_pk ORDER BY gp.nombre;
         "
         return dbr.list(db, sql, params)
     }
@@ -210,6 +233,7 @@ module "model"
         sql_impuesto = "SELECT sys_pk, nombre FROM cfgimpuesto;"
         sql_tipocomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM ctiposcomisionesproducto ORDER BY id;"
         sql_formcomi = "SELECT id, REPLACE(SUBSTR(IFNULL(const,''),2),'_',' ') const FROM cformacomisionproducto ORDER BY id;"
+        sql_cimpadic = "SELECT CONCAT(id,' - ',SUBSTR(const,2)) id, SUBSTR(const,2) const FROM cimpadicionales ORDER BY id;"
         sql_ensamble = "
             SELECT
                 ie.sys_pk, ie.sys_recver, ie.elemento,
@@ -222,6 +246,25 @@ module "model"
                 LEFT JOIN producto p3 ON ie.reemplazo = p3.sys_pk
             WHERE p2.sys_pk=@sys_pk;
         "
+        sql_variable = "
+            SELECT iv.grupo grupo, gp.nombre grupo_desc, IFNULL(iv.descripcion,'') descripcion, IFNULL(iv.factor,0) factor,
+                IFNULL(iv.maximo,0) maximo, IFNULL(iv.minimo,0) minimo, CONCAT(cia.id,' - ',SUBSTR(cia.const,2)) padicional,
+                AVG(IFNULL(p.cdirecto,0)) cdirectoprom, AVG(IFNULL(p.cindirecto,0)) cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) cmanoobraprom,
+                AVG(IFNULL(p.cdirecto,0)) _cdirectoprom, AVG(IFNULL(p.cindirecto,0)) _cindirectoprom, AVG(IFNULL(p.cmanoobra,0)) _cmanoobraprom
+            FROM ivariable iv
+                INNER JOIN grupoproductos gp ON iv.grupo = gp.sys_pk
+                INNER JOIN grupoproductos_producto_ gp_p ON gp_p.igrupos = gp.sys_pk
+                INNER JOIN producto p ON gp_p.iproductos = p.sys_pk
+                LEFT JOIN cimpadicionales cia ON iv.padicional=cia.id
+            WHERE iv.fk_producto_ivariables=@sys_pk
+            GROUP BY iv.grupo;
+        "
+        sql_cproducc = "
+            SELECT cp.codigo id, cp.descripcion text, IF(IFNULL(cpp.prod,-99)=-99,0,1) done
+            FROM cproduccion cp
+                LEFT JOIN (SELECT icentrosproduccion prod FROM cproduccion_producto_ WHERE iproductos=@sys_pk) cpp ON cpp.prod=cp.sys_pk
+            ORDER BY cp.descripcion;
+        "
 
         using data
         {
@@ -230,7 +273,10 @@ module "model"
             @"impuesto*": dbr.list(db, sql_impuesto, @null)
             @"tipocomi*": dbr.list(db, sql_tipocomi, @null)
             @"formcomi*": dbr.list(db, sql_formcomi, @null)
+            @"cimpadic*": dbr.list(db, sql_cimpadic, @null)
             @"ensamble*": dbr.list(db, sql_ensamble, @@(data,"&producto"))
+            @"variable*": dbr.list(db, sql_variable, @@(data,"&producto"))
+            @"cproducc*": dbr.list(db, sql_cproducc, @@(data,"&producto"))
         }
 
         return data

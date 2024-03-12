@@ -28,6 +28,12 @@ module "controller"
             point @list to alibeb.obtenerProductos
             break
         }
+        case "grupoprod"
+        {
+            @table_name = "grupoproductos"
+            point @list to alibeb.obtenerGrupoProd
+            break
+        }
         case "linea"
         {
             @table_name = "linea"
