@@ -34,6 +34,7 @@ module "form.dk"
     errorMsg = @("$error/message")
     @isNewEnt = (entityId == "_new")
     formActn = @ALIBEB_RECETAS + entityId + "/"
+    curr_url = url_encode(path.concat(get_base_url(@('&http')),formActn))
 
     ref divsa = lib.get_divisa(database, field.dnum(producto,"idivisa",1))
     ref linea = lib.get_linea(database, @@(producto,"$ilinea"))
@@ -875,6 +876,7 @@ module "form.dk"
             recetas.urlMasPrecios = "#<@CATBAS_MAS_PRECIOS>";
             recetas.currentReceta = "#<entityId>";
             recetas.exist_mp_app = #<exists_mp>;
+            recetas.curr_url = "#<curr_url>";
             recetas.urlBack = "#<@ALIBEB_RECETAS>";
             recetas.formcomi = #<to.json(formcomi)>;
             recetas.minrowsRecConst = #<minrowsRecConst>;

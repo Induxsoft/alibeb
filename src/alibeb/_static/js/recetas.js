@@ -2,7 +2,7 @@ var recetas =
 {
     urlFormActn:'', urlBack:'', formcomi:[],
     urlMasPrecios:'', exist_mp_app: false,
-    currentReceta: '',
+    currentReceta: '', curr_url:'',
     table_rec_cons: null,
     table_rec_vari: null,
     inputk_product: null,
@@ -208,7 +208,7 @@ var recetas =
             alert('Debe instalar el paquete catbas para continuar.');
             return;
         }
-        window.location.href = this.urlMasPrecios + this.currentReceta + '/';
+        window.location.href = this.urlMasPrecios + this.currentReceta + '/?exit='+this.curr_url;
     },
 
     // =============== RECETA CONSTANTE
