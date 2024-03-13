@@ -32,7 +32,7 @@ module "form.dk"
     
     entityId = @("$parameters/_entity_id")
     errorMsg = @("$error/message")
-    isNewEnt = (entityId == "_new")
+    @isNewEnt = (entityId == "_new")
     formActn = @ALIBEB_RECETAS + entityId + "/"
 
     ref divsa = lib.get_divisa(database, field.dnum(producto,"idivisa",1))
@@ -43,18 +43,19 @@ module "form.dk"
     ref prov3 = lib.get_proveedor(database, @@(producto,"$proveedor3"))
 
     codigoprd = field.dstr(producto,"codigo","<A>")
+    exists_mp = dir.exists(@CATBAS_MAS_PRECIOS_PATH)
 
     header_act::
     { 
-        #$
-        button(class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_submit" title="Guardar"){ $'#<@ICON_SAVE>' }
+        if not(@isNewEnt) { #$ button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_more_prices" title="Más precios"){ $'Más precios' } }
+        button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_submit" title="Guardar"){ $'#<@ICON_SAVE>' }
     }
 
     #! point general_act to header_act
 
     new nav_config
     {
-        @"title": ifstr(isNewEnt,'Agregar','Editar') + ' receta'
+        @"title": ifstr(@isNewEnt,'Agregar','Editar') + ' receta'
         @"buttons*": general_act
         @"urlexit": @ALIBEB_RECETAS
         member @"hidden"
@@ -871,6 +872,9 @@ module "form.dk"
         script(src="#<@JS_RECETAS>"){$""}
         script{$'
             recetas.urlFormActn = "#<formActn>";
+            recetas.urlMasPrecios = "#<@CATBAS_MAS_PRECIOS>";
+            recetas.currentReceta = "#<entityId>";
+            recetas.exist_mp_app = #<exists_mp>;
             recetas.urlBack = "#<@ALIBEB_RECETAS>";
             recetas.formcomi = #<to.json(formcomi)>;
             recetas.minrowsRecConst = #<minrowsRecConst>;

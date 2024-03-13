@@ -1,6 +1,8 @@
 var recetas =
 {
     urlFormActn:'', urlBack:'', formcomi:[],
+    urlMasPrecios:'', exist_mp_app: false,
+    currentReceta: '',
     table_rec_cons: null,
     table_rec_vari: null,
     inputk_product: null,
@@ -31,6 +33,7 @@ var recetas =
         const ipt_costoultimo = document.querySelector('input[name="costoultimo"]');
         const check_ingadic = document.querySelector('#check_ingadic');
         const ipt_checks = document.querySelectorAll('input[type="checkbox"]');
+        const btn_more_prices = document.querySelector('#btn_more_prices');
 
         ipt_checks.forEach(check => {
             const iptid = (check.getAttribute('ipt')??'___');
@@ -61,6 +64,8 @@ var recetas =
             ipt_factorb.addEventListener('change', e => { this.valide_factor(ipt_unidad,ipt_factorb,ipt_unidadb,msg_factor) });
             ipt_factorb.addEventListener('keyup', e => { this.valide_factor(ipt_unidad,ipt_factorb,ipt_unidadb,msg_factor) });
         }
+
+        if (btn_more_prices) btn_more_prices.addEventListener('click', () => this.showMorePrices());
     },
 
     // =============== TABLES EVENTS AND CONFIGS
@@ -196,6 +201,14 @@ var recetas =
     getTableList(table,valideField)
     {
         return table.DataArray.filter(data => data[valideField]!=undefined);
+    },
+    showMorePrices()
+    {
+        if (!this.exist_mp_app){
+            alert('Debe instalar el paquete catbas para continuar.');
+            return;
+        }
+        window.location.href = this.urlMasPrecios + this.currentReceta + '/';
     },
 
     // =============== RECETA CONSTANTE
