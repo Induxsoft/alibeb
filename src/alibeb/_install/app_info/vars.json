@@ -1,0 +1,32 @@
+[
+    {
+        "id": "alibeb",
+        "caption": "Alimentos y bebidas",
+        "help": "Variables del paquete: alibeb",
+        "vars": 
+        [
+            {
+                "varname": "FXCA123",
+                "vardefault": "|0000",
+                "varvalue": "|0000",
+                "varcaption": "Líneas de recetas",
+                "vartype": "string",
+                "varinput": 
+                {
+                    "control": "text"
+                }
+            },
+            {
+                "varname": "FXCA124",
+                "vardefault": "@Linea|0000",
+                "varvalue": "@Linea|0000",
+                "varcaption": "Recetas",
+                "vartype": "string",
+                "varinput": 
+                {
+                    "control": "text"
+                }
+            }
+        ]
+    }
+]
