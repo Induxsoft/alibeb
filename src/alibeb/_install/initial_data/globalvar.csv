@@ -1,3 +1,3 @@
 "sys_guid","sys_dtcreated","sys_timestamp","sys_info","sys_user","sys_lastuser","sys_exported","sys_dtexported","sys_recver","sys_deleted","sys_lock","varname","vardefault","varvalue","varcaption","varhelp","vartype","varinput","ref_varcat","userenable"
-"5F4A15F7737F4406B00DBD0DB3EE0895","2024-03-06 12:00:00","2024-03-06 12:00:00",\N,\N,\N,"0","2015-08-20 12:00:00","0",\N,\N,"FXCA123",\N,"|0000","Líneas de recetas",\N,\N,\N,6,\N
-"51B67A534FFB4987AD51F44983D4DE2A","2024-03-06 12:00:00","2024-03-06 12:00:00",\N,\N,\N,"0","2015-08-20 12:00:00","0",\N,\N,"FXCA124",\N,"@Linea|0000","Recetas",\N,\N,\N,6,\N
+"5F4A15F7737F4406B00DBD0DB3EE0895","2024-03-06 12:00:00","2024-03-06 12:00:00",\N,\N,\N,"0","2015-08-20 12:00:00","0",\N,\N,"FXCA123",\N,"|0000","Líneas de recetas",\N,\N,\N,"alibeb",\N
+"51B67A534FFB4987AD51F44983D4DE2A","2024-03-06 12:00:00","2024-03-06 12:00:00",\N,\N,\N,"0","2015-08-20 12:00:00","0",\N,\N,"FXCA124",\N,"@Linea|0000","Recetas",\N,\N,\N,"alibeb",\N
