@@ -46,9 +46,7 @@ program "instalador"
         "cimpadicionales.csv",
         "cproduccion.csv",
         "linea.csv",
-        "divisa.csv",
-        "varcategory.csv",
-        "globalvar.csv"
+        "divisa.csv"
     ]')
 	// Lista de permisos iniciales
     ref permissions_to_import = from.json('[]')
