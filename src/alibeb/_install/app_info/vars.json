@@ -1,15 +1,27 @@
 [
     {
-        "id": "alibeb",
+        "id": "general",
+        "caption": "@General",
+        "help": "Configuraciones comunes a todos los paquetes"
+    },
+    {
+        "id": "autocode",
+        "caption": "Autocódigo",
+        "help": "Formatos de autocódigos",
+        "parent":"general"
+    },
+    {
+        "id": "autocode.alibeb",
         "caption": "Alimentos y bebidas",
-        "help": "Variables del paquete: alibeb",
+        "help": "Formatos de autocódigos",
+        "parent":"autocode",
         "vars": 
         [
             {
                 "varname": "FXCA123",
                 "vardefault": "|0000",
                 "varvalue": "|0000",
-                "varcaption": "Líneas de recetas",
+                "varcaption": "Formato de código para líneas de recetas",
                 "vartype": "string",
                 "varinput": 
                 {
@@ -20,7 +32,7 @@
                 "varname": "FXCA124",
                 "vardefault": "@Linea|0000",
                 "varvalue": "@Linea|0000",
-                "varcaption": "Recetas",
+                "varcaption": "Formato de código para recetas",
                 "vartype": "string",
                 "varinput": 
                 {

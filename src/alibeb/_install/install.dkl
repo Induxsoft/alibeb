@@ -165,6 +165,7 @@ program "instalador"
         ref actionsData = CsvRead(item_action_file,"")
         do dbr.apps.itemaction.import(database,actionsData)
     }
+
     if file.exists(vars_file)
     {
         do print("\nIMPORTANDO VARIABLES DE CONFIGURACIÓN")
