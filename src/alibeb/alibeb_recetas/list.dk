@@ -4,6 +4,8 @@ module "list.dk"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.apps.dkl"
     #include "uielements.v12.dkl"
     #include "../_lib/config.dk"
     #include "../_lib/scape_special_charactes2.dk"
@@ -43,19 +45,14 @@ module "list.dk"
         }
     }
 
-    header_act::
-    { 
-        #$
-        a(href="#<@ALIBEB_RECETAS>_new/" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Agregar"}
-    }
-
-    #! point general_act to header_act
-
     new nav_config
     {
         @"title": "Catálogo de recetas"
-        @"buttons*": general_act
+        @"buttons*": @null
         @"urlexit": "/"
+        @"actions*": dbr.apps.itemactions(@('&database'),"DET045","action","",0)
+        @"reports*": dbr.apps.itemactions(@('&database'),"DET045","report","",0)
+        @"jscurrentcontext": "getCurrentContext"
     }
     
     #$ div(class="container-fluid p-0")
@@ -80,5 +77,16 @@ module "list.dk"
             }
             #! do uie.dbeditable(table_definition, "tbl_recetas")
         }
+
+        #$
+		script(type="text/javascript")
+		{$'
+			function getCurrentContext()
+			{
+				const table = document.getElementById("tbl_recetas");
+				const id = (table?.DataArray[table.CurrentRowIndex()]?.sys_pk ?? "");
+    			return { item_id:id, context: {} }
+			}
+		'}
     }
 }

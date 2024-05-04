@@ -35,21 +35,13 @@ module "list.dk"
         }
     }
 
-    header_act::
-    { 
-        #$
-        a(href="#<@ALIBEB_LINEA>_new/" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Agregar"}
-    }
-
-    #! point general_act to header_act
-
     new nav_config
     {
         @"title": "Líneas de recetas"
-        @"buttons*": general_act
+        @"buttons*": @null
         @"urlexit": "/"
-        @"actions*": dbr.apps.itemactions(@('&database'),"alimento","action","",0)
-        @"reports*": dbr.apps.itemactions(@('&database'),"alimento","report","",0)
+        @"actions*": dbr.apps.itemactions(@('&database'),"DET029","action","",0)
+        @"reports*": dbr.apps.itemactions(@('&database'),"DET029","report","",0)
         @"jscurrentcontext": "linea.getCurrentContext"
     }
 
