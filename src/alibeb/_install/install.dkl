@@ -12,7 +12,6 @@ program "instalador"
         "cclaseproducto.csv",
         "cmetodosvaluacion.csv",
         "ctipoproducto.csv",
-        "cfgimpuesto.csv",
         "ctiposcomisionesproducto.csv",
         "cformacomisionproducto.csv",
         "cimpadicionales.csv",
