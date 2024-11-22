@@ -44,7 +44,9 @@ module "model"
         data<"color">: 0
 
         if @@(data,"codigo")=="" || @@(data,"codigo")=="<A>" { do check_autocode(db,"linea","codigo",data) }
-        do entity.create(db, params, data)
+        ref entity= entity.create(db, params, data)
+        params<"_entity_id">:@@(entity,"#sys_pk")
+        do SaveFile(db,params,data)
 
         exception
 		{

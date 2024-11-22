@@ -43,7 +43,7 @@ module "form.dk"
 
     #$ div(class="container")
     {
-        form(method="POST" action="#<formActn>" id="form")
+        form(method="POST" action="#<formActn>" id="form" enctype="multipart/form-data")
         {
             #! do uie.printV12FormBar(nav_config)
 
@@ -81,21 +81,17 @@ module "form.dk"
                         textarea(class="induxsoft-form-control mb-2" name="uf_indicaciones" rows="12"){$"#<@@(linea,'$uf_indicaciones')>"}
                     }
                 }
+                hr{""}
+                input(type="file" class="induxsoft-form-control d-none" id="line_file" name="line_file"  accept=".png, .jpg, .jpeg")
+                label(class="btn btn-sm btn-secondary induxsoft-corners" "for"="line_file" id="lbl_file"){"Asignar imagen a esta línea"}
+                p(id="name_file"){""}
                 #!
-                if @@(linea,"#sys_pk") > 0
+                if @@(dtfile,"$url")!="" 
                 {
                     #$
-                    hr{""}
-                    input(type="file" class="induxsoft-form-control d-none" id="line_file" name="line_file"  accept=".png, .jpg, .jpeg")
-                    label(class="btn btn-sm btn-secondary induxsoft-corners" "for"="line_file" ){"Asignar imagen a esta línea"}
-                    #!
-                    if @@(dtfile,"$url")!="" 
+                    div(class="pt-2")
                     {
-                        #$
-                        div(class="pt-2")
-                        {
-                            img(src="#<@@(dtfile,'$url')>" loading="lazy" style="height: 10rem; width: 15rem; object-fit: contain;border: 1px solid #ced4da;"){""}
-                        }
+                        img(src="#<@@(dtfile,'$url')>" loading="lazy" style="height: 10rem; width: 15rem; object-fit: contain;border: 1px solid #ced4da;"){""}
                     }
                 }
             }
@@ -105,5 +101,11 @@ module "form.dk"
             }
         }
         script(src="#<@JS_LINEA>"){$""}
+        script
+        {
+            $'
+            linea._entity=#<@@(linea,"#sys_pk")>;
+            '
+        }
     }
 }

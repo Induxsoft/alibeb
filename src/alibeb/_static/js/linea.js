@@ -1,16 +1,22 @@
 var linea =
 {
     table:null, tableId:'',
+    _entity:0,
     init()
     {
         this.line_file=document.getElementById("line_file");
+        this.name_file=document.getElementById("name_file");
         const check_visible = document.querySelector('#check_visible');
         const ipt_visible = document.querySelector('#ipt_visible');
         this.table = document.getElementById(this.tableId);
 
         if (check_visible && ipt_visible) check_visible.addEventListener('change', e => { ipt_visible.value = (check_visible.checked ? 1 : 0) });
 
-        if(this.line_file)this.line_file.addEventListener("change",()=>{linea.uploadFile();});
+        if(this.line_file)this.line_file.addEventListener("change",()=>
+        {
+            linea.ShowNameFile();
+            if(linea._entity>0)linea.uploadFile();
+        });
     },
     getCurrentContext()
     {
@@ -25,7 +31,6 @@ var linea =
         for (let i = 0; i < this.line_file.files.length; i++) 
         {
             const f = this.line_file.files[i];
-            console.log(f.name)
             formData.append(f.name,f);
         }
      
@@ -38,10 +43,22 @@ var linea =
             failure => 
             {
                 this.line_file.value="";
+                linea.ShowNameFile();
                 alert("Ocurrió un error al subir las imagenes.\n\n"+JSON.stringify(failure));
             },
             'PATCH', false, true, '', true
         );
+    },
+    ShowNameFile()
+    {
+        if(!this.name_file)return;
+
+        if(this.line_file.files.length<1)this.name_file.innerHTML="";
+        else
+        {
+            var f = this.line_file.files[0];
+            this.name_file.innerHTML="Elemento seleccionado: "+f.name;
+        }
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
