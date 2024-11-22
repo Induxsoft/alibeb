@@ -21,5 +21,7 @@ module "config"
     @JS_RECETAS = "/$/alibeb/js/recetas.js"
     @JS_MAIN = "/$/alibeb/js/main.js"
 
+    @PROD_SERV_GALERIA="/!/prodserv/productos/@id/galeria/"
+
     @default_max_rows=250
 }

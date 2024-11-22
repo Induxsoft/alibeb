@@ -248,8 +248,6 @@ module "model"
 
     function alibeb.list(&db, &params)
     {
-        // if not(dbr.security.isauth(db,@AUT_ACCESS_PRODUCTO)) { do rise_error(500,"No autorizado") }
-
         query = "
             SELECT 
                 p.sys_pk, 
@@ -271,10 +269,20 @@ module "model"
                 INNER JOIN linea l ON p.ilinea = l.sys_pk
             WHERE cc.id = 2
                 AND IF(IFNULL(@s,'')='', true, (p.codigo LIKE CONCAT('%',@s,'%') OR p.descripcion LIKE CONCAT('%',@s,'%')))
+                AND IF(ifnull(@fil_linea,'*')='*' OR ifnull(@fil_linea,'')='',true,l.sys_pk=@fil_linea)
             ORDER BY p.codigo
             LIMIT #<@default_max_rows>;
         "
-        return dbr.list(db, ftext(query), params)
+        new data
+        {
+            @"productos*":dbr.list(db, ftext(query), params)
+            @"list_lineas*":dbr.list(db,"SELECT 
+                                l.sys_pk,l.codigo,l.descripcion
+                            FROM linea l
+                            WHERE l.clase = 2
+                            ORDER BY l.sys_pk desc",params)
+        }
+        return data
     }
     function alibeb.delete(&db, &params)
     {

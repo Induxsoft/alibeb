@@ -11,9 +11,12 @@ module "list.dk"
     #include "../_lib/scape_special_charactes2.dk"
 
     do @context.begin(@crud_context)
-    ref productos = @('&.')
+    ref productos = @('&./productos')
     do scape_special_charactes(productos,"codigo,descripcion")
 
+    exist_pack_prodserv=file.exists("prodserv/_install/install.dkl")
+
+    url_prod_serv=replace(@PROD_SERV_GALERIA,"@id","${DataRow.sys_pk}")+"?url_exit_encode="+url_encode(@ALIBEB_RECETAS)
     new table_definition
     {
         @"datatable*": productos
@@ -39,6 +42,7 @@ module "list.dk"
                     <div style="display:flex;gap:8px;justify-content:center;width:100%;" class="no-print">
                         <a href="#<@ALIBEB_RECETAS>${DataRow.sys_pk}/" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
                         <button onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Eliminar</button>
+                        ${#<exist_pack_prodserv> ? `<a href="#<url_prod_serv>" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Galeria</a>`:``}
                     </div>')
                 @"no-print":@true
             }
@@ -54,7 +58,22 @@ module "list.dk"
         @"reports*": dbr.apps.itemactions(@('&database'),"DET045","report","",0)
         @"jscurrentcontext": "getCurrentContext"
     }
-    
+     new fil_linea
+    {
+        @"id": "fil_linea"
+        @"datatable*": ifnull(@("&./list_lineas"),list.create())
+        new member @"attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "fil_linea"
+            @"onchange": "document.querySelector('#form_search').submit()"
+        }
+        @"first_text": "(Todas las lineas)"
+        @"first_value": "*"
+        @"text_field": "descripcion"
+        @"value_field": "sys_pk"
+        @"selected": @("#parameters/fil_linea")
+    }
     #$ div(class="container-fluid p-0")
     {
         #! do uie.printV12FormBar(nav_config)
@@ -65,15 +84,23 @@ module "list.dk"
 
             form(action="./" method="GET" id="form_search" class="no-print my-1 d-flex py-1")
             {
-                "filter-text"(
-                    "id"="ft_search"
-                    "text-field"="s"
-                    "placeholder"="Buscar por código o descripción"
-                    "form"="#form_search"
-                    "value"="#<@@(@@(@crud_context,'&http/request/get'),'$s')>"
-                    "auto-submit"="true"
-                    "class"="w-100"
-                ){$""}
+                div(class="d-flex gap-2 w-100")
+                {
+                    div(style="width:20%"){#! do uie.dbSelect(fil_linea) }#$
+                    div(style="width:80%")
+                    {
+                        "filter-text"(
+                            "id"="ft_search"
+                            "text-field"="s"
+                            "placeholder"="Buscar por código o descripción"
+                            "form"="#form_search"
+                            "value"="#<@@(@@(@crud_context,'&http/request/get'),'$s')>"
+                            "auto-submit"="true"
+                            "class"="w-100"
+                        ){$""}
+                    }
+                }
+                
             }
             #! do uie.dbeditable(table_definition, "tbl_recetas")
         }

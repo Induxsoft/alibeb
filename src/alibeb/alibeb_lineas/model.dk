@@ -4,7 +4,7 @@ module "model"
 {
     #include "../_lib/config.dk"
     #include "../_lib/lib.dk"
-
+    #include "prodserv/_lib/lib.dk"
     @table_name = "linea"
 
     function check_autocode(&db,table,field,&data)
@@ -88,7 +88,41 @@ module "model"
 
         return @true
     }
+    function SaveFile(&db,&params,&data)
+    {
+         ref files = @@(@http_context,"&request/files")
+        if isnull(files) || @count(files) < 1 { return data}
 
+        ref linea=dbr.rec(db,"select sys_pk,codigo from linea where sys_pk=@_entity_id",params)
+        if isnull(linea){do rise_error(500,"No se encontró datos de la línea")}
+        
+        ref @cross_domain=@null
+        attachment_path=dbr.vars.get(db,"prodserv_path_img_lns")
+        attachment_path=replace_paths(attachment_path)
+        attachment_path=replace(attachment_path,"@_id",@@(linea,"$codigo"))
+        do dir.ensure(attachment_path)
+
+        ref files_saved=list.files(attachment_path,"default.*")
+        for i = 0; i < @count(files_saved)
+        {
+            f=list.str(files_saved,i)
+            do file.delete(f)
+        }
+        
+        for i = 0; i < @count(files)
+        {
+            ref file = @item(files,i)
+            if file.exists(@@(file,"$temp_file")) && @@(file,"$filename")!="" && @@(file,"#size")>0
+            {
+                filename = "default"+file.extension(@@(file,"$filename"))
+                filepath = path.concat(attachment_path,filename)
+                do file.copy(@@(file,"$temp_file"),filepath)
+                params<"img_file">:filename
+                do dbr.execute(db,"update linea set img_file=@img_file where sys_pk=@_entity_id",params)
+            }
+        }
+        return data
+    }
     function cu_error(table)
     {
         new fields {

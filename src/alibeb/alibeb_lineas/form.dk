@@ -4,11 +4,15 @@ module "form.dk"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "dbr.dkh"
     #include "uielements.v12.dkl"
     #include "../_lib/config.dk"
     #include "../_lib/icons.dk"
+    #include "dbr.vars.dkl"
+    #include "prodserv/_lib/lib.dk"
 
     do @context.begin(@crud_context)
+    ref @http_context=@("&http")
 
     ref linea = @("&./")
     entityId = @("$parameters/_entity_id")
@@ -32,6 +36,10 @@ module "form.dk"
         @"urlexit": @ALIBEB_LINEA
         member @"hidden" { @"print": @true }
     }
+
+    prodserv_path_img_lns_url=dbr.vars.get(@("&database"),"prodserv_path_img_lns_url")
+    attachment_path=dbr.vars.get(@("&database"),"prodserv_path_img_lns")
+    ref dtfile=GetDataFile(@@(linea,"$codigo"),attachment_path,prodserv_path_img_lns_url,@@(linea,"$img_file"))
 
     #$ div(class="container")
     {
@@ -59,23 +67,6 @@ module "form.dk"
                         input(type="text" class="induxsoft-form-control mb-2" name="descripcion" value="#<@@(linea,'$descripcion')>" required="true" maxlength="50")
                     }
                 }
-                // div(class="row mb-2")
-                // {
-                //     div(class="col-sm-6")
-                //     {
-                //         small(class="fw-bold"){$"Color::"}
-                //         input(type="color" id="color_picker" class="induxsoft-form-control mb-2")
-                //         input(type="hidden" name="color" id="ipt_color" value="#<@@(linea,'#color')>")
-                //     }
-                // }
-                // div(class="row mb-2")
-                // {
-                //     div(class="col-12")
-                //     {
-                //         small{$"Notas:"}
-                //         textarea(class="induxsoft-form-control mb-2" name="notas"){$"#<@@(linea,'$notas')>"}
-                //     }
-                // }
                 div(class="form-check")
                 {
                     input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_visible" "#<ifstr(@@(linea,'#visible')==1,'checked','')>"="true")
@@ -87,7 +78,24 @@ module "form.dk"
                     div(class="col-12")
                     {
                         label(class="mb-1"){$"Instrucciones de preparación:"}
-                        textarea(class="induxsoft-form-control mb-2" name="uf_indicaciones" rows="16"){$"#<@@(linea,'$uf_indicaciones')>"}
+                        textarea(class="induxsoft-form-control mb-2" name="uf_indicaciones" rows="12"){$"#<@@(linea,'$uf_indicaciones')>"}
+                    }
+                }
+                #!
+                if @@(linea,"#sys_pk") > 0
+                {
+                    #$
+                    hr{""}
+                    input(type="file" class="induxsoft-form-control d-none" id="line_file" name="line_file"  accept=".png, .jpg, .jpeg")
+                    label(class="btn btn-sm btn-secondary induxsoft-corners" "for"="line_file" ){"Asignar imagen a esta línea"}
+                    #!
+                    if @@(dtfile,"$url")!="" 
+                    {
+                        #$
+                        div(class="pt-2")
+                        {
+                            img(src="#<@@(dtfile,'$url')>" loading="lazy" style="height: 10rem; width: 15rem; object-fit: contain;border: 1px solid #ced4da;"){""}
+                        }
                     }
                 }
             }

@@ -2,5 +2,8 @@
 #!
 module "controller"
 {
-    
+    if @@(params,"$_entities_type")=="alibeb_lineas" && parse.bool(@@(input_data,"upload"))
+    {
+        point @update to SaveFile
+    }
 }
