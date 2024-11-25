@@ -13,8 +13,8 @@ module "config"
     @ALIBEB_SEARCH_PRODUCTO  = "/!/ALIBEB/alibeb_recetas/?_view=producto&s=@search"
     @ALIBEB_SEARCH_GRUPOPROD  = "/!/ALIBEB/alibeb_recetas/?_view=grupoprod&s=@search"
 
-    @CATBAS_MAS_PRECIOS = "/!/catbas/mas_precios/"
-    @CATBAS_MAS_PRECIOS_PATH = "catbas/mas_precios/"
+    @CATBAS_MAS_PRECIOS = "/!/prodserv/mas_precios/"
+    @CATBAS_MAS_PRECIOS_PATH = "prodserv/mas_precios/"
 
     // _STATIC
     @JS_LINEA = "/$/alibeb/js/linea.js"
