@@ -21,7 +21,7 @@ module "model"
 
     function list(&db, &params)
     {
-        // if not(dbr.security.isauth(db,@AUT_ACCESS_LINEA)) { do rise_error(500,"No autorizado") }
+        do dbr.apps.action.grant("CA10")
 
         query="
             SELECT sys_pk, clase, codigo, descripcion,
@@ -38,8 +38,10 @@ module "model"
 
     function create(&db, &params, &data)
     {
-        // if not(dbr.security.isauth(db,@AUT_CREATE_LINEA)) { do rise_error(500,"No autorizado") }
-
+        @use_transaction = @false
+            do dbr.apps.action.pre("CA11")
+        do dbr.begin(db)
+        
         data<"clase">: 2
         data<"color">: 0
 
@@ -47,35 +49,51 @@ module "model"
         ref entity= entity.create(db, params, data)
         params<"_entity_id">:@@(entity,"#sys_pk")
         do SaveFile(db,params,data)
+        
+            do dbr.apps.action.pos(entity)
+        do dbr.commit(db)
+            do dbr.apps.action.ext(entity)
+        
 
         exception
 		{
 			do cu_error("línea")
-			do rise_error(last_error_code(), last_error())
+			if dbr.in_transaction(db){ do dbr.rollback(db) }
+            do dbr.apps.action.log()
+            do rise_error(last_error_code(),last_error())
 		}
     }
 
     function update(&db, &params, &data)
     {
-        // if not(dbr.security.isauth(db,@AUT_UPDATE_LINEA)) { do rise_error(500,"No autorizado") }
-
-        do entity.update(db, params, data)
+        @use_transaction = @false
+            do dbr.apps.action.pre("CA12")
+        do dbr.begin(db)
+        
+        ref entity=entity.update(db, params, data)
+        
+            do dbr.apps.action.pos(entity)
+        do dbr.commit(db)
+            do dbr.apps.action.ext(entity)
+        
         exception
 		{
 			do cu_error("línea")
-			do rise_error(last_error_code(), last_error())
+			if dbr.in_transaction(db){ do dbr.rollback(db) }
+            do dbr.apps.action.log()
+            do rise_error(last_error_code(),last_error())
 		}
     }
 
     function delete(&db, &params)
     {
-        // if not(dbr.security.isauth(db,@AUT_DELETE_LINEA)) { do rise_error(500,"No autorizado") }
+        do dbr.apps.action.grant("CA13")
         // intentar borrado físico
         do entity.delete(db, params)
         
         exception
         {
-            // if not(dbr.security.isauth(db,@AUT_DELETE_LINEA)) { do rise_error(500,"No autorizado") }
+            do dbr.apps.action.grant("CA13")
             
             // borrado lógico
             sql = "
@@ -133,7 +151,22 @@ module "model"
         }
         do valide_duplicate(fields, table, last_error(), last_error_code())
     }
+    read::&db,&params
+    {
+        do dbr.apps.action.grant("CA10")
 
+        ref entity= entity.read(db,params)
+       return entity
+    }
+    blank::&db,&params
+    {
+        do dbr.apps.action.grant("CA10")
+      new entity{}
+      return entity
+    }
+    
+    point @blank to blank
+    point @read to read
     point @list to list
     point @create to create
     point @update to update

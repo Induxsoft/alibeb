@@ -32,8 +32,9 @@ module "model"
 
     function alibeb.crearProducto(&db, &params, &data)
     {
-        // if @@(params,"$_entity_id") == "_new" && not(dbr.security.isauth(db,@AUT_CREATE_PRODUCTO)) { do rise_error(500,"No autorizado") }
-        // if @@(params,"$_entity_id") != "_new" && not(dbr.security.isauth(db,@AUT_UPDATE_PRODUCTO)) { do rise_error(500,"No autorizado") }
+        if @@(params,"$_entity_id") == "_new"{ do dbr.apps.action.pre("CA21")}
+        if @@(params,"$_entity_id") != "_new" { do dbr.apps.action.pre("CA22") }
+        @use_transaction = @false
 
         @table_name = "producto"
         if field.exist(data,"codbar1") && trim(@@(data,"$codbar1")) == "" { data<"codbar1*"> : @null }
@@ -107,18 +108,24 @@ module "model"
         @use_transaction = @false
         
         do dbr.begin(db)
-        ref res = entity.create(db, params, data)
-        do insertcproduccion(db,cproduccion,res)
+
+            ref res = entity.create(db, params, data)
+            do insertcproduccion(db,cproduccion,res)
+            do dbr.apps.action.pos(res)
         do dbr.commit(db)
+            do dbr.apps.action.ext(res)
+
 
         return res
+
         exception
 		{
             if dbr.in_transaction(db) { do dbr.rollback(db) }
 			do cu_error("receta")
             do errordet(@false)
-			do rise_error(last_error_code(),last_error())
             do alibeb.prepareView(db, params, data)
+            do dbr.apps.action.log()
+            do rise_error(last_error_code(),last_error())
 		}
     }
     function insertcproduccion(&db,&cproduccion,&producto)
@@ -140,7 +147,7 @@ module "model"
     }
     function alibeb.read(&db, &params)
     {
-        // if not(dbr.security.isauth(db,@AUT_READ_PRODUCTO)) { do rise_error(500,"No autorizado") }
+        do dbr.apps.action.grant("CA20")
 
         sql_producto = "
             SELECT
@@ -248,6 +255,8 @@ module "model"
 
     function alibeb.list(&db, &params)
     {
+        do dbr.apps.action.grant("CA20")
+
         query = "
             SELECT 
                 p.sys_pk, 
@@ -286,7 +295,7 @@ module "model"
     }
     function alibeb.delete(&db, &params)
     {
-        // if not(dbr.security.isauth(db,@AUT_DELETE_PRODUCTO)) { do rise_error(500,"No autorizado") }
+        do dbr.apps.action.grant("CA23")
 
         @use_transaction = @false
         
@@ -319,7 +328,7 @@ module "model"
     }
     function alibeb.blank(&db, &params)
     {
-        // if not(dbr.security.isauth(db,@AUT_READ_PRODUCTO)) { do rise_error(500,"No autorizado") }
+        do dbr.apps.action.grant("CA20")
 
         ref data = record.create()
         do alibeb.prepareView(db, params, data)
