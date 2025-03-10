@@ -345,8 +345,10 @@ module "model"
         sql_ensamble = "
             SELECT
                 0 AS sys_pk, 0 AS sys_recver, ie.elemento,
-                p.codigo, p.descripcion, p.unidad, IFNULL(ie.cantidad,0) cantidad, IFNULL(p.costoultimo,0) costoultimo, 
-                IFNULL(p.costoultimo,0) importe, '100' AS representacion, IFNULL(ie.cantdemasiado,0) cantdemasiado, 
+                p.codigo, p.descripcion, p.unidad, 
+                IFNULL(ie.cantidad,0) cantidad, 
+                IFNULL(p.costoultimo,0) costoultimo, 
+                IFNULL(ie.cantidad,0) * IFNULL(p.costoultimo,0) importe, '100' AS representacion, IFNULL(ie.cantdemasiado,0) cantdemasiado, 
                 IFNULL(ie.cantmucho,0) cantmucho, IFNULL(ie.cantpoco,0) cantpoco, IF(IFNULL(omitible,0)=0,'No','Si') omitible,
                 IFNULL(p3.sys_pk,'') reemplazo, IFNULL(p3.descripcion,'') reemplazo_desc
             FROM iensamble ie INNER JOIN producto p ON ie.elemento=p.sys_pk
@@ -385,6 +387,8 @@ module "model"
             @"ensamble*": dbr.list(db, sql_ensamble, @@(data,"&producto"))
             @"variable*": dbr.list(db, sql_variable, @@(data,"&producto"))
             @"cproducc*": dbr.list(db, sql_cproducc, @@(data,"&producto"))
+            @"decs_imp":parse.num(dbr.vars.get(db,"V12-0A-001")) 
+            @"decs_vol":parse.num(dbr.vars.get(db,"V12-0A-002")) 
         }
 
         return data

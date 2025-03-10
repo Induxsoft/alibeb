@@ -16,6 +16,9 @@ module "form.dk"
     minrowsRecConst=15
     minrowsRecVarbl=15
 
+    decs_imp=@("#./decs_imp")
+    decs_vol=@("#./decs_vol")
+
     ref producto = ifnull(@("&./producto"), record.create())
     ref ensamble = proccessEnsambles(@("&./ensamble"),minrowsRecConst)
     ref variable = proccessVariables(@("&./variable"),minrowsRecVarbl)
@@ -247,13 +250,13 @@ module "form.dk"
                                         "edit-th"(type="Text" field="codigo" button="true"){$"Código"}
                                         "edit-th"(type="Text" field="descripcion" button="true"){$"Descripción"}
                                         "edit-th"(type="Text" field="unidad"){$"Unidad"}
-                                        "edit-th"(type="Number" field="cantidad" textalign="end" format="true" decs="2"){$"Cantidad"}
-                                        "edit-th"(type="NoEditable" field="costoultimo" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo"}
-                                        "edit-th"(type="NoEditable" field="importe" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Importe"}
-                                        "edit-th"(type="NoEditable" field="representacion" textalign="end" format="true" decs="2" sufix="%"){$"Representación"}
-                                        "edit-th"(type="Number" field="cantdemasiado" textalign="end" format="true" decs="2"){$"Demasiado"}
-                                        "edit-th"(type="Number" field="cantmucho" textalign="end" format="true" decs="2"){$"Mucho"}
-                                        "edit-th"(type="Number" field="cantpoco" textalign="end" format="true" decs="2"){$"Poco"}
+                                        "edit-th"(type="Number" field="cantidad" textalign="end" format="true" decs="#<decs_vol>"){$"Cantidad"}
+                                        "edit-th"(type="NoEditable" field="costoultimo" textalign="end" format="true" decs="#<decs_imp>" prefix="$" thousandssep="true"){$"Costo"}
+                                        "edit-th"(type="NoEditable" field="importe" textalign="end" format="true" decs="#<decs_imp>" prefix="$" thousandssep="true"){$"Importe"}
+                                        "edit-th"(type="NoEditable" field="representacion" textalign="end" format="true" decs="#<decs_vol>" sufix="%"){$"Representación"}
+                                        "edit-th"(type="Number" field="cantdemasiado" textalign="end" format="true" decs="#<decs_vol>"){$"Demasiado"}
+                                        "edit-th"(type="Number" field="cantmucho" textalign="end" format="true" decs="#<decs_vol>"){$"Mucho"}
+                                        "edit-th"(type="Number" field="cantpoco" textalign="end" format="true" decs="#<decs_vol>"){$"Poco"}
                                         "edit-th"(type="Check" field="omitible" textalign="center"){$"Omitible"}
                                         "edit-th"(type="Text" field="reemplazo_desc" button="true"){$"Reemplazo"}
                                     }
@@ -315,12 +318,12 @@ module "form.dk"
                                         "edit-th"(type="Text" field="grupo_desc" button="true"){$"Grupo"}
                                         "edit-th"(type="Text" field="descripcion"){$"Descripción"}
                                         "edit-th"(type="Number" field="factor" textalign="end"){$"Factor"}
-                                        "edit-th"(type="Number" field="maximo" textalign="end" format="true" decs="2"){$"Máximo"}
-                                        "edit-th"(type="Number" field="minimo" textalign="end" format="true" decs="2"){$"Mínimo"}
+                                        "edit-th"(type="Number" field="maximo" textalign="end" format="true" decs="#<decs_vol>"){$"Máximo"}
+                                        "edit-th"(type="Number" field="minimo" textalign="end" format="true" decs="#<decs_vol>"){$"Mínimo"}
                                         "edit-th"(type="Select" field="padicional" 'options'='#<to.json(cimpadic)>'){$"Importe adicional"}
-                                        "edit-th"(type="NoEditable" field="cdirectoprom" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo directo"}
-                                        "edit-th"(type="NoEditable" field="cmanoobraprom" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo mano obra"}
-                                        "edit-th"(type="NoEditable" field="cindirectoprom" textalign="end" format="true" decs="2" prefix="$" thousandssep="true"){$"Costo indirecto"}
+                                        "edit-th"(type="NoEditable" field="cdirectoprom" textalign="end" format="true" decs="#<decs_imp>" prefix="$" thousandssep="true"){$"Costo directo"}
+                                        "edit-th"(type="NoEditable" field="cmanoobraprom" textalign="end" format="true" decs="#<decs_imp>" prefix="$" thousandssep="true"){$"Costo mano obra"}
+                                        "edit-th"(type="NoEditable" field="cindirectoprom" textalign="end" format="true" decs="#<decs_imp>" prefix="$" thousandssep="true"){$"Costo indirecto"}
                                     }
                                 }
                             }
