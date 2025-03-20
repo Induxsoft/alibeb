@@ -367,7 +367,12 @@ module "model"
                 LEFT JOIN producto p ON gp_p.iproductos = p.sys_pk
                 LEFT JOIN cimpadicionales cia ON iv.padicional=cia.id
             WHERE iv.fk_producto_ivariables=@sys_pk
-            GROUP BY iv.grupo;
+            GROUP BY iv.grupo,
+                iv.descripcion,
+                iv.factor,
+                iv.maximo,
+                iv.minimo,
+                cia.id
         "
         sql_cproducc = "
             SELECT cp.sys_pk, cp.codigo id, cp.descripcion text, IF(IFNULL(cpp.prod,-99)=-99,0,1) done
