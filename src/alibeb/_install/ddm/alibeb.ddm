@@ -1,6 +1,10 @@
-# include "ddm.dkh"
-model "alimentos y bebidas"
+#include "ddm.dkh"
+model "alibeb"
 {
+    /** 
+    alimentos y bebidas
+    =======================================================================
+    */
 	#include "induxsoft.abstracts.ddm"
 
     abstract "NmModel"
@@ -19,6 +23,52 @@ model "alimentos y bebidas"
     entity "ctiposcomisionesproducto" : "EnumModel" {}
     entity "ctasasiva" : "EnumModel" {}
     entity "cimpadicionales" : "EnumModel" {}
+    entity "clase_almacen" : "EnumModel"
+    {
+        // 0-"Almacén de propósito general"
+        // 1-"Almacén vinculado a otro elemento de datos"
+        // 2-"Almacén virtual o imaginario"
+    }
+
+    //#region Domicilio
+    entity "pais" : "TableModel"
+    {
+        @"codigo" string(8) unique required
+        @"nombre" string(100) unique required
+
+        @"th_sep" string(3)
+        @"dc_sep" string(3)
+        //https://es.wikipedia.org/wiki/ISO_3166-1
+        @"iso3166" string(2) unique
+        @"iso3166_a3" string(3) unique
+        //https://es.wikipedia.org/wiki/Anexo:Prefijos_telef%C3%B3nicos_mundiales
+        @"codigotel" string(5)
+    }
+    entity "edoprov" : "TableModel"
+    {
+        @"codigo" string(8) unique required
+        @"nombre" string(50) required
+        @"ipais" ref:"pais" required
+    }
+    entity "ciudad" : "TableModel"
+    {
+        @"codigo" string(8) unique required
+        @"codigotel" string(5)
+        @"nombre" string(100) required
+        @"estado" ref:"edoprov" required
+    }
+    entity "domicilio" : "TableModel"
+    {
+        @"codpos" string(10)
+        @"colonia" string(150)
+        @"direccion" string(1024)
+        @"notas" string(150)
+        @"telefonos" string(150)
+        @"iciudad" ref:"ciudad"
+        @"numint" string(1024)
+        @"numext" string(1024)
+    }
+    //#endregion
 
     entity "departamento" : "TableModel"
     {
@@ -43,14 +93,14 @@ model "alimentos y bebidas"
     }
     entity "cfgimpuesto" : "TableModel"
     {
-        @"i1compra" string(4096)
-        @"i1venta" string(4096)
-        @"i2compra" string(4096)
-        @"i2venta" string(4096)
-        @"i3compra" string(4096)
-        @"i3venta" string(4096)
-        @"i4compra" string(4096)
-        @"i4venta" string(4096)
+        @"i1compra" string(128)
+        @"i1venta" string(128)
+        @"i2compra" string(128)
+        @"i2venta" string(128)
+        @"i3compra" string(128)
+        @"i3venta" string(128)
+        @"i4compra" string(128)
+        @"i4venta" string(128)
         @"nombre" string(25) unique required
         @"uf_tipoi1" string(25)
         @"uf_tipoi2" string(25)
@@ -63,7 +113,7 @@ model "alimentos y bebidas"
     {
         @"codigo" string(15) unique required
         @"descripcion" string(50) unique required
-        @"notas" string(4096) 
+        @"notas" memo
     }
 	entity "proveedor" : "TableModel"
     {
@@ -76,7 +126,7 @@ model "alimentos y bebidas"
         @"fax" string(50)
         @"limitecredito" decimal(18,8)
         @"nombre" string(150) unique required
-        @"notas" string(32000)
+        @"notas" memo
         @"rfc" string(15)
         @"saldo" decimal(18,8)
         @"tasaiva" ref:"ctasasiva" required
@@ -99,9 +149,9 @@ model "alimentos y bebidas"
         @"comision4" decimal(18,8)
         @"comision5" decimal(18,8)
         @"descripcion" string(50) unique required
-        @"notas" string(4096)
+        @"notas" memo
         @"visible" bool
-        @"uf_indicaciones" string(4096)
+        @"uf_indicaciones" string(1024)
     }
     entity "producto" : "TableModel"
     {
@@ -288,10 +338,19 @@ model "alimentos y bebidas"
         @"fax" string(150)
         @"telefonos" string(150)
         @"website" string(150)
+        @"domicilio1" ref:"domicilio"
         @"uf_movremoto" bool
         @"uf_inhabilitado" bool
         @"uf_fechainhabilitacion" datetime
         @"uf_formaproduccion" int
+        @"clase" ref:"clase_almacen"
+        @"ubicacion" ref:"ubicacion"
+    }
+    entity "ubicacion" : "TableModel"
+    {
+        @"codigo" string(10) unique required
+        @"descripcion" string(50) required
+        @"notas" memo
     }
 	entity "cproduccion" : "TableModel"
     {

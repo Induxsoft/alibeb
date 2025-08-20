@@ -15,6 +15,7 @@ program "instalador"
         "ctiposcomisionesproducto.csv",
         "cformacomisionproducto.csv",
         "cimpadicionales.csv",
+        "almacen.csv",
         "cproduccion.csv",
         "linea.csv",
         "divisa.csv"
