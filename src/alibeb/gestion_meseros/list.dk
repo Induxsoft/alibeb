@@ -1,0 +1,71 @@
+#include "dkli.dkh"
+#!
+module "index.dkl"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "config.dkl"
+	#include "alibeb/_lib/config.dk"
+	#include "alibeb/gestion_meseros/config.dkl"
+	
+	do @context.begin(@crud_context)
+    ref @http_context=@("&http")
+
+	view=@@(@http_context,"request/get/view")
+	ws=@@(@http_context,"request/get/ws")
+	ids=@@(@http_context,"request/get/ids")
+	@namews=@@(@http_context,"request/get/namews")
+	dm=@@(@http_context,"request/get/dm_scr")
+
+	if ws=="" && dm!=""{ws=dm}
+    if ws=="" && dm==""{view="workspace"}
+
+    @url_origin=@url_origin+ws
+    if @namews==""{@namews=@name_company}
+
+	if @use_bdconfig
+	{
+	 ws=@@(@config,"connection")
+	 view=""
+	}
+
+    // if contains(ws,"@"){@url_origin="/login/?success="+url_encode(@url_entry_point_pathern)}
+    // if view=="workspace"{@url_origin=""}
+	
+    // if @@(@http_context,"session/user/ids")=="" && contains(ws,"@")
+    // {
+    // 	 @http_context<"response/headers/location">:@url_origin
+	// 	 return
+    // }
+	// if @@(@http_context,"session/user/ids")=="" || ws==""
+	// {
+	// 	 @http_context<"response/headers/location">:@url_origin+ws
+	// 	 return
+	// }
+	#$
+	div(style="height: 100%;")
+	{
+		#!
+		switch view
+		{
+			case "login11"{include path.concat(@path_view,"login.dkl")}
+			case "workspace"{include path.concat(@path_view,"vw_workspace.dkl")}
+			default{
+				include path.concat(@path_view,"view_admin.dkl")
+			}
+		}
+		#$
+		
+		script
+		{
+			$'
+			var ws="#<ws>";
+			var cofig_expiracion="#<@expiracion_token>";
+			#<ftext(file.rtext(@styles_js))>
+			#<ftext(file.rtext(@views_js))>
+			#<ftext(file.rtext(@model_js))>
+			#<ftext(file.rtext(@driver_js))>
+			'
+		}
+	}
+}

@@ -18,7 +18,8 @@ program "instalador"
         "almacen.csv",
         "cproduccion.csv",
         "linea.csv",
-        "divisa.csv"
+        "divisa.csv",
+        "dmnszona.csv"
     ]')
 
     // Lista de privilegios iniciales (arreglo de id de privilegios)

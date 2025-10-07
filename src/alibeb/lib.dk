@@ -1,0 +1,42 @@
+#include "dkli.dkh"
+#!
+module "lib.dk"
+{
+	#!
+	api_base_service::
+    {
+        expose responseJSONdata
+
+        new responseJSONdata
+        {
+            @"success":@true
+        }
+        
+        that
+        
+        @http_context<"response/headers/Content-Type">:"application/json;charset=utf-8"
+        @http_context<"response/output">:"text"
+        @http_context<"response/text">: to.json(responseJSONdata)
+    }
+
+    #!
+    open.db::qname
+    {
+        module
+        {
+            do reset()
+            exception{}
+        }
+        if qname!=""{return dbr.open(qname)}
+        
+        return dbr.open(@@(@config,"connection"))
+    }
+
+    #!
+    session.logout::ids
+    {
+        ref db=dbr.reconnect(@@(@config,"connection"),ids)
+        do dbr.logout(db)
+        exception{}
+    }
+}

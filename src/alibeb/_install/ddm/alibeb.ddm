@@ -29,7 +29,59 @@ model "alibeb"
         // 1-"Almacén vinculado a otro elemento de datos"
         // 2-"Almacén virtual o imaginario"
     }
+    //configuración de la terminal de meseros
+    entity "ut_dm_tmm"
+    {
+        @"sys_pk" int key required autoincrement
+        @"access_movil" int
+        @"agente" int
+        @"cc" int
+        @"zn" int
+        @"pwd" string(32)
+    }
 
+    entity "ut_dn_dmm_token"
+    {
+        @"sys_pk" int key required autoincrement
+        @"token" string(32) required
+        @"creacion" datetime required
+        @"expiracion" datetime required
+        @"revocado" int
+        @"datos" memo
+    }
+    
+    //Gestion de kds
+    entity "dm_kds" 
+    {
+        @"cproduccion" int 
+        @"pwd" string(32)
+        @"shortpool" int
+    }
+    
+    /* uod.dmnszona */
+    entity "dmnszona" : "TableModel"
+    {
+        @"archivo" string(255)
+        @"color" int
+        @"fumar" bool
+        @"id" string(35)
+        @"mesero" string(32)
+        @"notas" memo
+    }
+    /* uod.dmnsmesa */
+    entity "dmnsmesa" : "TableModel"
+    {
+        @"bandera" int
+        @"h" int
+        @"id" string(10)
+        @"mesero" string(32)
+        @"notas" string(4096)
+        @"personas" int
+        @"w" int
+        @"x" int
+        @"y" int
+        @"izona" int required
+    }
     //#region Domicilio
     entity "pais" : "TableModel"
     {

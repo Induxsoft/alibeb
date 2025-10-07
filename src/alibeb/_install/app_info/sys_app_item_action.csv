@@ -5,3 +5,5 @@
 "CA21","Agregar receta","","/!/alibeb/alibeb_recetas/_new/","0","alibeb.recetas","DET045","0","action","Agregar receta"
 "CA22","Editar receta","","/!/alibeb/alibeb_recetas/@_src_context_item_id/","0","alibeb.recetas","DET045","1","action","Editar receta"
 "CA23","Eliminar receta","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","alibeb.recetas","DET045","1","action","Eliminar receta"
+"CA30","Gestión de KDS","","/!/alibeb/gestion-kds/","0","alibeb.gestion_kds","DET045","0","shortcut","KDS"
+"CA40","Gestión de meseros","","/!/alibeb/gestion-meseros/","0","alibeb.gestion_meseros","DET045","0","shortcut","Meseros"

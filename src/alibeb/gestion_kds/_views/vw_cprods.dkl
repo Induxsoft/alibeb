@@ -1,0 +1,123 @@
+#include "dkli.dkh"
+#!
+module "view_admin"
+{
+	#$
+	div(class="container-all")
+	{
+		#!
+		include path.concat(@path_include,"navbar.dkl")
+		#$
+		div(class="container-admin")
+		{
+			div(class="list_cprod")
+			{
+				div(class="row-cprod-headers")
+				{
+					div(class="new_cprod")
+					{
+						button(class="btn-admin" id="btnnewcprod" onclick="controller.add_cprod()"){"Nuevo Cprod"}
+					}
+					h3(class="text-center"){"Centro de producción"}
+				}
+				
+				div(class="list-cprod-element")
+				{
+					table(class="ol-list")
+					{
+						tbody(class="tbody-list-cprod")
+						{$""
+						}
+					}
+				}
+			}
+			
+			div(class="" )
+			{
+				div(class="container-nav" style="")
+				{
+					div(class="nav-admin nav-tabs-ad" id="nav-tabs")
+					{
+						a(class="nav-link-ad" style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);" id="general"){"General"}
+						//a(class="nav-link-ad" style="background-color: transparent; color: rgb(136, 136, 136);" onclick="design.select_propertie('access-movil',this)" id="link-access" ){"Acceso a terminal móvil"}
+						p(id="p-hidden"){}
+						div(class="btns-admin mt-admin-4")
+						{
+							button(class="btn-admin" id="btnaction" onclick="controller.add_datacprod('',this)"){"Agregar"}
+							button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
+							button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
+						}
+						
+					}
+					
+				}
+				div(class="container-body" style="")
+				{
+				
+					div(class="tab-content " id="nav-tabContent")
+					{
+						div(class="item_prop" id="general" role="tabpanel" "aria-labelledby"="nav-general-tab")
+						{
+							$""
+							h4{"Código: "}
+							input(class="input-admin" id="cprod_codigo" value="<A>" placeholder="Código..." maxlength="5"){""}br{}
+							
+							h4{"Descripción: "}
+							input(class="input-admin" id="cprod_descripcion" placeholder="Descripción..." maxlength="30"){""}br{}
+							
+							h4{$"Almacén MP"}
+							select(class="select-apparence-admin" id="cprod_amacenmp"){option{""}}
+							h4{$"Almacén PT"}
+							select(class="select-apparence-admin" id="cprod_amacenpt"){option{""}}
+							input(type="hidden" value="" id="cprod_sys_pk")
+
+							hr{""}
+							label{"Acceso a terminal móvil"}
+							button(class="btn-admin mt-admin-4" id="btnchangepwd" onclick="views.change_pwd()"){"Editar"}
+							fieldset(class="fieldchangepwd disabled mt-admin-4")
+							{
+								// legend{"Cambiar contraseña."}
+								div(class="module-change-pwd")
+								{
+									label("for"="pwdbefore"){"Contraseña anterior:"}br{}
+									input(id="pwdbefore" type="password" value="")br{}
+
+									label("for"="pwd"){"Contraseña:"}br{}
+									input(id="pwd" type="password" value="")br{}
+
+									label("for"="pwdconfirm"){"Confirmar contraseña"}br{}
+									input(id="pwdconfirm" type="password" value="")br{}
+
+									label("for"="seg_act"){"Segundos de actualización:"}br{}
+									
+									input(type="number" class="select-shorpol" value="0" id="seg_act" onkeypress="return controller.filterInt(event, this)"   min="0" oninput="if( this.value.length > 11 )  this.value = this.value.slice(0,11) " )
+
+								}
+								
+							}
+							
+								
+						}
+						
+						
+					}
+					$""
+				}
+				 
+
+				
+				script
+				{
+					$' 
+					$(document).ready(function()
+					{
+						controller.get_cprods();
+						controller.get_almcn("cprod_amacenmp,cprod_amacenpt");
+					});
+
+					'
+				}
+			}
+		}
+	}
+}

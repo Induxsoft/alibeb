@@ -1,3 +1,5 @@
 "pack_id","app_id","app_title","created","app_info"
 "alibeb","alibeb.linea","Línea de recetas",2024-03-06T23:59:59,"Administración de líneas de recetas"
 "alibeb","alibeb.recetas","Recetas",2024-03-06T23:59:59,"Administración de recetas"
+"alibeb","alibeb.gestion_kds","Gestión kds",2024-03-06T23:59:59,"Administración de kds"
+"alibeb","alibeb.gestion_meseros","Gestión meseros",2025-09-25T23:59:59,"Administración de meseros"

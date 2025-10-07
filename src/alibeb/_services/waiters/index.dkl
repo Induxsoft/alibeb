@@ -1,0 +1,175 @@
+#include "dkli.dkh"
+#!
+module "index.dkl"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "alibeb/_lib/config.dk"
+	@SITE_INCLUDES="config.dk,lib.dk,list_query.dk,impuesto.dk"
+	#include "website.dkl"
+	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
+	
+	
+	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
+	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
+    @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
+
+    if @@(@http_context,"request/headers/REQUEST_METHOD")=="OPTIONS"{return}
+   	
+	go api_base_service (responseJSONdata:response) 
+	{
+		method=@@(@http_context,"request/headers/REQUEST_METHOD")
+		ref params=@@(@http_context,"&request/get")
+		ref postData=@@(@http_context,"&request/post")
+
+		// module "Authorization"
+		// {
+		// 	// do rise_error(00,)
+		// 	admin=@@(@http_context,"request/headers/HTTP_ADMIN")
+		// 	workspace=""
+		// 	dm_token=""
+		// 	isadmin=@false
+		// 	if admin==""
+		// 	{
+		// 		auth=@@(@http_context,"$request/headers/http_Authorization")
+		// 		if auth=="" { do rise_error(0,"No autorizado") }
+
+		// 		if contains(tolower(auth),"bearer"){ auth=trim(replace(tolower(auth),"bearer","")) }
+		// 		ref dauth=split(auth,"+")
+				
+		// 		if @count(dauth)>1
+		// 		{
+		// 			workspace=list.str(dauth,0)
+		// 			dm_token=list.str(dauth,1)
+		// 		}
+		// 		if dm_token=="" && not(parse.bool(@@(params,"access"))) && @@(params,"id_table")!=@idlogin{ do rise_error(0,"No autorizado") }
+				
+		// 	}else
+		// 	{
+		// 		workspace=admin
+		// 		isadmin=@true
+		// 	}
+		// 	if not(@accept_qnames) && contains(workspace,"@"){do rise_error(99,"No se aceptan nombres cualificados.")}
+			
+		// 	if workspace==""{do rise_error(99,"Falta la conexión a la base de datos.")}
+
+		// 	qname=""
+		// 	if @accept_qnames && contains(workspace,"@"){qname=workspace}
+		// 	else{qname="Connections@Induxsoft/ws"+workspace+"@workspaces"}
+
+		// 	ref db=open.db(qname)
+			
+		// 	if not(isadmin) && not(parse.bool(@@(params,"access"))) && @@(params,"id_table")!=@idlogin
+		// 	{
+		// 		if dm_token==""{do rise_error(99,"Sin token de inicio de sesión.")}
+		// 		new t{@"token":dm_token}
+		// 		if isnull(token.valid(db,t)){do rise_error(99,"El token es inválido o ha sido revocado.")}	
+		// 	}
+		// }
+		
+		ref db=@@(@http_context,"&session/idp/database")
+		
+		if isnull(postData) && (method=="POST" || method=="PATCH")
+		{
+			ref postData=from.json(field.dstr(@http_context,"request/post_string","{}"))
+		}
+		if @@(postData,"action")!=""{method="PATCH"}
+
+		
+		switch method
+		{
+			case "GET"
+			{
+				if @@(params,"id_table")!=""{ref data=get.mesa(db,params)}
+				else if field.exist(params,"prodc") && field.exist(params,"line") || @@(params,"entity")==@idfooddbev{ref data=get.foodbev(db,params)}
+				else if field.exist(params,"prodc") || @@(params,"entity")==@idlines{ref data=get.lines(db,params)}
+				else if field.exist(params,"cc") && not(field.exist(params,"zone")){ref data=get.prodc_x_cc(db,params)}
+				else if @@(params,"_key")!=""{ref data=data.foodbev(db,params)}
+				else if @@(params,"entity")==@idadcdmns{ref data=get.adds.dmns(db,params)}
+				else if @@(params,"entity")==@idwaiters{
+					if @@(params,"waiter")!=""{ref data=get.dataWaiter(db,params)}
+					else{ref data=get.waiters(db,params)}
+					
+				}
+				else if @@(params,"entity")==@idccs{ref data=get.ccs(db,params)}
+				else if @@(params,"entity")==@idzns{ref data=get.zones(db,params)}
+				else{ref data=get.mesas(db,params)}
+			}
+			case "POST"
+			{
+				if @@(params,"id_table")!="" && @@(params,"entity")==@idtables
+				{
+					ref data=execute.command(db,params,postData)
+				}
+				else if @@(params,"entity")==@idwaiters
+				{
+					if @@(params,"waiter")!=""{ref data=update.waiter(db,params,postData)}
+					else if @@(params,"id_table")==@idlogin{ref data=login(db,params,postData)}
+					else{ref data= insert.waiter(db,params,postData)}
+				}
+				else if @@(params,"entity")==@idaccessmovil
+				{
+					ref data=insert.accesmovil(db,params,postData)
+				}
+				else if @@(params,"entity")==@token
+				{
+					ref data=get.token(db,params,postData)
+				}
+				else{
+					do exist.table(db,params,postData)
+					ref data=open.table(db,params,postData)
+				}
+			}
+			case "PATCH"
+			{
+				if @@(params,"id_table")==""{do rise_error(99,"Falta un identificador de la mesa")}
+				else if @@(postData,"action")!=""{
+					switch tolower(@@(postData,"action"))
+					{
+						case "open"{ref data=reopen.table(db,params,postData)}
+						case "close"{ref data=close.table(db,params,postData)}
+						case "uptorder"
+						{
+							postData<"id_table">:@@(params,"id_table")
+							ref data=update.order(db,postData)
+						}
+						case "reprint"
+						{
+							do printer_ordertable(db,@@(params,"id_table"))
+							ref data=@null
+						}
+						default{do rise_error(99,"Acción no encontrada.")}
+					}
+				}
+			}
+			case "PUT"
+			{
+				if @@(params,"entity")==@idwaiters
+				{
+					ref data=delete.waiter(db,params)
+				}
+			}
+			default
+			{
+				ref data=@null
+			}
+		}
+		if dbr.is_open(db){do dbr.close(db)}
+		using response
+		{
+			@"success":@true
+			@"data*":data
+		}
+
+		exception
+		{
+			// if dbr.is_open(db){do dbr.close(db)}
+			using response
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+		}
+	}
+}

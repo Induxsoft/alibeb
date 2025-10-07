@@ -1,0 +1,26 @@
+#include "dkli.dkh"
+
+#!
+module "config.dkl"
+{
+	#include "functions.dkh"
+	#include "cookies.dkl"
+
+	@path_absolute="alibeb/gestion_kds/"
+	
+	@path_view=path.concat(@path_absolute,"_views")
+	@path_view_admin=path.concat(@path_absolute,"admin")
+	@path_include=path.concat(@path_absolute,"_include")
+
+	@model_js="alibeb/_static/js/kds/model.js"
+	@view_js="alibeb/_static/js/kds/view.js"
+	@driver_js="alibeb/_static/js/kds/controller.js"
+
+	@name_company="Induxsoft"
+	@as_company="Its work better"
+	
+	@url_origin="https://ws.induxsoft.net/"
+	@end_point_service="/alibeb/_services/kds/"
+	@url_entry_point_pathern="/gestion-kds/?view=&dm_scr=&token=@token"
+
+}

@@ -15,7 +15,8 @@ module "Controller configs"
 	@base_path="alibeb"
 	@path_root="" // Establezca una ruta de ser necesario
 
-	if @@(@http_context,"$session/user/ids") == "" {
+	if @@(@http_context,"$session/user/ids") == "" 
+	{
 		if file.exists("webshell/lost.dk") { include "webshell/lost.dk" }
 		else { @http_context<"response/headers/location"> : "/" }
 		return
@@ -25,6 +26,10 @@ module "Controller configs"
 	do crudl.routes.pattern("/_program/")
 	do crudl.routes.entity("/alibeb_lineas/","alibeb_lineas")
 	do crudl.routes.entity("/alibeb_recetas/","alibeb_recetas")
+
+	do crudl.routes.entity("/gestion-kds/","gestion_kds")
+	do crudl.routes.entity("/gestion-meseros/","gestion_meseros")
+
 
 	@dbmvc_path="crudl/"
 	@auto_crud=@true
@@ -47,5 +52,26 @@ module "Controller configs"
 		"access":[{"workspace":"'+@ws+'"}]
 	}'
 
+	//
+	//No modifique a menos que sepa lo que está haciendo
+	if not(field.exist(@@(@http_context,"&session"),"resource")) { @http_context<"session/resource*">:record.create() }
+	if not(field.exist(@@(@http_context,"&session/resource"),"properties")) { @http_context<"session/resource/properties*">:record.create() }
+	if not(field.exist(@@(@http_context,"&session/resource/properties"),"web_meta_tags")) { @http_context<"session/resource/properties/web_meta_tags*">:record.create() }
+	if not(field.exist(@@(@http_context,"&session/resource/properties/web_meta_tags"),"web_page")){@http_context<"session/resource/properties/web_meta_tags/web_page*">:record.create()}
+	if not(field.exist(@@(@http_context,"&session/resource/properties"),"web_page")){@http_context<"session/resource/properties/web_page*">:record.create()}
+
+	end_head=""
+	if isanyword(@@(@http_context,"$request/get/_entities_type"),"gestion_kds,gestion_meseros")
+	{
+		text end_head
+		{
+			'
+			<script src="/$/alibeb/js/jquery-3.6.0.min.js"></script>
+			<link href="/$/alibeb/_css/principal.css" rel="stylesheet"></link>
+			'
+		}
+	}
+	
+	@http_context<"session/resource/properties/web_page/end_head"> : end_head
 	#include "crudl/controller.dkl"
 }

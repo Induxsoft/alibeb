@@ -1,0 +1,10 @@
+#include "dkli.dkh"
+#!
+module ":gmesero"
+{
+    list::&db,&params{return list.create()}
+    read::&db,&params{return read.create()}
+
+    point @list to gmesero.list
+    point @read to gmesero.read
+}

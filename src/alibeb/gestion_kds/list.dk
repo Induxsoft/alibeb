@@ -1,0 +1,74 @@
+﻿#include "dkli.dkh"
+#set "meta-xml-declaration" "<!DOCTYPE html>\r\n"
+
+#!
+module "admin kds"
+{
+    
+    #include "functions.dkh"
+	#include "serialize.dkh"
+    #include "alibeb/_lib/config.dk"
+    #include "alibeb/gestion_kds/config.dk"
+	
+    do @context.begin(@crud_context)
+    ref @http_context=@("&http")
+
+    view=@@(@http_context,"request/get/view")
+    ws=@@(@http_context,"request/get/ws")
+    @namews=@@(@http_context,"request/get/namews")
+    token=@@(@http_context,"request/get/token")
+    dm=@@(@http_context,"request/get/dm_scr")
+
+    if ws=="" && dm!=""{ws=dm}
+    if ws=="" && dm==""{view="workspace"}
+
+    if @use_bdconfig
+	{
+	 ws=@@(@config,"connection")
+	 view=""
+	}
+
+    @url_origin=@url_origin+ws
+    if @namews==""{@namews=@name_company}
+
+    if contains(ws,"@"){@url_origin="/login/?success="+url_encode(@url_entry_point_pathern)}
+    if view=="workspace"{@url_origin=""}
+    
+    // if @@(@http_context,"$session/user/ids")=="" && contains(ws,"@")
+    // {
+    //      @http_context<"response/headers/location">:@url_origin
+    //      return
+    // }
+    // if @@(@http_context,"$session/user/ids")=="" || ws==""
+    // {
+    //      @http_context<"response/headers/location">:@url_origin+ws
+    //      return
+    // }
+
+    #$
+    div(class="" style="height: 100%;")
+    {
+        #!
+        switch view
+        {
+            case "login"{}
+            case "workspace"{include path.concat(@path_view,"vw_workspace.dkl")}
+            default{include path.concat(@path_view,"vw_cprods.dkl")}
+        }
+        #$
+            style(href="#<@style_css>" rel="stylesheet"){$''}
+            script
+            {
+                $'
+                    var ws="#<ws>";
+                    var token="#<token>";
+                    #<ftext(file.rtext(@model_js))>
+                    #<ftext(file.rtext(@driver_js))>
+                    #<ftext(file.rtext(@view_js))>
+
+                    $(document).ready(function(){});
+                '
+            }
+    }
+    
+}

@@ -1,0 +1,266 @@
+#include "dkli.dkh"
+#!
+module "lib.dk"
+{
+
+    // ******************************module admin*****************
+    get.code_waiter::&db
+    {
+
+        sys_pk=dbr.num(db,@pk_max,@null)
+        code="000"+str(sys_pk+1)
+        if length(code)>5{code=right(code,5)}
+        return code
+    }
+    #!
+    get.waiters::&db,&params
+    {
+        query=@getwaiters
+        if @@(params,"access")!=""{query=query+" where u.access_movil"}
+        return dbr.list(db,query,params)
+    }
+
+    #!
+    get.dataWaiter::&db,&params
+    {
+        return dbr.rec(db,replace(@getwaiter,"@_key",@@(params,"key")),params)
+    }
+
+    #!
+    insert.waiter::&db,&params,&data
+    {
+        ref now=now()
+        if @@(data,"code")=="<A>"{data<"code">:get.code_waiter(db)}
+        new waiter
+        {
+            @"Sys_TimeStamp*":now
+            @"Sys_GUID":toupper(cut(uuid(),30))
+            @"Sys_DTCreated*":now
+            @"Sys_DTExported*":now
+            @"Codigo":@@(data,"code")
+            // @"CodNomina":@@(data,"codnomina")
+            @"eMail":@@(data,"email")
+            @"Nombre":@@(data,"name")
+            @"Notas":@@(data,"notes")
+            @"PComision":0
+            @"Telefono":@@(data,"telephone")
+        }
+        do dbr.begin(db)
+            do dbr.insert(db,"agente",waiter)
+            data<"waiter">:@@(waiter,"sys_guid")
+            data<"key">:"sys_guid"
+            waiter<"data*">:insert.accesmovil(db,params,data)
+        do dbr.commit(db)
+
+        // waiter<"key">:"sys_guid"
+        // waiter<"waiter">:@@(waiter,"sys_guid")
+        return get.waiters(db,@null)//get.dataWaiter(db,waiter)
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(99,last_error())
+        }
+    }
+
+    #!
+    update.waiter::&db,&params,&data
+    {
+        data<"waiter">:@@(params,"waiter")
+        do dbr.begin(db)
+        do dbr.execute(db,@updatewaiter,data)
+
+        params<"pwd">:@@(data,"pwd")
+        if not(existe_waiteraccesm(db,params)){
+            data<"key">:"sys_pk"
+            do insert.accesmovil(db,params,data)
+        }
+        else
+        {
+            params<"pwd">:@@(data,"pwdbefore")
+            if not(valid_pwd(db,params)) && parse.bool(@@(data,"changepwd")){do rise_error(99,"Contraseña anterior inválida.")}
+            do update.accesmovil(db,params,data)
+        }
+        
+        do dbr.commit(db)
+        data<"key">:"sys_pk"
+        return get.waiters(db,@null)//get.dataWaiter(db,data)
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(99,last_error())
+        }
+    }
+
+    #!
+    delete.waiter::&db,&params
+    {
+        _key="sys_pk"
+        do dbr.execute(db,replace(@deletewaiter,"@_key",_key),params)
+        return get.waiters(db,params)
+    }
+
+    #!
+    get.ccs::&db,&params
+    {
+        return dbr.list(db,@getccs,params)
+    }
+
+    #!
+    get.zones::&db,&params
+    {
+        return dbr.list(db,@getzones,params)
+    }
+
+    #!
+    insert.accesmovil::&db,&params,&data
+    {
+        ref waiter=get.dataWaiter(db,data)
+        new access
+        {
+            @"access_movil":@@(data,"access_m")
+            @"agente":@@(waiter,"sys_pk")
+            @"cc":@@(data,"cc")
+            @"zn":@@(data,"zn")
+            @"pwd":@@(data,"pwd")
+        }
+        do dbr.insert(db,"ut_dm_tmm",access)
+
+        ref zone=dbr.rec(db,@getzone,access)
+        new d
+        {
+            @"key":@@(waiter,"codigo")
+            @"caption":@@(waiter,"nombre")
+            @"zone":@@(zone,"descripcion")
+            @"cc":@@(access,"cc")
+        }
+        data<"datos*">:d
+        data<"token">:uuid()
+
+        ref datatoken=@null//insert.datatoken(db,params,data)
+        new newdata
+        {
+            @"data_token*":datatoken
+            @"config*":access
+        }
+        return newdata
+    }
+
+    #!
+    valid_pwd::&db,params
+    {
+        ref datapwd=dbr.rec(db,@getdatapwd,params)
+        if isnull(datapwd){return @false}
+        return @true
+    }
+
+    #!
+    existe_waiteraccesm::&db,params
+    {
+        ref datapwd=dbr.rec(db,@existwaiter,params)
+        if isnull(datapwd){return @false}
+        return @true
+    }
+
+
+    #!
+    insert.datatoken::&db,&params,&data
+    {
+        new config{@"cofig_expiracion":@@(data,"cofig_expiracion")}
+        new datatoken
+        {
+            @"token":@@(data,"token")
+            @"creacion*":now()
+            @"expiracion*":str2dt(dbr.str(db,"SELECT NOW()+INTERVAL @cofig_expiracion minute AS DATE ",config))
+            @"revocado":0
+            @"datos":to.json(@@(data,"&datos"))
+        }
+        do dbr.insert(db,"ut_dn_dmm_token",datatoken)
+        return datatoken
+    }
+
+    #!
+    update.accesmovil::&db,&params,&data
+    {
+        new access
+        {
+            @"access_movil":@@(data,"access_m")
+            @"waiter":@@(data,"waiter")
+            @"cc":@@(data,"cc")
+            @"zn":@@(data,"zn")
+            @"pwd":@@(data,"pwd")
+        }
+        do dbr.execute(db,@updatepwdaccesm,access)
+    }
+
+    #!
+    login::&db,&params,&Postdata
+    {
+
+        ref data=dbr.rec(db,@login,Postdata)
+        if isnull(data){return @null}
+
+       
+        data<"key">:"sys_pk"
+
+        data<"waiter">:@@(data,"agente")
+        ref waiter=get.dataWaiter(db,data)//dbr.rec(db,@getdatapwd,data)//get.dataWaiter(db,data)
+         
+        ref zone=dbr.rec(db,@getzone,data)
+        new d
+        {
+            @"key":@@(waiter,"codigo")
+            @"caption":@@(waiter,"nombre")
+            @"zone":@@(zone,"descripcion")
+            @"cc":@@(data,"cc")
+        }
+        data<"datos*">:d
+        data<"token">:uuid()
+        do update.datatoken(db,d)
+        ref datatoken=insert.datatoken(db,params,data)
+        data<"datatoken*">:datatoken
+
+        return data
+    }
+
+    #!
+    update.datatoken::&db,&params
+    {
+        ref listwaiter=dbr.list(db,@getdatatoken,@null)
+        for i=0;i<@count(listwaiter)
+        {
+            ref itm=@item(listwaiter,i)
+            ref data=from.json(field.dstr(itm,"datos","{}"))
+            if @@(data,"key")==@@(params,"key")
+            {
+                do dbr.execute(db,@updatedatatoken,itm)
+            }
+        }
+    }
+
+    #!
+    get.token::&db,&params,&postData
+    {
+        query=@getdatatoken
+        query=query+" where token=@token"
+        ref json=dbr.rec(db,query,postData)
+        json<"json*">:from.json(@@(json,"datos"))
+        return json
+    }
+
+    #!
+    token.valid::&db,&params
+    {
+        query=@getdatatoken
+        query=query+" where token=@token AND date(expiracion)>= date(NOW()) AND revocado=0 ;"
+        ref json=dbr.rec(db,query,params)
+        if isnull(json){return @null}
+
+        json<"json*">:from.json(@@(json,"datos"))
+        return json
+    }
+
+    // ********************************************************************************
+
+}

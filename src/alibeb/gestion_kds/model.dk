@@ -1,0 +1,11 @@
+#include "dkli.dkh"
+#!
+module ":gkds"
+{
+    list::&db,&params{return list.create()}
+    read::&db,&params{return record.create()}
+    
+
+    point @list to gkds.list
+    point @read to gkds.read
+}

@@ -24,4 +24,34 @@ module "config"
     @PROD_SERV_GALERIA="/!/prodserv/productos/@id/galeria/"
 
     @default_max_rows=250
+
+
+    ///comandas
+    @id_reopen="_open"
+	@idtables="tables"
+	@idlines="fblines"
+	@idfooddbev="foodbev"
+	@idadcdmns="foodbev-adds"
+	@idwaiters="waiters"
+	@idccs="ccs"
+	@idzns="zns"
+	@idaccessmovil="accessmovil"
+	@idlogin="login"
+	@token="token"
+
+	@path_map=""
+	@folder_map="prod_printers/"
+
+	@path_file_map=@path_map+"printers.map"
+	@id_printer_tickets="tickets"
+
+	@use_bdconfig=@true
+	@accept_qnames=@true
+
+	//css
+	@style_css="/$/alibeb/_css/style.css"
+	new @config
+	{
+		@"connection":""
+	}
 }

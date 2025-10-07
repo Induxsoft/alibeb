@@ -1,0 +1,31 @@
+#include "dkli.dkh"
+
+#!
+module "login"
+{
+	#$
+	div(class="container-all")
+	{
+		#!
+		include path.concat(@path_include,"navbar.dkl")
+		#$
+		div(class="container-login #<@token>")
+		{
+			div(class="module-all")
+			{
+				div(class="module-login")
+				{
+					label("for"="idws"){"Id workspace:"}
+					input(class="input-login" type="" id="idws" placeholder="")
+
+					div(class="module-click")
+					{
+						button(class="btn-admin" id="btnws" onclick="controller.workspace()"){"Aceptar"}
+					}
+					
+				}
+			}
+						
+		}
+	}
+}
