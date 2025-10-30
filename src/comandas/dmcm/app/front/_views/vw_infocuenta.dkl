@@ -1,0 +1,39 @@
+#include "dkli.dkh"
+#!
+module "infocuenta"
+{
+	id_table=@@(@http_context,"request/get/id_table")
+	idt=@@(@http_context,"request/get/idt")
+	if idt!="" && id_table==""{id_table=idt}
+	#$
+	div(class="container")
+	{
+		div(class="card card-info" id="card-info" style="padding:0px;display:block;")
+		{
+			div(class="body-info")
+			{
+				#!
+				#include "./vw_detail_infocuenta.dkl"
+				#$
+			}
+		}
+	}
+	#!
+	if id_table!=""
+	 {
+	 	#$
+	 	script
+	 	{
+	 		$'
+	 			$(document).ready(function()
+				{
+	 				controller.get_table("#<id_table>");
+	 				event.hide_loading();
+	 			});
+	 			
+	 		'
+	 	}
+	 	#!
+	 }
+	
+}

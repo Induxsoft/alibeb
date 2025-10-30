@@ -1,0 +1,248 @@
+#include "dkli.dkh"
+#set "meta-xml-declaration" "<!DOCTYPE html>\r\n"
+
+#!
+module "view-dkf"
+{
+	#$
+	style{
+		$'
+			.kdf-all
+			{
+				display: flex; 
+			  flex-direction: column;
+			  height: 100%;
+			  background-color: #F5F5F5 !important;
+			}
+			.kdf-container
+			{
+				width: 100%;
+			    margin-top: 4.63rem;
+			    padding-right: var(--bs-gutter-x,.75rem);
+			    padding-left: var(--bs-gutter-x,.75rem);
+			    margin-right: auto;
+			    margin-left: auto;
+			    height: 90%;
+			    overflow:auto;
+			}
+			.content-commands
+			{
+				width: 100%;
+			    display: grid;
+			    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+			    grid-auto-rows: 30rem;
+			    gap: 0.5rem;
+			    padding: 10px;
+			    height: 100%;
+			}
+			.c-command
+			{
+				    width: 100%;
+				    max-height: 100%;
+				    display: flex;
+				    text-decoration: none;
+				    color: black;
+				    // align-items: center;
+				    flex-flow: column;
+				    cursor: pointer;
+				    // padding: 8px;
+				    box-shadow: 1px 2px 5px 0 #ddd;
+				    position: relative;
+				    overflow: hidden;
+				    transition-duration: .3s;
+			    background-color: #FFF !important;
+			}
+			.cmmd-header
+			{
+				padding:3px;
+				height:10%;
+				// background:red;
+			}
+			.cmmd-body
+			{
+				padding-top:3px;
+				height:80%;
+				// background:green;
+				overflow: auto;
+			}
+			.cmmd-footer
+			{
+				height:30%;
+				// background:yellow;
+				padding-top:3px;
+			}
+			.cmmd-details
+			{
+				padding-left:5px;
+				width: 100%;
+			}
+			.datails-adcs
+			{
+				padding-left:20px;
+				color:#787878;
+				background: antiquewhite;
+			}
+			.details
+			{
+				width:100%;
+			}
+
+			.button{
+				width:80px;
+				heigth:60px;
+				margin-left:75%;
+				background:white;
+				color:black;
+				cursor: pointer;
+				align-items: center;
+    			display: flex;
+				transition:.8s;
+				font-size: 16px;
+				border-color: antiquewhite;
+				
+				
+			}
+			.button:hover{
+				background:#540883;
+				color:white;
+			}
+			.order-notes
+			{
+				padding-left:20px;
+				color:#787878;
+				background: aliceblue;
+			}
+			.btn-icon
+			{
+				display: flex; 
+			  background-color: #F5F5F5 !important;
+			  margin-top:5px;
+			  
+			}
+			.f-grow-1{flex-grow: 1 !important;}
+			.btn-update 
+			{
+				width:77px;
+				heigth:60px;
+				background:#540883;
+				color:white;
+				cursor: pointer;
+				font-size:14px;
+				outline:none;
+				border:none;
+
+			
+			}
+			.icon{
+				margin-right:5px;
+				color:black;
+				cursor:pointer;
+			}
+			.icon:hover
+			{
+				// background:var(--purple);
+				color:green;
+			}
+			.order-time
+			{
+				color:green;
+			}
+			.mr-10{margin-right: 10px !important;}
+			.btn-kds {
+			    display: inline-block;
+			    font-weight: 500 !important;
+			    color: #000 !important;
+			    text-align: center;
+			    text-decoration: none;
+			    cursor: pointer;
+			    -webkit-user-select: none;
+			    -moz-user-select: none;
+			    user-select: none;
+			    padding: 4px 8px !important;
+			    font-size: 1rem !important;
+			    transition-duration: 0.4s;
+			    border: none !important;
+			    display: flex;
+			    align-items: center;
+			    justify-content: start;
+			    background-color: transparent !important;
+			    border:1px solid var(--purple) !important;
+			}
+			.btn-kds:hover
+			{
+				background-color: var(--purple) !important;
+    			color: white !important;
+			}
+			.ctn-h
+			{
+				display: grid;
+    			grid-template-columns: 70% 30%;
+    			padding-left:3px;
+    			padding-right:3px;
+    			grid-auto-rows: 3rem;
+			}
+			.order-hours
+			{
+				display:flex;
+				align-items:center;
+			}
+		'
+	}
+	div(class="kdf-all")
+	{
+		 #!
+		 include path.concat(@path_include,"navbar.dkl")
+		 #$
+		 div(class="kdf-container")
+		 {
+			div(class="btn-icon"){
+				div(class="f-grow-1"){$""}
+				icon(class="icon" onclick="controller.view_history();"){
+					svg (xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16"){
+						path(d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z") 
+						path(d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0v1z")
+						path(d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z")
+					}
+				}
+				
+				button(class="btn-kds mr-10" onclick="controller.get_commands()" ){
+					svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16"){
+						path(d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"){""}
+						path("fill-rule"="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"){""}
+					}
+					"Actualizar"}
+				
+			}
+		 	div(class="content-commands placeholder-glow" id="content-commands")
+			{
+				
+				$""
+				div(class="c-command placeholder")
+				{
+					$""
+				}
+				div(class="c-command placeholder")
+				{
+					$""
+				}
+			}
+		 }
+		
+
+	}
+	#$
+	script{$'$(document).ready(function(){
+		controller.get_commands();
+		setInterval("controller.get_commands_last()",timer_kds);
+		controller.get_commands_history();
+		setInterval("controller.get_commands_history();",timer_kds);
+	})'}
+
+
+
+
+}
+	
+	
+	
+	

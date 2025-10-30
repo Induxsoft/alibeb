@@ -1,0 +1,36 @@
+#include "dkli.dkh"
+
+#!
+module "config.dkl"
+{
+	#include "functions.dkh"
+	#include "cookies.dkl"
+	
+	@path_absolute=""
+
+	if isset("@http_context")
+	{
+		if @@(@http_context,"request/headers/path_translated")!=""{@path_absolute=dir.name(@@(@http_context,"request/headers/path_translated"))+"/"}
+		else{@path_absolute=@@(@http_context,"request/headers/DOCUMENT_ROOT")+"/gestion-kds/"}
+		@path_absolute=replace(@path_absolute,"\\","/")
+	}
+	
+	@path_view=path.concat(@path_absolute,"_views")
+	@path_view_admin=path.concat(@path_absolute,"admin")
+	@path_include=path.concat(@path_absolute,"_include")
+
+	@model_js=path.concat(@path_absolute,"_js/model.js")
+	@view_js=path.concat(@path_absolute,"_js/view.js")
+	@driver_js=path.concat(@path_absolute,"_js/controller.js")
+	@style_css=path.concat(@path_absolute,"_css/style.css")
+
+	@name_company="Induxsoft"
+	@as_company="its work better"
+
+	@timer_kds=30000 //
+
+	@end_point_service="/kds/"
+	@end_point_service_admin="/kds/admin/"
+	
+
+}

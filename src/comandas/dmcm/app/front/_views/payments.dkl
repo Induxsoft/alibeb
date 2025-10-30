@@ -1,0 +1,178 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.vars.dkl"
+    @SITE_INCLUDES="config.dk,list_query.dk"
+    #include "website.dkl"
+
+    ref db=getDatabase("")
+    ref getData=@@(@http_context,"&request/get")
+
+    sql="select qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
+                            qv.notas,qv.dmnsnota as 'notetable',qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'cc',qv.iagente as 'ag'
+                            from qventasserviciomesa qv where qv.sys_pk=@idt "
+
+    ref rsource=dbr.rec(db,sql,getData)
+    importe_total= round(@@(rsource,"#balance"),2)
+    
+    str_importe=format(importe_total,"$ #,0.00")
+
+    //obtener el caller de caja o cajero
+    ref datatoken=dbr.rec(db,"select * from ut_dn_dmm_token where token=@dmtm_token",getData)
+    datos=trim(@@(datatoken,"$datos"))
+
+    caller=""
+    if datos!=""
+    {
+        ref _data=from.json(datos)
+        if @@(_data,"$idcaja")!=""{caller=dbr.str(db,"select pcardcaller from caja where codigo=@idcaja",_data)}
+        else if @@(_data,"$key")!=""{caller=dbr.str(db,"select pcardcaller from agente where codigo=@key",_data)}
+    }
+
+    ref transactions=dbr.list(db,@sql_transaciones_realizadas,getData)
+    ref ltransactions=list.create()
+
+    for i = 0; i < @count(transactions)
+    {
+        ref trans=@item(transactions,i)
+        ref response=from.json(@@(trans,"$response"))
+        if @@(response,"$AuthResultCode") == "00"{do list.add(ltransactions,response)}
+    }
+
+    pos_porcentaje_propina=parse.num(dbr.vars.get(db,"pos_porcentaje_propina"))
+
+    #$
+	div(style="height: 100%;")
+    {
+        div(class="container-md" id="pay-container-main")
+        {
+            div(class="cantainer bg-white mt-4 p-4")
+            {
+                div(class="d-flex gap-2")
+                {
+                    div(class="flex-grow-1")
+                    {
+                        b{"#<@@(rsource,'$reference')>"}
+                    }
+                    
+                    div(class="d-flex gap-2")
+                    {
+                        a(href="#<preserveQSParams('./?view=vw_principal')>" class="btn-admin" type="button" id="" style="height: fit-content;")
+                        {
+                            $'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                            </svg>'
+                            $"Volver"
+                        }
+                        button(class="btn-admin" type="button" id="btn_cobrar_venta" onclick="controller.Cobrar(#<@@(getData,'#idt')>,this)" style="height: fit-content;")
+                        {
+                            $"Cobrar"
+                            $'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
+                            </svg>'
+                        }
+                    }
+
+                    
+                }
+                div(class="row")
+                {
+                    div(class="col-md-2 d-flex justify-content-between d-md-block")
+                    {
+                        h6(class="fw-bold"){"Cuenta: "}
+                        h5(class="ms-2"){" #<str_importe>"}
+                    }
+                    div(class="col-md-2 d-flex justify-content-between d-md-block")
+                    {
+                        h6(class="fw-bold"){"Total: "}
+                        h5(class="ms-2 fw-bold" id="cobro_lbltotal"){" #<str_importe>"}
+                    }
+                    
+                    div(class="col-md-2 d-flex justify-content-between d-md-block")
+                    {
+                        h6(class="fw-bold"){"Falta: "}
+                        h5(class="ms-2 fw-bold" id="cobro_lblresto"){"$ 0.00"}
+                    }
+                    div(class="col-md-2 d-flex justify-content-between d-md-block")
+                    {
+                        h6(class="fw-bold"){"Cambio: "}
+                        h5(class="ms-2 fw-bold" id="cobro_lblcambio"){" $ 0.00"}
+                    }
+                }
+                
+                div(class="d-flex gap-2 flex-wrap mt-2")
+                {
+                    div(class="d-flex gap-2 align-items-center")
+                    {
+                        small(class="fw-bold" style="width:auto"){"Propina:"}
+                        input(class="input-login" style="width:auto" type="number" name="propina" value="0.00" id="propina" "data-importe"="#<importe_total>" onfocus="views.SelectAll(this)")
+                    }
+                    div(class="d-flex gap-2")
+                    {
+                        button(class="btn-admin" type="button" onclick="controller.Propina(#<importe_total>,5,this)" style="background:#b8daba !important;"){$"5%"}
+                        button(class="btn-admin" type="button" onclick="controller.Propina(#<importe_total>,10,this)" style="background:#95c799 !important;"){$"10%"}
+                        button(class="btn-admin" type="button" onclick="controller.Propina(#<importe_total>,15,this)" style="background:#70b578 !important;"){$"15%"}
+                        button(class="btn-admin" type="button" onclick="controller.Propina(#<importe_total>,20,this)" style="background:#48a259 !important;"){$"20%"}
+                        button(class="btn-admin" type="button" onclick="controller.Propina(#<importe_total>,0,this)" style="background:#F4320B !important;"){$'0%'}
+                    }
+                    
+                }
+
+                div(class="card mt-2" id="")
+                {
+                    // div(class="card-header")
+                    // {
+                    //     b{"Métodos de pago"}
+                    // }
+                    div(class="card-body pt-0 pb-0")
+                    {
+
+                        div(class="card mt-2")
+                        {
+                            div(class="card-header")
+                            {
+                                b{"Efectivo"}
+                            }
+                            div(class="card-body")
+                            {
+                                div(class="row")
+                                {
+                                    div(class="col-md-4")
+                                    {
+                                        label(class="form-label" "for"=""){"Importe"}
+                                        div(class="d-flex align-items-center")
+                                        {
+                                            input(class="input-login" type="number" name="efectivo_importe" value="#<importe_total>" id="efectivo_importe" onfocus="views.SelectAll(this)")
+                                            button(class="btn-admin" type="button" onclick="controller.ResetImporte();"){$"X"}
+                                            label(class="fw-bold ms-2" "for"=""){"#<@@(@__divisa,'$codigo')>"}
+                                        }
+                                    }
+                                }
+                                
+                            }
+                        }
+                        #!
+                        #include "paycard.dkl"
+                        #$
+                    }
+                }
+            }
+            
+        }
+        script(type="text/javascript")
+        {$'
+            document.addEventListener("DOMContentLoaded",()=>
+            {
+                controller.caller="#<caller>";
+                controller.transaction="#<@@(rsource,"$reference")>";
+                controller.tarjeta.config=#<to.json(@cobro_tarjeta)>;
+                controller.tarjeta.Transactions=#<to.json(ltransactions)>;
+                controller.pos_porcentaje_propina=#<pos_porcentaje_propina>;
+            })
+            
+        '}
+    }
+}

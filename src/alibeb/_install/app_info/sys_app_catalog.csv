@@ -3,3 +3,5 @@
 "alibeb","alibeb.recetas","Recetas",2024-03-06T23:59:59,"Administración de recetas"
 "alibeb","alibeb.gestion_kds","Gestión kds",2024-03-06T23:59:59,"Administración de kds"
 "alibeb","alibeb.gestion_meseros","Gestión meseros",2025-09-25T23:59:59,"Administración de meseros"
+"alibeb","alibeb.gestion_prn","Gestión impresoras",2025-10-28T23:59:59,"Administración de impresoras"
+"alibeb","alibeb.config_prn_cp","Gestión impresoras en cp",2025-10-28T23:59:59,"Administración de impresoras en centro de producción"

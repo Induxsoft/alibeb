@@ -2,8 +2,16 @@
 #!
 module ":gmesero"
 {
-    list::&db,&params{return list.create()}
-    read::&db,&params{return read.create()}
+    list::&db,&params
+    {
+        do dbr.apps.action.grant("CA40")
+        return list.create()
+    }
+    read::&db,&params
+    {
+        do dbr.apps.action.grant("CA40")
+        return read.create()
+    }
 
     point @list to gmesero.list
     point @read to gmesero.read

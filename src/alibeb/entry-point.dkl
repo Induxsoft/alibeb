@@ -11,6 +11,7 @@ module "Controller configs"
 	#include "crudl/crudl.dk"
 	#include "dbr.events.dkl"
 	#include "dbr.apps.dkl"
+	#include "alibeb/_lib/lib.dk"
 
 	@base_path="alibeb"
 	@path_root="" // Establezca una ruta de ser necesario
@@ -29,6 +30,8 @@ module "Controller configs"
 
 	do crudl.routes.entity("/gestion-kds/","gestion_kds")
 	do crudl.routes.entity("/gestion-meseros/","gestion_meseros")
+	do crudl.routes.entity("/gestion-prn/","gestion_prn")
+	do crudl.routes.entity("/config-prn-cp/","config_prn_cp")
 
 
 	@dbmvc_path="crudl/"

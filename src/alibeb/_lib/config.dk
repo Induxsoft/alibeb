@@ -23,6 +23,8 @@ module "config"
 
     @PROD_SERV_GALERIA="/!/prodserv/productos/@id/galeria/"
 
+	@GESTION_PRN="/!/alibeb/gestion-prn/"
+	@CONFIG_PRN_CP="/!/alibeb/config-prn-cp/"
     @default_max_rows=250
 
 

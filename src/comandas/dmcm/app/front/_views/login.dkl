@@ -1,0 +1,72 @@
+#include "dkli.dkh"
+#!
+module "login"
+{
+	#$
+	div(class="container-login")
+	{
+		div(class="module-all")
+		{
+			div(class="module-login")
+			{
+				label("for"="ubicacion" class="fw-bold"){"Ubicación:"}
+				select(class="input-login" type="text" name="ubicacion" id="ubicacion"){""}
+				br{}
+				hr{}
+
+				div(class="d-flex gap-2 mb-2")
+				{
+					label(class="d-flex gap-1" "for"="rdomesero")
+					{
+						input(class="form-check-input" type="radio" name="opt" value="" id="rdomesero" checked="" onclick="views.ShowFormulario('container-mesero')")
+						"Mesero"
+					}
+
+					label(class="d-flex gap-1" "for"="rdocajero")
+					{
+						input(class="form-check-input" type="radio" name="opt" value="" id="rdocajero" onclick="views.ShowFormulario('container-cajero')")
+						"Cajero"
+					}
+				}
+				
+				div(id="container-cajero" style="display:none")
+				{
+					label("for"="selectcaja" class="fw-bold"){"Caja:"}
+					select(class="select-apparence-login" id="selectcaja" name="caja"){$""}br{}
+
+					label("for"="selectcajero" class="fw-bold"){"Cajero:"}
+					select(class="select-apparence-login" id="selectcajero" name="cajero"){$""}br{}
+
+					label("for"="pwd"){"Contraseña:"}
+					input(class="input-login" type="password" name="pwd" placeholder="")
+				}
+				
+				div(id="container-mesero")
+				{
+					label("for"="selectwaiter" class="fw-bold"){"Mesero:"}
+					select(class="select-apparence-login" id="selectwaiter" name="waiter"){$""}br{}
+
+					label("for"="pwd"){"Contraseña:"}
+					input(class="input-login" type="password" id="pwdlogin" placeholder="" name="pwd")
+				}
+				
+
+				div(class="module-click")
+				{
+					button(class="btn-admin" id="btnlogin" onclick="controller.login(this)"){"Aceptar"}
+				}
+				
+			}
+		}
+		
+	}
+	script
+	{
+		$'
+		$(document).ready(function()
+		{
+			controller.getUbicaciones();
+		});
+		'
+	}
+}

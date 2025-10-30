@@ -1,0 +1,108 @@
+#include "dkli.dkh"
+#!
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+    #include "../_lib/config.dk"
+    #include "../_lib/icons.dk"
+
+    do @context.begin(@crud_context)
+    ref data=ifnull(@("&."),record.create())
+
+    n_print_buttons::
+    {
+        act_btn_cls = "btn btn-sm border-secondary induxsoft-corners btn-main-action"
+        
+        #$
+        button(class="#<act_btn_cls>" type="submit" id="btn_guardar" form="frm_gprn" title="Guardar"){$"#<@ICON_SAVE>"}
+        #!
+    }
+
+    point n_print_buttons to n_print_buttons
+    new nav_config
+    {
+        @"title": "Configuración de impresoras"
+        @"urlexit": ".."
+        @"buttons*":n_print_buttons
+        new member "hidden"
+        {
+            @"csv":@true
+            @"print":@true
+            @"copy":@true
+        }
+    }
+
+    new fil_cprod
+    {
+        @"datatable*": @("&./cprods")
+        @"id": "ref_cprod"
+        member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "ref_cprod"
+            @"required":"true"
+        }
+        @"value_field": "sys_pk"
+        @"text_field": "cprod"
+        @"selected": @("$./ref_cprod")
+    }
+
+    new fil_impresora
+    {
+        @"datatable*": @("&./impresoras")
+        @"id": "ref_gprn"
+        member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "ref_gprn"
+            @"required":"true"
+        }
+        @"value_field": "id"
+        @"text_field": "id"
+        @"selected": @("$./ref_gprn")
+    }
+    
+    #$ 
+    div(class="container")
+    {
+        section(id="top_area")
+        {
+            #! 
+            do uie.printV12FormBar(nav_config)
+            #$
+        }
+        section(id="work_area")
+        {
+            div(class="alert alert-danger overflow-auto mb-2 #<ifstr(@('$error/message')!='','','d-none')>" id="frm_alerts"){$"#<@('error/message')>"}
+            form(action="." method="POST" id="frm_gprn")
+            {
+                div(class="row")
+                {
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"ID:"}
+                        input(class="induxsoft-form-control" type="" name="id" value="#<@@(data,'$id')>" id="id" required="true" maxlength="32")
+                    }
+                    div(class="col-md-5")
+                    {
+                        label(class="fw-bold" "for"=""){"Centro de producción:"}
+                        #!
+                        do uie.dbSelect(fil_cprod)
+                        #$
+                    }
+                    div(class="col-md-4")
+                    {
+                        label(class="fw-bold" "for"=""){"Impresora:"}
+                        #!
+                        do uie.dbSelect(fil_impresora)
+                        #$
+                    }
+                }
+            }
+        }
+    }
+}

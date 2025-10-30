@@ -1,0 +1,42 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #$
+    div(class="")
+    {
+        script(src="/_js/induxsoft.controls.js"){""}
+        div(class="card cmn-header mt-0")
+        {
+            div(class="card-header mt-0")
+            {
+                div(class="d-flex justify-content-center w-100")
+                {
+                    h2{"Comida rápida"}
+                }
+            }
+            div(class="card-body")
+            {
+                div(class="row")
+                {
+                    div(class="col-md-6")
+                    {
+                        label(class="fw-bold" "for"=""){"Cliente:"}
+                        "input-key"(name="ipt_cliente" 
+                        id="ipt_cliente" "data-key"="sys_pk" 
+                        required="true" "data-search"="codigo" 
+                        "data-text"="nombre" "data-source"="/dmcm/pos/dinner/cliente/?access=true" 
+                        "data-value"="#<to.json(@('&./proveedor'))>" 
+                        columns="codigo,nombre" colcaptions="Código,Nombre" "control-styles"=""){$""}
+                    }
+                    div(class="col-md-3 mt-4")
+                    {
+                        button(class="btn-admin" type="button" id=""){$"Aceptar"}
+                    }
+                }
+
+            }
+        }
+        
+    }
+}

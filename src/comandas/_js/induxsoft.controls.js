@@ -1,0 +1,3654 @@
+/**
+ * ¿QUÉ ES UN WEB COMPONENT?
+ * Es una forma de crear un bloque de código encapsulado y de
+ * responsabilidad única que puede reutilizarse en cualquier
+ * página.
+ */
+
+class EditSelect extends HTMLElement
+{
+    attributes = null;
+    select = null;
+    inputh = null;
+    manualOption = null;
+    manualInput = null;
+    onChanging = null;
+
+    // Inicializar el HTMLElement padre
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+
+    // Devuelve el array de atributos que el navegador observará
+    static get observedAttributes()
+    {
+        return  attributes;
+    }
+
+    // Se llama cada vez que se modifica un atributo
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+
+    // Se llama cuando el componente se agrega al documento
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const shadow = this.attachShadow({ mode: 'closed' });
+            const option = this.querySelectorAll('option');
+            const contnr = document.createElement('div');
+            const defval = this.getAttribute('value');
+            this.select = document.createElement('select');
+            this.inputh = document.createElement('input');
+
+            this.select.classList.add('induxsoft-form-select');
+            contnr.setAttribute('id', 'EditSelect_container');
+            this.inputh.setAttribute('type', 'hidden');
+            this.inputh.setAttribute('name', (this.getAttribute('name')??''));
+
+            //=============== Manual option
+
+            const textIndicatorManual = (this.getAttribute('manual-text') ?? 'Escribir manualmente...');
+            this.manualOption = document.createElement('option');
+            this.manualOption.value = -99;
+            this.manualOption.textContent = textIndicatorManual;
+
+            //=============== Input manual
+
+            this.manualInput = document.createElement('input');
+            this.manualInput.classList.add('induxsoft-form-control');
+            this.manualInput.setAttribute('placeholder', textIndicatorManual);
+
+            //=============== Events
+
+            this.select.addEventListener('change', (e) => 
+            {
+                if (this.select.value === this.manualOption.value)
+                {
+                    this.setValue((this.select.getAttribute('text-value') ?? ''));
+                }
+                else
+                {
+                    this.setValue(e.target.value ?? '');
+                }
+            });
+
+            this.manualInput.addEventListener('change', () => 
+            {
+                this.setValue(this.manualInput.value, false);
+                this.select.setAttribute('text-value', this.manualInput.value);
+            });
+
+            if ((this.getAttribute('edit-options') ?? 'false') == 'true')
+            {
+                this.select.addEventListener('dblclick', () => 
+                {
+                    this.manualInput.style.zIndex = 0;
+                    this.setValue((this.select.getAttribute('text-value') ?? ''));
+                    this.manualInput.value = (this.select.getAttribute('text-value') ?? '');
+                    this.manualInput.select();
+                    this.manualInput.focus();
+                });
+            }
+
+            //=============== DOM
+
+            shadow.innerHTML = 
+            `
+                <style>
+                    div{ position: relative !important; }
+                    select{ width: 100% !important; padding: 4px 8px !important; }
+                    input{ position: absolute !important; z-index: -1; left: 0; top: 0; width:85% !important; height: 60% !important; border: none !important; outline: none !important;}
+                    
+                    .induxsoft-form-control{border: none; outline:1px solid #ced4da;display: block;width: 100%;padding: 0.375rem 0.75rem !important;font-size: 1rem;font-weight: 400;line-height: 1.5;color: #212529;background-color: #fff;background-clip: padding-box;appearance: none;transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                    }
+                    .induxsoft-form-control:disabled, .induxsoft-form-control[readonly] {background-color: #e9ecef;opacity: 1;
+                    }
+                    .induxsoft-buttons{display: inline-block;font-weight: 400;line-height: 1.5;color: #212529;text-align: center;text-decoration: none;vertical-align: middle;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;background-color: #FFF;outline:1px solid #ced4da;border: none;padding: 0.375rem 0.75rem;font-size: 1rem;transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                    }
+                    .induxsoft-buttons:hover{color: #212529;background-color: #F5F5F5;
+                    }
+                    .induxsoft-form-select {display: block;width: 100%;padding: 0.375rem 2.25rem 0.375rem 0.75rem !important;-moz-padding-start: calc(0.75rem - 3px);font-size: 1rem;font-weight: 400;line-height: 1.5;color: #212529;background-color: #fff;background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");background-repeat: no-repeat;background-position: right 0.75rem center;background-size: 16px 12px;border: none;outline:1px solid #ced4da;-webkit-appearance: none;-moz-appearance: none;appearance: none;
+                    }
+                    
+                    ` + (this.getAttribute('control-styles') ?? '') + `
+                </style>
+            `;
+
+            if (option && option.length >= 1) 
+                option.forEach(opt => this.select.appendChild(opt));
+
+            this.select.appendChild(this.manualOption);
+
+            if (defval) 
+            {
+                this.setValue(defval);
+                if (this.select.selectedIndex >= 0)
+                    this.select.setAttribute('text-value', this.select.options[this.select.selectedIndex].textContent);
+                else{
+                    this.select.setAttribute('text-value', defval);
+                    this.select.value = this.manualOption.value;
+                    this.select.dispatchEvent(new Event('change'));
+                }
+            }
+
+            if (this.hasAttribute('name'))
+                this.select.setAttribute('name', this.getAttribute('name'));
+
+            contnr.appendChild(this.select);
+            contnr.appendChild(this.manualInput);
+            shadow.appendChild(contnr);
+            this.after(this.inputh);
+        });
+    }
+    
+    setValue(value, allowFocus=true)
+    {
+        this.setAttribute('value', value);
+        this.inputh.value = value;
+        this.select.value = value;
+
+        if ((this.select.selectedIndex < 0) || this.select.value === this.manualOption.value)
+        {
+            this.select.setAttribute('text-value', value);
+            this.select.value = this.manualOption.value;
+            this.manualInput.style.zIndex = 0;
+            this.manualInput.value = (this.select.getAttribute('text-value') ?? '');
+            
+            if (allowFocus)
+            {
+                this.manualInput.select();
+                this.manualInput.focus();
+            }            
+        }
+        else
+        {
+            this.manualInput.style.zIndex = -1;
+            this.select.setAttribute('text-value', this.select.options[this.select.selectedIndex].textContent); 
+        }
+
+        if (this.onChanging)
+            this.onChanging();
+    }
+
+    getValue()
+    {
+        return this.getAttribute('value');
+    }
+
+    reloadSelect()
+    {
+        const option = this.querySelectorAll('option');
+        const micopy = this.manualOption.cloneNode(true);
+
+        this.select.innerHTML = '';
+
+        if (option && option.length >= 1) 
+            option.forEach(opt => this.select.appendChild(opt));
+
+        this.manualOption = micopy;
+        this.select.appendChild(this.manualOption);
+    }
+}
+
+class InputKey extends HTMLElement
+{
+    attributes = null;
+    data = null;
+    searchData = null;
+    record_selected = {};
+    accept_data = null;
+    table_tables_container2 = null;
+    head_tables_container2 = null;
+    body_tables_container2 = null;
+    columns = null;
+    container2 = null;
+    colcaptions = null;
+    inputv = null;
+    input_search_container = null;
+    input_search_container2 = null;
+    input_description_container = null;
+    accept_footer_container2 = null;
+    change_event = null;
+    onBeforeSearch = null;
+    buttonElements = [];
+    #Requesting = false;
+
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+
+    static get observedAttributes()
+    {
+        return this.attributes;
+    }
+
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            this.CreateShadow();
+        });
+    }
+    shadow=null;
+    CreateShadow()
+    {
+        this.columns = this.getAttribute('columns');
+        this.colcaptions = this.getAttribute('colcaptions');
+
+        //=============== 1 SECTION [ MAIN CONTROL ]
+        
+        if(!this.shadow)this.shadow = this.attachShadow({ mode: 'closed' });
+
+        this.inputv = this.createFullElement('input', {id:'inputv', type:'text', value:`${this.getAttribute('value')??''}`, name:`${this.getAttribute('name')}`, style:'opacity: 0 !important;width: 1px !important; height:1px !important; border:none !important; outline:none !important; box-shadow:none !important; padding:0 !important; margin: 0 !important; pointer-events: none !important; background-color: transparent !important; position:relative !important; display:block !important; top:-15px !important;'});
+        const container = this.createFullElement('div', {id:'container'});
+        const search_container = this.createFullElement('div', {id:'search_container'});
+        this.input_search_container = this.createFullElement('input', {id:'input_search_container', type:'text', class:'form-control induxsoft-form-control'});
+        const button_search_container = this.createFullElement('button', {id:'button_search_container', type:'button', class:'induxsoft-buttons', title:'Buscar'});
+        const description_container = this.createFullElement('div', {id:'description_container'});
+        this.input_description_container = this.createFullElement('input', {id:'input_description_container', type:'text', readonly:'readonly', class:'induxsoft-form-control'});
+        const button_add_container = this.createFullElement('button', {id:'button_add_container', type:'button', class:'induxsoft-buttons', title:'Agregar'});
+        const button_edit_container = this.createFullElement('button', {id:'button_edit_container', type:'button', class:'induxsoft-buttons', title:'Editar'});
+        const button_clear_container = this.createFullElement('button', {id:'button_clear_container', type:'button', class:'induxsoft-buttons', title:'Limpiar'});
+
+        container.classList.toggle('disable-element', ((this.getAttribute('disabled')??'') === 'true'));
+        this.inputv.required = ((this.getAttribute('required') ?? 'false') === 'true');
+        if (this.getAttribute("hide-searcher") === 'true') {
+            this.input_search_container.style.display = 'none';
+            container.style.gridTemplateColumns = 'minmax(6%,max-content) auto';
+        }
+
+        this.input_search_container.value = (this.getAttribute('search-value') ?? '');
+        this.input_description_container.value = (this.getAttribute('text-value') ?? '');
+        button_search_container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16"><path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>`;
+        button_add_container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg>`;
+        button_edit_container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-pencil-fill" viewBox="0 0 16 16"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>`;
+        button_clear_container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+
+        search_container.appendChild(this.input_search_container);
+        search_container.appendChild(button_search_container);
+        description_container.appendChild(this.input_description_container);
+
+        // BOTONES ADICIONALES
+        if (this.hasAttribute('buttons'))
+            this._createOtherButtons();
+
+        this.buttonElements.forEach(btn=>{
+            description_container.appendChild(btn);
+            this._setOtherButtonsEvents(btn);
+        });
+
+        if (this.getAttribute('add-url')) description_container.appendChild(button_add_container);
+        if (this.getAttribute('edit-url')) description_container.appendChild(button_edit_container);
+        description_container.appendChild(button_clear_container);
+        container.appendChild(search_container);
+        container.appendChild(description_container);
+
+        //=============== 2 SECTION [ SEARCH AND SELECT ELEMENT ]
+
+        this.container2 = this.createFullElement('div', {id:'container2', class:'hide-element modal-backdrop'});
+        const search_container2 = this.createFullElement('div', {id:'search_container2', class:'bg-white modal-container'});
+        const header_section_container2 = this.createFullElement('div', {id:'header_section_container2', class:'d-flex modal-section modal-section-header'});
+        const search_section_container2 = this.createFullElement('div', {id:'search_section_container2', class:'d-flex p-2 modal-section'});
+        const tables_section_container2 = this.createFullElement('div', {id:'tables_section_container2', class:'grow-1 modal-section overflow'});
+        const footer_section_container2 = this.createFullElement('div', {class:'bg-light-gray d-flex gap-1 justify-content-end p-2 modal-section'});
+
+        // header section
+        const title_header_container2 = this.createFullElement('p', {id:'title_container2', class:'text-secondary grow-1'});
+        const close_header_container2 = this.createFullElement('button', {id:'close_header_container2', class:"border-0 induxsoft-buttons p-2 d-flex align-items-center justify-content-center hover-red"});
+        title_header_container2.textContent = (this.getAttribute('box-title-text') ?? 'Seleccione un Registro');
+        close_header_container2.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#333" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+        header_section_container2.appendChild(title_header_container2);
+        header_section_container2.appendChild(close_header_container2);
+
+        // search section
+        const button_search_container2 = this.createFullElement('button', {type:'button',class:'p-2 induxsoft-buttons'});
+        this.input_search_container2 = this.createFullElement('input', {type:'text', class:'grow-1 induxsoft-form-control'});
+        button_search_container2.textContent = 'Buscar';
+        this.input_search_container2.setAttribute('placeholder', (this.getAttribute('box-placeholder-text') ?? 'Buscar...'));
+        search_section_container2.appendChild(this.input_search_container2);
+        search_section_container2.appendChild(button_search_container2);
+
+        // tables section
+        this.table_tables_container2 = this.createFullElement('table', {id:'table_tables_container2'});
+        this.head_tables_container2 = this.createFullElement('thead', {id:'head_tables_container2', class:'bg-light-gray'});
+        this.body_tables_container2 = this.createFullElement('tbody', {id:'body_tables_container2'});
+
+        this.table_tables_container2.appendChild(this.head_tables_container2);
+        this.table_tables_container2.appendChild(this.body_tables_container2);
+        tables_section_container2.appendChild(this.table_tables_container2);
+
+        // footer section
+        this.accept_footer_container2 = this.createFullElement('button', {type:'button',class:'induxsoft-buttons'});
+        const close2_footer_container2 = this.createFullElement('button', {id:'close2_container2', type:'button', class:'induxsoft-buttons'});
+        this.accept_footer_container2.textContent = 'Aceptar';
+        close2_footer_container2.textContent = 'Cancelar';
+        footer_section_container2.appendChild(this.accept_footer_container2);
+        footer_section_container2.appendChild(close2_footer_container2);
+
+        search_container2.appendChild(header_section_container2);
+        search_container2.appendChild(search_section_container2);
+        search_container2.appendChild(tables_section_container2);
+        search_container2.appendChild(footer_section_container2);
+        this.container2.appendChild(search_container2);
+
+        //=============== 3 SECTION [ ADD ELEMENT ]
+
+        const container3 = this.createFullElement('div', {id:'container3', class:'hide-element modal-backdrop'});
+        const add_container3 = this.createFullElement('div', {id:'add_container3', class:'bg-white modal-container'});
+        const header_section_container3 = this.createFullElement('div', {id:'header_section_container3', class:'d-flex modal-section modal-section-header'});
+        const iframe_section_container3 = this.createFullElement('div', {id:'iframe_section_container3', class:'grow-1 modal-section'});
+
+        // header section
+        const title_header_container3 = this.createFullElement('p', {id:'title_container2', class:'text-secondary grow-1'});
+        const close_header_container3 = this.createFullElement('button', {id:'close_header_container2', class:"border-0 p-1 hover-red"});
+        title_header_container3.textContent = (this.getAttribute('box-title-text') ?? 'Agregar registro');
+        close_header_container3.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#FFF" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+        header_section_container3.appendChild(title_header_container3);
+        header_section_container3.appendChild(close_header_container3);
+
+        add_container3.appendChild(header_section_container3);
+        add_container3.appendChild(iframe_section_container3);
+        container3.appendChild(add_container3);
+
+        //=============== 4 SECTION [ EDIT ELEMENT ]
+
+        const container4 = this.createFullElement('div', {id:'container4', class:'hide-element modal-backdrop'});
+        const edit_container4 = this.createFullElement('div', {id:'edit_container4', class:'bg-white modal-container'});
+        const header_section_container4 = this.createFullElement('div', {id:'header_section_container4', class:'d-flex modal-section modal-section-header'});
+        const iframe_section_container4 = this.createFullElement('div', {id:'iframe_section_container4', class:'grow-1 modal-section'});
+
+        // header section
+        const title_header_container4 = this.createFullElement('p', {id:'title_container4', class:'text-secondary grow-1'});
+        const close_header_container4 = this.createFullElement('button', {id:'close_header_container4', class:"border-0 p-1 hover-red"});
+        title_header_container4.textContent = (this.getAttribute('box-title-text') ?? 'Editar registro');
+        close_header_container4.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#FFF" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+        header_section_container4.appendChild(title_header_container4);
+        header_section_container4.appendChild(close_header_container4);
+
+        edit_container4.appendChild(header_section_container4);
+        edit_container4.appendChild(iframe_section_container4);
+        container4.appendChild(edit_container4);
+
+        //=============== EVENTS
+
+        button_search_container.addEventListener('click', () => {
+            this._search(false);
+        });
+        this.input_description_container.addEventListener('dblclick', () => {
+            button_search_container.click();
+        })
+        close_header_container2.addEventListener('click', () => {
+            this.container2.classList.add('hide-element');
+        });
+        close2_footer_container2.addEventListener('click', () => {
+            this.container2.classList.add('hide-element');
+            this.setValue(this.accept_data);
+        });
+        this.accept_footer_container2.addEventListener('click', () => {
+            if (!this.record_selected || Object.entries(this.record_selected).length <= 0)
+            {
+                alert("Debe seleccionar un registro para continuar");
+                return;
+            }
+            this.setValue(this.record_selected);
+            this.container2.classList.add('hide-element');
+        });
+        this.input_search_container.addEventListener('click', () => {
+            this.input_search_container.select();
+            this.input_search_container.focus();
+        });
+        this.input_search_container.addEventListener('blur', (e) => {
+            if (this.container2.classList.contains('hide-element'))
+            {
+                if (!this.input_search_container.value.trim())
+                {
+                    this.clear();
+                }
+                else if (!this.accept_data || Object.keys(this.accept_data).length < 1)
+                {
+                    this._search();
+                }
+                else if (this.accept_data && (this.accept_data[(this.getAttribute('data-search') ?? '').toLowerCase()]) != this.input_search_container.value.toLowerCase())
+                {
+                    this.setValue(this.accept_data);
+                }
+            }
+        });
+        this.input_search_container.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter' && this.input_search_container.value == "")
+                this.clear();
+            else if (e.key === 'Enter')
+                this._search();
+            else if (e.key === 'Escape')
+                this.input_search_container.blur();
+        });
+        button_search_container2.addEventListener('click', () => {
+            this.searchButton(this.container2);
+        });
+        this.input_search_container2.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter')
+                this.searchButton(this.container2);
+        });
+        search_container2.addEventListener('keyup', (e) => {
+            if (e.key === 'Escape')
+                this.container2.classList.add('hide-element');
+        });
+        button_add_container.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let url = this.prepareUrl((this.getAttribute('add-url')??''));
+            const iframe_container3 = this.createFullElement('iframe', {width:'100%', height:'100%', title:'Add element', src:url});
+            iframe_section_container3.innerHTML = '';
+            iframe_section_container3.appendChild(iframe_container3);
+            container3.classList.remove('hide-element');
+        });
+        close_header_container3.addEventListener('click', () => {
+            container3.classList.add('hide-element');
+        });
+        button_edit_container.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!this.getAttribute('value'))
+            {
+                alert('Debe seleccionar un registro para continuar.');
+                return;
+            }
+            let url = this.prepareUrl((this.getAttribute('edit-url')??''));
+            const iframe_container4 = this.createFullElement('iframe', {width:'100%', height:'100%', title:'Edit element', src:url});
+            iframe_section_container4.innerHTML = '';
+            iframe_section_container4.appendChild(iframe_container4);
+            container4.classList.remove('hide-element');
+        });
+        button_clear_container.addEventListener('click', () => {
+            this.clear();
+            this.input_search_container.focus();
+        });
+        close_header_container4.addEventListener('click', () => {
+            container4.classList.add('hide-element');
+        });
+
+        const MO = new MutationObserver(()=>{
+            container.classList.toggle('disable-element', ((this.getAttribute('disabled')??'') === 'true'));
+            this.inputv.required = ((this.getAttribute('required') ?? 'false') === 'true');
+            
+            let hide_searcher = (this.getAttribute("hide-searcher") === 'true');
+            this.input_search_container.style.display = (hide_searcher) ? 'none' : '';
+            container.style.gridTemplateColumns = (hide_searcher) ? 'minmax(6%,max-content) auto' : '40% 60%';
+        });
+
+        MO.observe(this, {
+            attributes: true,
+            attributeFilter: ['disabled','required','hide-searcher']
+        });
+        
+        //=============== STYLES
+
+        this.shadow.innerHTML = `
+            <style>
+                /* ========== General */
+                *{ box-sizing: border-box; margin: 0; padding: 0; }
+                .hide-element{ display: none !important; }
+                .text-secondary{ color: #888; }
+                .text-white{color: #FFF;}
+                .bg-white{ background-color: #FFF;}.bg-red{ background-color: #F00; }.bg-light-gray{ background-color: #F5F5F5; }.bg-gray{background-color:#C0C0C0;}
+                .d-flex{ display:flex; align-items:center;}
+                .gap-1{gap:4px;}.gap-2{gap:8px;}
+                .grow-1{ flex-grow: 1; }
+                .border-0{ border:none; outline:none; }.border-1{border:1px solid #EEE;}
+                .p-1{ padding: 2px; }.p-2{ padding: 4px; }.p-3{ padding: 8px; }.p-4{ padding: 16px; }.p-5{ padding: 32px; }
+                .ps-1{ padding-left: 2px; }.ps-2{ padding-left: 4px; }.ps-3{ padding-left: 8px; }.ps-4{ padding-left: 16px; }.ps-5{ padding-left: 32px; }
+                .pe-1{ padding-right: 2px; }.pe-2{ padding-right: 4px; }.pe-3{ padding-right: 8px; }.pe-4{ padding-right: 16px; }.pe-5{ padding-right: 32px; }
+                .justify-content-start{ justify-content: start; }.justify-content-center{ justify-content: center; }.justify-content-end{ justify-content: end; }
+                .hover-red:hover{ background-color:#F00; }.hover-gray:hover{ background-color:#DDD !important; }
+                .fw-500{font-weight: 500;}
+                .btn-sm{display: flex; align-items:center; justify-content: center; padding: 0 5px; border: none; outline:1px solid #888;}
+                .modal-backdrop{ width: 100vw; height: 100vh; position: fixed; top:0; left:0; padding:0; margin: 0; display:flex; align-items:center; justify-content:center; z-index: 1000; }
+                .modal-container{ width: 40rem; height: 30rem; border:1px solid #ededed; box-shadow: 1px 3px 6px 0 #DDD; display:flex;flex-direction: column; }
+                .modal-section{ border-bottom:1px solid #DDD; }
+                .modal-section-header{ padding: 6px 10px; }
+                .overflow{ overflow:auto; }
+                .disable-element{ pointer-events: none !important; opacity: .5 !important; }
+
+                /* ========== 1 Section */
+                #container{ display: grid; grid-template-columns: 40% 60%; }
+                #search_container, #description_container{ display: flex; padding:0 4px;}
+                #input_search_container, #input_description_container{ padding: 4px 8px; width: 100%; }
+
+                /* ========== 2 Section */
+                #table_tables_container2{width:100%;border-spacing: 0;}
+                th,td{ border: 1px solid #DDD; }
+                th{text-align:start;}
+                #body_tables_container2{text-wrap: nowrap;}
+                .row_table{cursor: default;}
+                .row_table:hover{background-color:#F5F5F5;color:#000;}
+                .row_selected{background-color:#3D75DD !important;color:#FFF !important;}
+
+                @media screen and (max-width:600px) {
+                    #search_container2{width: 100%;}
+                }
+
+                .induxsoft-form-control{border: none; outline:1px solid #ced4da;display: block;width: 100%;padding: 0.375rem 0.75rem !important;font-size: 1rem;font-weight: 400;line-height: 1.5;color: #212529;background-color: #fff;background-clip: padding-box;appearance: none;transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                }
+                .induxsoft-form-control:disabled, .induxsoft-form-control[readonly] {background-color: #e9ecef;opacity: 1;
+                }
+                .induxsoft-buttons{font-weight: 400;line-height: 1.5;color: #212529;text-align: center;text-decoration: none;vertical-align: middle;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;background-color: #FFF;outline:1px solid #ced4da;border: none;padding: 0.375rem 0.75rem;font-size: 1rem;transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                }
+                .induxsoft-buttons:hover{color: #212529;background-color: #F5F5F5;
+                }
+                .induxsoft-form-select {display: block;width: 100%;padding: 0.375rem 2.25rem 0.375rem 0.75rem !important;-moz-padding-start: calc(0.75rem - 3px);font-size: 1rem;font-weight: 400;line-height: 1.5;color: #212529;background-color: #fff;background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");background-repeat: no-repeat;background-position: right 0.75rem center;background-size: 16px 12px;border: none;outline:1px solid #ced4da;-webkit-appearance: none;-moz-appearance: none;appearance: none;
+                }
+
+                ` + (this.getAttribute('control-styles') ?? '') + `
+                
+            </style>
+        `;
+
+        this.shadow.appendChild(container);
+        this.shadow.appendChild(this.container2);
+        this.shadow.appendChild(container3);
+        this.shadow.appendChild(container4);
+        
+        if (this._parseBool((this.getAttribute('hidden-input')??''), true)) this.after(this.inputv);
+
+        if (this.hasAttribute('data-value'))
+        {
+            try{
+                var data_value=JSON.parse(this.getAttribute('data-value')??'{}');
+                if(data_value)
+                {
+                    let initvalue = this.setObjectMinus(data_value);
+                    this.setValue(initvalue);
+                }
+                
+            }catch{
+                alert('El valor del atributo "data-value" tiene un formato JSON inválido');
+            }
+        }
+    }
+    /**
+     * @param {string} tagName Nombre de etiqueta.
+     * @param {object} attributes Objeto que representan los atributos del elemento, ej: {id:'miElement',class:'mi-element'}
+     * @returns Retorna un **nuevo elemento HTML**
+     */
+    createFullElement(tagName="div", attributes={}, innerHTML="")
+    {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        if (innerHTML) elem.innerHTML = innerHTML;
+        return elem;
+    }
+    /**
+     * Pinta la información en la tabla de búsqueda.
+     * @returns retorna el elemento ***tbody*** de la tabla
+     */
+    printTableData()
+    {
+        this.body_tables_container2.innerHTML = ``;
+        this.head_tables_container2.innerHTML = ``;
+
+        if (!this.data || this.data.length <= 0)
+        { 
+            this.body_tables_container2.innerHTML = `<p class="p-3 text-secondary">${(this.getAttribute('box-nodata-text')??'Sin registros')}</p>`; 
+            return;
+        }
+
+        const titles = (this.colcaptions ? this.colcaptions.split(',') : Object.keys(this.data[0]));
+        const fields = (this.columns ? this.columns.split(',') : Object.keys(this.data[0]));
+
+        while (fields.length > titles.length && fields.length <= Object.keys(this.data[0]).length)
+            titles[titles.length] = fields[titles.length];
+
+        while (titles.length > fields.length && titles.length <= Object.keys(this.data[0]).length)
+            fields[fields.length] = Object.keys(this.data[0])[fields.length];
+            
+        const tr_tables_container2 = this.createFullElement('tr', {id:'tr_tables_container2'});
+        
+        titles.forEach(title => 
+        {
+            const t = this.createFullElement('th',{class:'fw-500 border-1 p-2 ps-3 pe-3'});
+            t.textContent = title.trim();
+            tr_tables_container2.appendChild(t);
+        });
+        
+        this.head_tables_container2.appendChild(tr_tables_container2);
+
+        this.data.forEach((dt, i) => 
+        {
+            const row_tables_conatiner2 = this.createFullElement('tr',{class:'row_table', value:`${dt[(this.getAttribute('data-key')??'').toLowerCase()]}`, tabindex:`0`});
+            row_tables_conatiner2.addEventListener('click', (e) => 
+            {
+                e.stopPropagation();
+                this.findValue(e.target.parentNode.getAttribute('value'));
+                e.target.parentNode.parentNode.childNodes.forEach(child => child.classList.remove('row_selected'));
+                e.target.parentNode.classList.add('row_selected');
+            });
+            row_tables_conatiner2.addEventListener('dblclick', () => {
+                this.accept_footer_container2.click();
+            });
+            row_tables_conatiner2.addEventListener('keyup', (e) => 
+            {
+                switch(e.key)
+                {
+                    case "ArrowRight":
+                    case "ArrowDown":
+                        if(e.target.nextElementSibling)e.target.nextElementSibling.focus();
+                        else if(this.body_tables_container2.firstChild) this.body_tables_container2.firstChild.focus();
+                        break;
+                    case "ArrowLeft":
+                    case "ArrowUp":
+                        if(e.target.previousElementSibling)e.target.previousElementSibling.focus();
+                        else if(this.body_tables_container2.lastChild) this.body_tables_container2.lastChild.focus();
+                        break;
+                    case "Enter":
+                        this.accept_footer_container2.click();
+                        break;
+                }
+            });
+            row_tables_conatiner2.addEventListener('focus', (e) => 
+            {
+                e.stopPropagation();
+                this.findValue(e.target.getAttribute('value'));
+                e.target.parentNode.childNodes.forEach(child => child.classList.remove('row_selected'));
+                e.target.classList.add('row_selected');
+            });
+            fields.forEach(field => 
+            {
+                const cell = this.createFullElement('td',{class:'border-1 p-1 ps-2 pe-2'});
+                cell.textContent = dt[field.trim()];
+                row_tables_conatiner2.appendChild(cell);
+            });
+            this.body_tables_container2.appendChild(row_tables_conatiner2);
+        });
+
+        return this.body_tables_container2;
+    }
+    /**
+     * Establece el objeto de datos a partir de un identificador con el cual se realizará la búsqueda de similitudes.
+     * @param {string} id Cadena con el valor a buscar.
+     * @returns retorna un objeto **promise** al que se le puede adjuntar un *callback* de retorno.
+     */
+    setDataSource(id="",search="")
+    {
+        this.data = null;
+        let url = this.getAttribute('data-source');
+        search=search.toLowerCase();
+        return new Promise(resolve => {
+            if (url && search.trim() != "" && !this.#Requesting)
+            {
+                let surl = url.replace('@search', search);
+                if (this.onBeforeSearch) {
+                    surl = this.onBeforeSearch(surl);
+                }
+
+                this.#Requesting = true;
+                this.request(surl, (dataSuccess) => {
+                    this.data = this.setObjectListMinus(dataSuccess);
+                    this.findValue(id);
+                    resolve();
+                    this.#Requesting = false;
+                }, (dataFail) => {
+                    resolve();
+                    alert("Ocurrió un error al invocar el servicio.\n\n" + dataFail);
+                    this.#Requesting = false;
+                });
+            }
+            else if(this.hasAttribute('data-source-array') && this.getAttribute('data-source-array').trim() != '')
+            {
+                try{ this.data = this.setObjectListMinus(JSON.parse(this.getAttribute('data-source-array'))); }
+                catch{ alert('El valor del atributo "data-source-array" tiene un formato JSON inválido'); }
+                if (id && this.data){
+                    this.data = this.data.filter(data => (data[(this.getAttribute('data-key')??'').toLowerCase()] === id.toLowerCase()));
+                }
+                else if (search && this.data){
+                    this.data = this.data.filter(data => (data[(this.getAttribute('data-search')??'').toLowerCase()].includes(search.toLowerCase()) || search=='%'));
+                }
+                this.findValue(id);
+                resolve();
+            }
+            else
+            {
+                resolve();
+            }
+        });
+    }
+    /**
+     * Convierte los campos de los objetos de la lista a minúsculas.
+     * @param {Array} list 
+     * @returns Retorna una copia de la lista de objetos con campos convertidos a minúsculas
+     */
+    setObjectListMinus(list)
+    {
+        if (!list) return [];
+
+        let newList = [];
+        list.forEach(obj => {
+            newList.push(this.setObjectMinus(obj));
+        });
+        return newList;
+    }
+    /**
+     * Convierte los campos del objeto a minúsculas.
+     * @param {Object} obj 
+     * @returns Retorna una copia del objeto con campos convertidos a minúsculas
+     */
+    setObjectMinus(obj)
+    {
+        let newObj = {};
+        Object.keys(obj).forEach(key => {
+            newObj[key.toLowerCase()] = obj[key];
+        });
+        return newObj;
+    }
+    /**
+     * @param {string} id Cadena con el valor a buscar.
+     * @returns Retorna un **elemento** dentro del objeto de datos que coincida con el valor especificado establecido en la propiedad searchData y el identificador proporcionado.
+     */
+    findValue(id)
+    {
+        if (this.data && this.data.length > 0) {
+            this.record_selected = this.data.find(d => (d[(this.getAttribute('data-key')??'').toString().toLowerCase()]??'').toString().toLowerCase() == id.toLowerCase());
+            // console.log("key")
+        }
+        if (Object.keys(this.record_selected??{}).length == 0) {
+            this.record_selected = this.data.find(d => (d[(this.getAttribute('data-search')??'').toString().toLowerCase()]??'').toString().toLowerCase() == id.toLowerCase());
+            // console.log("search")
+        }
+        // console.log(this.record_selected)
+
+        return this.record_selected;
+    }
+    /**
+     * @returns Retorna el **objeto** seleccionado en la tabla de datos.
+     */
+    getValue()
+    {
+        return this.accept_data;
+    }
+    /**
+     * Establece el valor del control.
+     * @param {object} value Objeto a establecer
+     */
+    setValue(value={})
+    {
+        this.accept_data = value;
+
+        if(!this.accept_data || Object.entries(this.accept_data).length <= 0)
+        {
+            this.input_search_container.value = '';
+            this.input_description_container.value = '';
+            this.setAttribute('value', '');
+            this.inputv.setAttribute('value', '');
+        }
+        else
+        {
+            this.accept_data = this.setObjectMinus(this.accept_data);
+            this.input_search_container.value = (this.accept_data[(this.getAttribute('data-search')??'').toLowerCase()]??'');
+            this.input_search_container.setAttribute("key-value",(this.accept_data[(this.getAttribute('data-key')??'').toLowerCase()]??''));
+            this.input_description_container.value = (this.accept_data[(this.getAttribute('data-text')??'').toLowerCase()]??'');
+            this.setAttribute('value', this.accept_data[(this.getAttribute('data-key')??'').toLowerCase()]??'');
+            this.inputv.setAttribute('value', this.accept_data[(this.getAttribute('data-key')??'').toLowerCase()]??'');
+        }
+
+        if (this.change_event)
+            this.change_event(value);
+    }
+    /**
+     * Limpia la información del objeto seleccionado y los controles del componente.
+     */
+    clear()
+    {
+        this.accept_data = null;
+        this.record_selected = null;
+        this.setValue(null);
+    }
+    /**
+     * Abre la tabla de busqueda
+     * @param {HTMLElement} this.container2 Referencia del contenedor principal de la tabla de búsqueda
+     * @param {Boolean} autoselect Define la selección automática de un elemento al lanzarse la búsqueda y encontrarse una sola coincidencia.
+     */
+    search(container2, autoselect=false)
+    {
+        if (this.data && this.data.length == 1 && this.record_selected && autoselect)
+        {
+            this.setValue(this.record_selected);
+        }
+        else
+        {
+            this.printTableData();
+            this.container2.classList.remove('hide-element');
+            if(!this.data || this.data.length <= 0)
+            {
+                this.input_search_container2.select();
+                this.input_search_container2.focus();
+            }
+            else
+            {
+                this.body_tables_container2.childNodes[0].focus();
+            }
+        }
+    }
+    /**
+     * Lanza la búsqueda de un elemento.
+     * @param {HTMLElement} this.container2 Referencia del contenedor principal de la tabla de búsqueda.
+     */
+    searchButton(container2)
+    {
+        if (this.input_search_container2.value.trim() == ""){
+            alert("Debe especificar el texto a buscar para continuar");
+            this.input_search_container2.focus();
+            return;
+        }
+
+        let kv = this.input_search_container2.getAttribute("key-value") || "";
+        let sv = this.input_search_container2.value || "";
+        this.setDataSource(kv,sv).then(()=>{
+            this.search(container2, false);
+        });
+    }
+    /**
+     * Sincroniza el valor del campo de búsqueda del primer control del componente con el campo de búsqueda de la tabla de datos.
+     */
+    setDataInputSearch2()
+    {
+        this.input_search_container2.value = this.input_search_container.value;
+        this.input_search_container2.setAttribute("key-value",this.input_search_container.getAttribute("key-value")||"");
+        this.input_search_container2.select();
+        this.input_search_container2.focus();
+    }
+    /**
+     * Sobrescribe el escuchador de eventos del componente con el definido por el usuario.
+     * @param {string} ename Nombre del evento.
+     * @param {object} func Función a disparar con el evento.
+     */
+    addEventListener(ename, func)
+    {
+        switch(ename)
+        {
+            case 'change':
+                this.change_event = func;
+                break;
+        }
+    }
+    /**
+     * Procesa la URL proporcionada para remplazar las claves que contenga con los valores del control.
+     * @param {string} url URL a procesar.
+     * @returns Retorna la nueva URL
+     */
+    prepareUrl(url)
+    {
+        return url.replace('@search',this.input_search_container.value)
+            .replace('@key',this.getAttribute('value')??'')
+            .replace('@text', this.input_description_container.value);
+    }
+    request(url, success, fail)
+    {
+        fetch(url, 
+        {
+            method: 'GET',
+            mode: 'cors',
+            headers:{
+                'Access-Control-Allow-Origin':'*'
+            }
+        }).then(response => 
+        {
+            if (response.ok)
+            {
+                response.json().then(json => 
+                {
+                    success(json);
+                }).catch(error => fail(error.message??error));
+            }
+            else{
+                response.json().then(json => 
+                    {
+                        fail(json.message ??json);
+                    }).catch(error=>
+                    {
+                        fail(error.message??error)
+                    });
+                // fail("El servicio respondió con un estado unválido");
+            }
+        })
+        .catch(error => 
+        {
+            fail(error.message);
+        })
+    }
+    _search(autoselect=true)
+    {
+        let kv = this.input_search_container.getAttribute("key-value") || "";
+        let sv = this.input_search_container.value || "";
+        
+        if (autoselect)
+        {
+            this.setDataSource(kv,sv).then(()=>{
+                this.input_search_container2.value = this.input_search_container.value;
+                this.input_search_container2.setAttribute("key-value",this.input_search_container.getAttribute("key-value")||"");
+                this.search(this.container2, true);
+            });
+        }
+        else
+        {
+            this.setDataSource(kv,sv).then(()=>{
+                this.setDataInputSearch2();
+                this.search(this.container2, false);
+            });
+        }
+    }
+    searchText(text,autoselect=true)
+    {
+        this.input_search_container.value = text;
+        this._search(autoselect);
+    }
+    _parseBool=(value, _default = false)=>
+    {
+        if (value) return (value.toString().toLowerCase() === 'true');
+        return _default;
+    }
+    _createOtherButtons()
+    {
+        this.buttonElements = [];
+        if (this.getAttribute('buttons') != '')
+        {
+            let buttonList = [];
+            try { buttonList = JSON.parse(this.getAttribute('buttons')); }
+            catch{ alert('El valor del atributo "buttons" tiene un formato JSON inválido'); }
+
+            buttonList.forEach((obj,i) => {
+                const btn = {
+                    type:'button', 
+                    class:'induxsoft-buttons',
+                    id: (obj.id ?? 'btn_ik_'+i)
+                }
+                this.buttonElements.push(this.createFullElement('button', btn, (obj.content??'')));
+            });
+        }
+    }
+    _setOtherButtonsEvents(button)
+    {
+        const externalBtn = this.createFullElement('button', { type:'button', style:"display:none !important;", id:button.id });
+        this.after(externalBtn);
+        button.onclick = e => externalBtn.click();
+    }
+}
+
+class CheckList extends HTMLElement
+{
+    attributes = null;
+    data = {};
+    key = "id";
+    parentKey = "parent";
+    childs = "items";
+    treeOptions = {}
+    locked = null;
+    doneStyle = null;
+    canRemove = null;
+    canEdit = null;
+    canMove = null;
+    canCheck = null;
+    canAdd = null;
+    showPercents = null;
+    hideHeader = false;
+    radioStyle = false;
+
+    onItemChanged = null;
+    onItemChecked = null;
+    onItemMoved = null;
+
+    _containerwc = null;
+    _headSection = null;
+    _titleHeader = null;
+    _bodySection = null;
+    _footSection = null;
+    _btnDropDown = null;
+    _footHeader = null;
+    _textDropDown = null;
+    _topPositionDragEvent = true;
+    _isChildItemDragEvent = true;
+    _draggingItem = null;
+
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+
+    static get observedAttributes()
+    {
+        return this.attributes;
+    }
+
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const shadow =      this.attachShadow({ mode: 'closed' });
+            this.locked =       this._parseBool(this.getAttribute('data-locked'));
+            this.doneStyle =    this._parseInt(this.getAttribute('data-done-style'));
+            this.canRemove =    this._parseBool(this.getAttribute('can-remove'));
+            this.canEdit =      this._parseBool(this.getAttribute('can-edit'));
+            this.canMove =      this._parseBool(this.getAttribute('can-move'));
+            this.canCheck =     this._parseBool(this.getAttribute('can-check'), true);
+            this.canAdd =       this._parseBool(this.getAttribute('can-add'), true);
+            this.showPercents = this._parseBool(this.getAttribute('show-percents'));
+            this.hideHeader =   this._parseBool(this.getAttribute('hide-header'));
+            this.radioStyle =   this._parseBool(this.getAttribute('radio-style'));
+
+            this._containerwc = this._createFullElement('div', { id:'CL_container', class:'bordered d-flex flex-column' });
+            this._headSection = this._createFullElement('div', { id:'CL_headerSection', class:'p-3 d-flex',tabindex:"0" });
+            this._bodySection = this._createFullElement('div', { id:'CL_bodySection', class:'grow-1' });
+            this._footSection = this._createFullElement('div', { id:'CL_footSection'});
+
+            // head section
+            this._titleHeader = this._createFullElement('input', { id:'CL_title_headSection', type: 'text', class:'w-100 fz-big2 p-2 noborder', placeholder:'Título'});
+            this._headSection.appendChild(this._titleHeader);
+            this._containerwc.appendChild(this._headSection);
+
+            // body section
+            this._containerwc.appendChild(this._bodySection);
+
+            // foot section
+            this._containerwc.appendChild(this._footSection);
+            this._footHeader = this._createFullElement('div', { id:'CL_footHeader', class:'ps-2 pe-2 hide-element' });
+            this._btnDropDown = this._createFullElement('button', { id:'CL_btnDropDown', class:'d-flex align-items-center gap-2 noborder bg-transparent p-3' });
+            const _svgDropDown = this._createFullElement('div', { class:'d-flex align-items-center justify-content-center' });
+            this._textDropDown = this._createFullElement('span');
+
+            _svgDropDown.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>`;
+
+            this._btnDropDown.appendChild(_svgDropDown);
+            this._btnDropDown.appendChild(this._textDropDown);
+            this._footHeader.appendChild(this._btnDropDown);
+            this._footSection.before(this._footHeader);
+
+            // events
+            this._titleHeader.addEventListener('keyup', () => {
+                this.data['text'] = this._titleHeader.value;
+            });
+            this._btnDropDown.addEventListener('click', () => {
+                if (this._footSection.classList.contains('hide-element'))
+                {
+                    this._footSection.classList.remove('hide-element');
+                    _svgDropDown.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>`;
+                }
+                else
+                {
+                    this._footSection.classList.add('hide-element');
+                    _svgDropDown.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>`;
+                }
+            });
+            this._footSection.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            });
+
+            shadow.innerHTML = `
+                <style>
+                    /* ========== General */
+                    *{ box-sizing: border-box;margin:0;padding:0; }
+                    .d-flex{ display:flex; }
+                    .flex-column{ flex-direction: column; }
+                    .gap-1{gap:4px;} .gap-2{gap:8px;}
+                    .justify-content-start{ justify-content: start; } .justify-content-center{ justify-content: center; } .justify-content-end{ justify-content: end; }
+                    .align-items-start{ align-items: start; } .align-items-center{ align-items: center; } .align-items-end{ align-items: end; }
+                    .fz-sm{ font-size: .8rem; } .fz-normal{ font-size: 1rem; } .fz-big1{ font-size: 1.2rem; } .fz-big2{ font-size: 1.4rem; }
+                    .grow-1{ flex-grow: 1; }
+                    .w-100{ width: 100%; }
+                    .bordered{ border: 1px solid #DDD; }
+                    .noborder{ border: none !important; outline: none !important; }
+                    .rounded{ border-radius: 6px; }
+                    .rounded-50{ border-radius: 50%; }
+                    .p-1{ padding: 4px; } .p-2{ padding: 8px; } .p-3{ padding: 12px; } .p-4{ padding: 16px; } .p-5{ padding: 32px; }
+                    .ps-1{ padding-left: 4px; }.ps-2{ padding-left: 8px; }.ps-3{ padding-left: 12px; }.ps-4{ padding-left: 16px; }.ps-5{ padding-left: 32px; }
+                    .pe-1{ padding-right: 4px; }.pe-2{ padding-right: 8px; }.pe-3{ padding-right: 12px; }.pe-4{ padding-right: 16px; }.pe-5{ padding-right: 32px; }
+                    .bg-white{ background-color: #FFF;} .bg-light-gray{ background-color: #F5F5F5; } .bg-transparent{background-color:transparent;}
+                    .hide-element{ display: none !important; }
+                    .disable-element{ pointer-events: none !important; opacity: .5 !important; }
+                    .disable-element-op0{ pointer-events: none !important; opacity: 0 !important; }
+                    .disable-element-transparent{ pointer-events: none !important; }
+                    .borderxy4{ border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+                    .border-t{ border-top-color: #005CC8; }
+                    .border-b{ border-bottom-color: #005CC8; }
+                    .dragging{ background-color: #F0F8FF; }
+                    .d-none{ display: none !important; }
+
+                    /* ========== List */
+                    .list-item-new{ display: grid; grid-template-columns: 1rem 1rem 1fr; gap:4px;}
+                    .list-item{ display: grid; grid-template-columns: 1rem auto 1fr 2rem; gap:4px;}
+                    .sub-item{ padding-left: 1.6rem; }
+                    .hover-item:focus-within{ outline: 1px solid #DDD !important; }
+                    .movItem, .delItem{ position: relative; left: -1000rem; }
+                    .hover-item:hover > div > button{ left: 0; }
+                    .delItem:hover{ background-color: #F5F5F5; fill: #000 !important; color: #000 !important; cursor: pointer; }
+                    .movItem:hover{ cursor: move ; }
+                    #CL_btnDropDown:hover{ !important; cursor: pointer !important; }
+                    #CL_footHeader{ border-top: 1px solid #DDD !important; transition: .3s; }
+                    #CL_footHeader:hover{ background-color: #f5f5f5; }
+                    .in-done-list .list-item .movItem{ pointer-events: none !important; opacity: 0 !important; }
+                    .container-checks{ display: flex; justify-content: center; align-items: center; gap: 10px; }
+                    .rd-item-yes, rd-item-no{ width: 1rem; height: 1rem; }
+                    .rd-item-yes::before{ content:'Si'; position:relative;top:-16px;left:2px;font-size:.7rem; color:#CCC;width: 100% !important;display: flex; }
+                    .rd-item-no::before{ content:'No'; position:relative;top:-16px;font-size:.7rem; color:#CCC;width: 100% !important;display: flex; }
+                    .rd-item-yes:hover::before{ color:#000; }
+                    .rd-item-no:hover::before{ color:#000; }
+                    `+ (this.getAttribute("control-styles") ?? '') +`
+                </style>
+            `;
+
+            shadow.appendChild(this._containerwc);
+            this._refreshView();
+
+            if (this.hasAttribute('data') && this.getAttribute('data').trim())
+            {
+                try
+                {
+                    this.setData(JSON.parse(this.getAttribute('data')));
+                }
+                catch(error)
+                {
+                    alert('El valor del atributo "data" no contiene un formato JSON válido');
+                    console.error(error);
+                    this.data = {};
+                }
+            }
+
+            this._initTreeValues();
+        });
+    }
+
+    _parseBool(value, _default = false)
+    {
+        if (value) return (value.toLowerCase() === 'true');
+        return _default;
+    }
+    _parseInt(value, _default = 0)
+    {
+        if (value != null && isFinite(value.trim()) && !isNaN(value.trim())) { return parseInt(value.trim()); }
+        return _default;
+    }
+    _createFullElement(tagName="div", attributes={})
+    {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        return elem;
+    }
+    _refreshView()
+    {
+        this._valideCheckedItems();
+
+        // title
+        this._titleHeader.value = (this.data?.text ?? '');
+        this._bodySection.innerHTML = ``;
+        this._footSection.innerHTML = ``;
+        this._footHeader.classList.add('hide-element');
+        
+        this._headSection.setAttribute("title",(this.data?.text ?? ''));
+        this._titleHeader.classList.toggle('disable-element', !this.canEdit);
+        if (this.hideHeader) this._headSection.style.display = "none";
+
+        // New item
+        let id = this._generateUUID()
+        const newItem = this._createRowItem(null, { isNew: true, id: id});
+
+        // Items List
+        if (this.data && this.data.items && this.data.items.length > 0)
+        {
+            this.data.items.forEach(item => 
+            {
+                let id = (item.id ?? this._generateUUID());
+                this._bodySection.appendChild(this._createRowItem(item, { id: id }));
+
+                if (item.items && item.items.length > 0)
+                    item.items.forEach(subItem => { 
+                        this._bodySection.appendChild(this._createRowItem(subItem, { isNew: false, isSubItem: true, id: (subItem.id ?? this._generateUUID()), parentId: id }))
+                    });
+            });
+        }
+
+        this._bodySection.appendChild(newItem);
+        this._reprintElementChecked();
+    }
+    _generateUUID()
+    {
+        return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0, 
+                v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    _createRowItem(item, params = { isNew: false, isSubItem: false, id: '', parentId:''})
+    {
+        let containerItem = null;
+        if (params.isNew)
+        {
+            containerItem = this._createFullElement('div', { id:'CL_newCont', class:'hover-item p-2 pe-3 bg-white', style:'margin-top: 1px;',tabindex:"0" });
+            const newItem = this._createFullElement('div', { id:'CL_newItem', class:'list-item-new', 'item-id': params.id });
+            const newEmpt = this._createFullElement('div');
+            const newIcon = this._createFullElement('div', { class:'d-flex align-items-center justify-content-center' });
+            const newText = this._createFullElement('input', { type:'text', class:'p-2 noborder w-100 bg-transparent', placeholder:'Elemento de lista'});
+
+            newIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#888" class="bi bi-plus-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg>`;
+
+            newItem.appendChild(newEmpt);
+            newItem.appendChild(newIcon);
+            newItem.appendChild(newText);
+            containerItem.appendChild(newItem);
+
+            if (!this.canAdd) containerItem.classList.add('hide-element');
+
+            newText.addEventListener('blur', () => {
+                if (newText.value.trim() != ""){
+                    const newItemElement = this._createRowItem({ text: newText.value.trim() }, { id: this._generateUUID() });
+                    newText.value = "";
+                    this._addOrUpdateItem(newItemElement);
+                }
+            });
+            newText.addEventListener('keyup', (e) => {
+                if (newText.value.trim() != "" && e.key === 'Enter'){
+                    const newItemElement = this._createRowItem({ text: newText.value.trim() }, { id: this._generateUUID() });
+                    newText.value = "";
+                    this._addOrUpdateItem(newItemElement);
+                }
+            });
+        }
+        else
+        {
+            containerItem = this._createFullElement('div', { class:'hover-item bg-white ps-1 pe-3 borderxy4', 'item-id':`${params.id}`, style:'position: relative; margin-top: 1px;',tabindex:"0" });
+            const rowItem = this._createFullElement('div', { class:'list-item' });
+            const movItem = this._createFullElement('button', { class: 'movItem noborder', style: 'background: transparent;', draggable: 'true' });
+            const chkItem = this._createFullElement('input', { type:'checkbox' });
+            const rdItemY = this._createFullElement('input', { type:'radio', name:`radio_${params.id}`, title:'Si', class:'rd-item-yes' });
+            const rdItemN = this._createFullElement('input', { type:'radio', name:`radio_${params.id}`, title:'No', class:'rd-item-no' });
+            const txtItem = this._createFullElement('input', { type:'text', class:'p-2 noborder w-100 bg-transparent'});
+            const delItem = this._createFullElement('button', { class:'delItem noborder bg-transparent d-flex align-items-center justify-content-center' });
+            const childIcon = this._createFullElement('div', { style:'position:absolute; top: 5px; left: 2px;', class:'hide-element'});
+            const cntnrChks = this._createFullElement('div', { class:'container-checks' });
+
+            childIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="#005CC8" class="bi bi-arrow-right-short" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/></svg>`;
+            movItem.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#888" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>`;
+            delItem.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+            txtItem.value = item.text;
+            chkItem.checked = (item.done ?? false);
+            rdItemY.checked = (item.done ?? false);
+            rdItemN.checked = (!item.done ?? true);
+            containerItem.setAttribute('item-text', item.text);
+            containerItem.setAttribute('title', item.text);
+            containerItem.setAttribute('item-done', chkItem.checked);
+
+            if (params.isSubItem)
+            {
+                containerItem.classList.add('sub-item');
+                containerItem.setAttribute('parent-id', params.parentId);
+            }
+
+            if (chkItem.checked && this.locked) cntnrChks.classList.add('disable-element');
+            if (!this.canRemove) delItem.classList.add('hide-element');
+            if (!this.canEdit) txtItem.classList.add('disable-element-transparent');
+            if (!this.canMove) movItem.classList.add('disable-element-op0');
+            if (!this.canCheck) cntnrChks.classList.add('disable-element');
+
+            chkItem.classList.toggle('d-none', this.radioStyle);
+            rdItemY.classList.toggle('d-none', !this.radioStyle);
+            rdItemN.classList.toggle('d-none', !this.radioStyle);
+
+            cntnrChks.append(chkItem);
+            cntnrChks.append(rdItemY);
+            cntnrChks.append(rdItemN);
+
+            rowItem.appendChild(movItem);
+            rowItem.appendChild(cntnrChks);
+            rowItem.appendChild(txtItem);
+            rowItem.appendChild(delItem);
+            containerItem.appendChild(rowItem);
+            containerItem.appendChild(childIcon);
+
+            const verifyCheckItem = () => 
+            {
+                containerItem.setAttribute('item-done', chkItem.checked);
+                this._addOrUpdateItem(containerItem);
+                this._refreshView();
+                
+                if (chkItem.checked && this.onItemChecked)
+                {
+                    let item = this.getItem((containerItem.getAttribute('item-id')??''))
+                    this.onItemChecked(item);
+                }
+
+                if (chkItem.checked && this.locked)
+                    cntnrChks.classList.add('disable-element');
+            }
+
+            delItem.addEventListener('click', () => {
+                this._addOrUpdateItem(containerItem, true);
+            });
+            txtItem.addEventListener('change', (e) => {
+                containerItem.setAttribute('item-text', txtItem.value);
+                this._addOrUpdateItem(containerItem);
+                if (e.key === 'Enter' && containerItem.nextElementSibling && containerItem.nextElementSibling.childNodes[0] && containerItem.nextElementSibling.childNodes[0].childNodes[2]){
+                    containerItem.nextElementSibling.childNodes[0].childNodes[2].focus();
+                }
+            });
+            chkItem.addEventListener('click', () => {
+                verifyCheckItem();
+            });
+            rdItemY.addEventListener('change', () => {
+                chkItem.checked = rdItemY.checked;
+                verifyCheckItem();
+            });
+            rdItemN.addEventListener('change', () => {
+                chkItem.checked = (!rdItemN.checked);
+                verifyCheckItem();
+            });
+
+            if (this.canMove)
+            {
+                containerItem.addEventListener('dragstart', (e) => {
+                    this._draggingItem = containerItem;
+                    e.dataTransfer.setData('text/plain', containerItem.getAttribute('item-id'));
+                    containerItem.classList.add('dragging');
+                    let item = this.getItem(containerItem.getAttribute('item-id'));
+                    if (item && item.items && item.items.length > 0)
+                    {
+                        this._bodySection.childNodes.forEach(itemList => {
+                            item.items.forEach(item => {
+                                if (item.id == itemList.getAttribute('item-id'))
+                                    itemList.classList.add('disable-element');
+                            });
+                        });
+                    }
+                });
+                containerItem.addEventListener('dragend', () => {
+                    containerItem.classList.remove('dragging');
+                    this._draggingItem = null;
+                    let item = this.getItem(containerItem.getAttribute('item-id'));
+                    if (item && item.items && item.items.length > 0)
+                    {
+                        this._bodySection.childNodes.forEach(itemList => {
+                            item.items.forEach(item => {
+                                if (item.id == itemList.getAttribute('item-id'))
+                                    itemList.classList.remove('disable-element');
+                            });
+                        });
+                    }
+                })
+                containerItem.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (containerItem.classList.contains('in-done-list')) return;
+                    if (this._draggingItem && containerItem.getAttribute('item-id') == this._draggingItem.getAttribute('item-id')) return;
+                    const rect = containerItem.getBoundingClientRect();
+                    const limity = (rect.y + (rect.height / 2));
+                    const limitx = (rect.x + (rect.width / 5))
+    
+                    let y = (e.clientY < limity);
+                    let x = (!y && e.clientX > limitx);
+    
+                    containerItem.classList.toggle('border-b', !y);
+                    containerItem.classList.toggle('border-t', y);
+                    if ((containerItem.getAttribute('parent-id')??'') == '')
+                    {
+                        containerItem.classList.toggle('bg-light-gray', x);
+                        childIcon.classList.toggle('hide-element', !x);
+                    }
+    
+                    this._topPositionDragEvent = y;
+                    this._isChildItemDragEvent = x;
+                });
+                containerItem.addEventListener('dragleave', (e) => {
+                    containerItem.classList.remove('border-b');
+                    containerItem.classList.remove('border-t');
+                    containerItem.classList.remove('bg-light-gray');
+                    childIcon.classList.add('hide-element');
+                });
+                containerItem.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (containerItem.classList.contains('in-done-list')) return;
+                    containerItem.classList.remove('border-b');
+                    containerItem.classList.remove('border-t');
+                    containerItem.classList.remove('bg-light-gray');
+                    childIcon.classList.add('hide-element');
+    
+                    let itemId = e.dataTransfer.getData("text");
+                    let itemDrop = null;
+                    this._bodySection.childNodes.forEach(item => {
+                        if (item.getAttribute('item-id') == itemId)
+                            itemDrop = item;
+                    });
+    
+                    if (itemDrop && containerItem.getAttribute('item-id') == itemDrop.getAttribute('item-id')) return;
+    
+                    if (itemDrop)
+                    {
+                        itemDrop.classList.remove('dragging');
+    
+                        let index = 0;
+                        let sourceItem = this.getItem(itemDrop.getAttribute('item-id'), false);
+                        
+                        if (sourceItem)
+                        {
+                            if (sourceItem.subindex != undefined) 
+                                this.data.items[sourceItem.subindex].items.splice(sourceItem.index, 1);
+                            else
+                                this.data.items.splice(sourceItem.index, 1);
+                        }
+    
+                        let targetItem = this.getItem(containerItem.getAttribute('item-id'), false);
+                        
+                        if (!this._topPositionDragEvent)
+                            index = 1;
+                        
+                        if (targetItem)
+                        {
+                            index += targetItem.index;
+                            delete sourceItem.index;
+                            delete sourceItem.subindex;
+    
+                            if (targetItem.subindex != undefined)
+                            {
+                                let subitemsSource = JSON.parse(JSON.stringify(sourceItem.items ?? []));
+                                if (subitemsSource && subitemsSource.length > 0)
+                                    delete sourceItem.items;
+                                this.data.items[targetItem.subindex].items.splice(index, 0, sourceItem);
+                                subitemsSource.forEach(subitem => {
+                                    index ++;
+                                    this.data.items[targetItem.subindex].items.splice(index, 0, subitem);
+                                });
+                            }
+                            else if (this._isChildItemDragEvent)
+                            {
+                                let subitems = (this.data.items[targetItem.index].items??[]);
+                                let subitemsSource = JSON.parse(JSON.stringify(sourceItem.items ?? []));
+                                if (subitemsSource && subitemsSource.length > 0)
+                                    delete sourceItem.items;
+                                subitems.unshift(sourceItem);
+                                let _index = 0;
+                                subitemsSource.forEach(subitem => {
+                                    _index ++;
+                                    subitems.splice(_index, 0, subitem);
+                                });
+                                this.data.items[targetItem.index].items = subitems;
+                            }
+                            else
+                            {
+                                this.data.items.splice(index, 0, sourceItem);
+                            }
+                            if (this.onItemMoved) this.onItemMoved(sourceItem);
+                        }
+                    }
+                    this._refreshView();
+                });
+            }
+        }
+
+        return containerItem;
+    }
+    _reprintElementChecked()
+    {
+        this._footSection.innerHTML = '';
+
+        switch(this.doneStyle)
+        {
+            case 0:
+            {
+                this._footHeader.classList.add('hide-element');
+                break;
+            }
+            case 1:
+            {
+                let checkedItems = this._getCheckedItems();
+                let lastParendtId = '🧔';
+
+                checkedItems.forEach(itemChecked => 
+                {
+                    this._bodySection.childNodes.forEach(itemList => 
+                    {
+                        if (itemChecked.id == itemList.getAttribute('item-id'))
+                        {
+                            let parentId = (itemList.getAttribute('parent-id') ?? '');
+                            if (parentId && parentId != lastParendtId)
+                            {
+                                lastParendtId = parentId;
+                                let parentItemList = null; 
+                                this._bodySection.childNodes.forEach(item => { 
+                                    if(item.getAttribute('item-id') == parentId)  
+                                        parentItemList = item;
+                                });
+                                if (parentItemList)
+                                {
+                                    const parentClone = parentItemList.cloneNode(true);
+                                    parentClone.classList.add('disable-element');
+                                    this._footSection.appendChild(parentClone);
+                                }
+                            }
+                            itemList.classList.add('in-done-list');
+                            this._footSection.appendChild(itemList);
+                        }
+                    });
+                });
+                
+                if (checkedItems.length > 0)
+                {
+                    this._footHeader.classList.remove('hide-element');
+                    let text = (checkedItems.length == 1 ? ' Elemento completado' : ' Elementos completados');
+                    this._textDropDown.textContent = checkedItems.length + text;
+                }
+                break;
+            }
+            case 2:
+            {
+                this._footHeader.classList.add('hide-element');
+                let checkedItems = this._getCheckedItems();
+                checkedItems.forEach(item => this._bodySection.childNodes.forEach(itemList => { if (item.id == itemList.getAttribute('item-id')) itemList.remove(); }));
+                break;
+            }
+        }
+    }
+    __addOrUpdateItem(element, del=false, data=null)
+    {
+        if (data == null) data = this.data;
+        
+        let updated = false;
+        let items = (data?.items??[]);
+        let itemId = (element.getAttribute('item-id') ?? '_');
+        let parentId = (element.getAttribute('parent-id')??'_');
+
+        if (items && items.length > 0)
+        {
+            items.forEach((item, i) => 
+            {
+                if (!updated && itemId == item.id)
+                {
+                    if (del)
+                    {
+                        let delSubItems = [];
+
+                        if (items[i].items && items[i].items.length > 0)
+                        {
+                            this._bodySection.childNodes.forEach((itm) => {
+                                if ((itm.getAttribute('parent-id')??'') == itemId) delSubItems.push(itm);
+                            });
+                        }
+                        items.splice(i, 1);
+                        delSubItems.forEach(subItem => subItem.remove());
+                        element.remove();
+                    }
+                    else
+                    {
+                        items[i].text = element.getAttribute('item-text');
+                        items[i].done = ((element.getAttribute('item-done') ?? '') === 'true');
+                        if (items[i].items && items[i].items.length > 0)
+                            items[i].items.forEach(subitem => subitem.done = items[i].done);
+                        if (this.onItemChanged)
+                            this.onItemChanged(item);
+                    }
+                    updated = true;
+                }
+                else if (item.items && item.items.length > 0 && parentId == item.id)
+                {
+                    items[i].items = this.__addOrUpdateItem(element, del, item);
+                    updated = true;
+                }
+            });
+        }
+
+        if (!updated)
+        {
+            items.push({
+                id: element.getAttribute('item-id'), 
+                text: element.getAttribute('item-text'),
+                done: ((element.getAttribute('item-done') ?? '') === 'true'),
+                _meta: {
+                    percent: -1, 
+                    progress: '100'
+                }
+            });
+            this._bodySection.lastChild.before(element);
+        }
+
+        return items;
+    }
+    _addOrUpdateItem(element, del=false)
+    {
+        this.data['items'] = this.__addOrUpdateItem(element, del);
+        this._valideCheckedItems();
+    }
+    _valideCheckedItems()
+    {
+        if (this.data && this.data.items && this.data.items.length > 0)
+        {
+            this.data.items.forEach(item => 
+            {
+                if (item.items && item.items.length > 0)
+                {
+                    let allSubItemsChecked = true;
+                    item.items.forEach(subItem => {
+                        if(!subItem.done) allSubItemsChecked = false;
+                    });
+                    item.done = allSubItemsChecked;
+                }
+            });
+        }
+    }
+    _getCheckedItems()
+    {
+        let itemsCompleted = [];
+        if (this.data && this.data.items && this.data.items.length > 0)
+        {
+            this.data.items.forEach(item => {
+                if (item.done == true) itemsCompleted.push(item);
+                if (item.items && item.items.length > 0){
+                    item.items.forEach(subitem => {
+                        if (subitem.done == true) itemsCompleted.push(subitem);
+                    });
+                }
+            });
+        }
+        return itemsCompleted;
+    }
+    _getUncheckedItems()
+    {
+        let incompleteItems = [];
+        if (this.data && this.data.items && this.data.items.length > 0)
+        {
+            this.data.items.forEach(item => {
+                if (item.done == false) incompleteItems.push(item);
+                if (item.items && item.items.length > 0){
+                    item.items.forEach(subitem => {
+                        if (subitem.done == false) incompleteItems.push(subitem);
+                    });
+                }
+            });
+        }
+        return incompleteItems;
+    }
+    _initTreeValues()
+    {
+        let v = (this.getAttribute("key") ?? "").trim();
+        this.key = (v || this.key);
+        v = (this.getAttribute("parentkey") ?? "").trim();
+        this.parentKey = (v || this.parentKey);
+        v = (this.getAttribute("childs-field") ?? "").trim();
+        this.childs = (v || this.childs);
+    }
+    _getTreeOptions()
+    {
+        if (!this.treeOptions || Object.keys(this.treeOptions) < 1)
+        {
+            this.treeOptions =
+            {
+                key: this.key,
+                parentkey: this.parentKey,
+                childs: this.childs
+            }
+        }
+        return this.treeOptions;
+    }
+
+    TreeArray=(dataArray, treeOptions=null)=>
+    {
+        if (!treeOptions) treeOptions = this._getTreeOptions();
+        
+        const positionObj = (list=[], data={}) => 
+        {
+            let parentObj = null;
+            let sourcData = null;
+
+            const _search = listObj => 
+            {
+                return listObj.some((obj, idx) =>  {
+                    if (data[treeOptions.parentkey] == (obj[treeOptions.key] ?? '_'))
+                        parentObj = obj;
+                    else if ((data[treeOptions.key] ?? '|') == (obj[treeOptions.key] ?? '_'))
+                        sourcData = { listObj, idx };
+                    return ((parentObj && sourcData) || _search((obj[treeOptions.childs] ?? [])));
+                });
+            }
+            
+            if (!_search(list)) return;
+
+            const parentChilds = (parentObj[treeOptions.childs] ?? []);
+            parentChilds.push( ...sourcData.listObj.splice(sourcData.idx,1) );
+            parentObj[treeOptions.childs] = parentChilds;
+        }
+
+        if (dataArray && dataArray.length > 0)
+        {
+            let copyArray = JSON.parse(JSON.stringify(dataArray));
+
+            copyArray.forEach(data => {
+                if (data[treeOptions.parentkey] != undefined) 
+                    positionObj(dataArray, data);
+            });
+        }
+
+        return dataArray;
+    }
+    setData(obj)
+    {
+        let treeOp = this._getTreeOptions();
+        this.data = obj;
+        this.TreeArray(obj[treeOp.childs],treeOp);
+        
+        if (this.data && this.data[treeOp.childs] && this.data[treeOp.childs].length > 0)
+        {
+            this.data[treeOp.childs].forEach(item => 
+            {
+                item[treeOp.key] = (item[treeOp.key] ?? this._generateUUID());
+                item['_meta'] =  { percent:(item.meta?.percent ?? -1), progress:(item.meta?.progress ?? '100') };
+                if (item[treeOp.childs] && item[treeOp.childs].length > 0)
+                {
+                    item[treeOp.childs].forEach(subItem => { 
+                        subItem[treeOp.key] = (subItem[treeOp.key] ?? this._generateUUID());
+                        subItem['_meta'] = { percent:(subItem.meta?.percent ?? -1), progress:(subItem.meta?.progress ?? '100') };
+                    });
+                }
+            });
+        }
+        this._refreshView();
+    }
+    getData(withoutmeta = false)
+    {
+        let temp = JSON.parse(JSON.stringify(this.data));
+        
+        if (withoutmeta)
+        {
+            temp.items.forEach(t => {
+                delete t._meta
+                if (t.items && t.items.length > 0)
+                    t.items.forEach(s => delete s._meta);
+            });
+        }
+        
+        return temp;
+    }
+    getItem(id, withoutindex=true)
+    {
+        let itm = null;
+        let temp = JSON.parse(JSON.stringify(this.data));
+
+        if (temp && temp.items && temp.items.length > 0)
+        {
+            temp.items.forEach((item, i) => 
+            {
+                if (item.id == id)
+                {
+                    itm = item;
+                    if (!withoutindex) itm['index'] = i;
+                }
+                if (!itm && item.items && item.items.length > 0) 
+                {
+                    item.items.forEach((subItem, i2) => 
+                    {
+                        if (subItem.id == id)
+                        {
+                            itm = subItem;
+                            if (!withoutindex)
+                            {
+                                itm['index']= i2;
+                                itm['subindex']= i;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        return itm;
+    }
+}
+
+class StackEdit extends HTMLElement
+{
+    attributes = null;
+    data = {};
+    captionA = '';
+    captionB = '';
+    captionC = '';
+    captionD = '';
+    title = '';
+    subtitle = '';
+    colorField = '';
+    backColorField = '';
+    stylesField = '';
+
+    _stackContainer = null;
+    onElementClick = null;
+
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+
+    static get observedAttributes()
+    {
+        return this.attributes;
+    }
+
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const shadow =      this.attachShadow({ mode: 'closed' });
+            this.captionA =     (this.getAttribute('caption-a')??'a');
+            this.captionB =     (this.getAttribute('caption-b')??'b');
+            this.captionC =     (this.getAttribute('caption-c')??'c');
+            this.captionD =     (this.getAttribute('caption-d')??'d');
+            this.title =        (this.getAttribute('title')??'title');
+            this.subtitle =     (this.getAttribute('subtitle')??'subtitle');
+            this.colorField =   (this.getAttribute('color-field')??'#000');
+            this.backColorField = (this.getAttribute('backcolor-field')??'#FFF');
+            this.stylesField = (this.getAttribute('styles-field')??'styles');
+
+            this._stackContainer = this._createFullElement('div', { id:'_stackContainer' });
+
+            shadow.innerHTML = `
+                <style>
+                    *{ box-sizing: border-box;margin:0;padding:0; }
+                    .d-flex{ display:flex; }
+                    .flex-column{ flex-direction: column; }
+                    .wrap{ flex-wrap: wrap; }
+                    .gap-1{gap:4px;} .gap-2{gap:8px;}
+                    .justify-content-start{ justify-content: start; } .justify-content-center{ justify-content: center; } .justify-content-end{ justify-content: end; }
+                    .align-items-start{ align-items: start; } .align-items-center{ align-items: center; } .align-items-end{ align-items: end; }
+                    .fz-sm{ font-size: .8rem; } .fz-normal{ font-size: 1rem; } .fz-big1{ font-size: 1.2rem; } .fz-big2{ font-size: 1.4rem; }
+                    .fw-bold{ font-weight: bold; }
+                    .grow-1{ flex-grow: 1; }
+                    .w-100{ width: 100%; }
+                    .bordered{ border: 1px solid #DDD; }
+                    .noborder{ border: none !important; outline: none !important; }
+                    .rounded{ border-radius: 6px; }
+                    .p-1{ padding: 4px; } .p-2{ padding: 8px; } .p-3{ padding: 12px; } .p-4{ padding: 16px; } .p-5{ padding: 32px; }
+                    .ps-1{ padding-left: 4px; }.ps-2{ padding-left: 8px; }.ps-3{ padding-left: 12px; }.ps-4{ padding-left: 16px; }.ps-5{ padding-left: 32px; }
+                    .pe-1{ padding-right: 4px; }.pe-2{ padding-right: 8px; }.pe-3{ padding-right: 12px; }.pe-4{ padding-right: 16px; }.pe-5{ padding-right: 32px; }
+                    .borderx{ border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+                    .text-secondary{ color: #888; }
+
+                    .stack-item{ display: grid; grid-template-columns: 1.5rem 1fr; }
+                    .container-item{ background-color: ${this.backColorField} !important; color: ${this.colorField} !important; outline: 1px solid #DDD; position: relative; margin-top: 1px; }
+                    .mov-item{ background: transparent; color: currentColor; cursor: move; }
+                    #_stackContainer{ min-height: 30vh; background-color: #F5F5F5; display: flex; flex-direction: column-reverse; }
+                    .dragging{ background-color: #F0F8FF !important; transform: scale(1.02); box-shadow: 3px 3px 8px 0 #AAA; }
+                    .border-t{ border-top-color: #005CC8; }
+                    .border-b{ border-bottom-color: #005CC8; }
+                    ` + (this.getAttribute('control-styles') ?? '') + `
+                </style>
+            `;
+
+            shadow.appendChild(this._stackContainer);
+            this._refreshView();
+
+            if (this.hasAttribute('data') && this.getAttribute('data').trim())
+            {
+                try
+                {
+                    this.setData(JSON.parse(this.getAttribute('data')));
+                }
+                catch(error)
+                {
+                    alert('El valor del atributo "data" no contiene un formato JSON válido');
+                    this.data = {};
+                }
+            }
+        });
+    }
+    _refreshView()
+    {
+        this._stackContainer.innerHTML = '';
+        // Items List
+        if (this.data && this.data.length > 0)
+        {
+            this.data.forEach(item => 
+            {
+                let id = (item.id ?? this._generateUUID());
+                this._stackContainer.appendChild(this._createRowItem(item, id));
+            });
+        }
+    }
+    _createRowItem(item, id = '')
+    {
+        const containerItem = this._createFullElement('div', { class:'container-item ps-1 borderx', 'item-id':`${id}` });
+        const rowItem = this._createFullElement('div', { class:'stack-item' });
+        const movItem = this._createFullElement('button', { class: 'noborder mov-item', draggable: 'true' });
+        const rowData = this._createFullElement('div', { class:'p-2 d-flex wrap gap-2' });
+
+        movItem.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>`;
+
+        // row data
+        const sectionASide = this._createFullElement('div', { id:'sectionASide', class:'fz-sm grow-1' });
+        const sectionBSide = this._createFullElement('div', { id:'sectionBSide', class:'fz-sm' });
+        const sectionTitle = this._createFullElement('div', { id:'sectionTitle', class:'w-100 fw-bold fz-normal'});
+        const sectionSubtl = this._createFullElement('div', { id:'sectionSubtl', class:'w-100 fz-normal'});
+        const sectionCSide = this._createFullElement('div', { id:'sectionCSide', class:'fz-sm grow-1' });
+        const sectionDSide = this._createFullElement('div', { id:'sectionDSide', class:'fz-sm' });
+
+        const headItemSect = this._createFullElement('div', { id:'headItemSect', class:'w-100 d-flex align-items-center'});
+        const bodyItemSect = this._createFullElement('div', { id:'bodyItemSect', class:'w-100 d-flex align-items-center wrap' });
+        const footItemSect = this._createFullElement('div', { id:'footItemSect', class:'w-100 d-flex align-items-center'});
+
+        sectionASide.textContent = (item?.[this.captionA]??'');
+        sectionBSide.textContent = (item?.[this.captionB]??'');
+        sectionTitle.textContent = (item?.[this.title]??'');
+        sectionSubtl.textContent = (item?.[this.subtitle]??'');
+        sectionCSide.textContent = (item?.[this.captionC]??'');
+        sectionDSide.textContent = (item?.[this.captionD]??'');
+
+        headItemSect.appendChild(sectionASide);
+        headItemSect.appendChild(sectionBSide);
+        bodyItemSect.appendChild(sectionTitle);
+        bodyItemSect.appendChild(sectionSubtl);
+        footItemSect.appendChild(sectionCSide);
+        footItemSect.appendChild(sectionDSide);
+
+        rowData.appendChild(headItemSect);
+        rowData.appendChild(bodyItemSect);
+        rowData.appendChild(footItemSect);
+
+        rowItem.appendChild(movItem);
+        rowItem.appendChild(rowData);
+
+        containerItem.appendChild(rowItem);
+
+        containerItem.addEventListener('click', () => {
+            let item = this._getItem(containerItem.getAttribute('item-id'), false);
+            let index = item.index;
+            delete item.index;
+            delete item.id;
+            if (this.onElementClick)
+                this.onElementClick(item, index);
+        });
+
+        containerItem.addEventListener('dragstart', (e) => {
+            this._draggingItem = containerItem;
+            e.dataTransfer.setData('text/plain', containerItem.getAttribute('item-id'));
+            containerItem.classList.add('dragging');
+        });
+        containerItem.addEventListener('dragend', () => {
+            containerItem.classList.remove('dragging');
+            this._draggingItem = null;
+        })
+        containerItem.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (this._draggingItem && containerItem.getAttribute('item-id') == this._draggingItem.getAttribute('item-id')) return;
+            const rect = containerItem.getBoundingClientRect();
+            const limity = (rect.y + (rect.height / 2));
+
+            let y = (e.clientY < limity);
+
+            containerItem.classList.toggle('border-b', !y);
+            containerItem.classList.toggle('border-t', y);
+
+            this._topPositionDragEvent = y;
+        });
+        containerItem.addEventListener('dragleave', (e) => {
+            containerItem.classList.remove('border-b');
+            containerItem.classList.remove('border-t');
+        });
+        containerItem.addEventListener('drop', (e) => {
+            e.preventDefault();
+            containerItem.classList.remove('border-b');
+            containerItem.classList.remove('border-t');
+
+            if (this._draggingItem && containerItem.getAttribute('item-id') == this._draggingItem.getAttribute('item-id')) return;
+
+            if (this._draggingItem)
+            {
+                this._draggingItem.classList.remove('dragging');
+
+                let index = 0;
+                let sourceItem = this._getItem(this._draggingItem.getAttribute('item-id'), false);
+                
+                if (sourceItem)
+                    this.data.splice(sourceItem.index, 1);
+
+                let targetItem = this._getItem(containerItem.getAttribute('item-id'), false);
+                
+                if (this._topPositionDragEvent)
+                    index = 1;
+                
+                if (targetItem)
+                {
+                    index += targetItem.index;
+                    delete sourceItem.index;
+                    this.data.splice(index, 0, sourceItem);
+                }
+            }
+            this._refreshView();
+        });
+
+        if ((item?.[this.stylesField]??'') != '')
+            containerItem.setAttribute('style', (item?.[this.stylesField]??''));
+
+        return containerItem;
+    }
+    setData(obj)
+    {
+        this.data = obj;
+        if (this.data && this.data.length > 0)
+        {
+            this.data.forEach(item => {
+                item['id'] = (item.id ?? this._generateUUID());
+            });
+        }
+        this._refreshView();
+    }
+    getData()
+    {
+        const copy = JSON.parse(JSON.stringify(this.data))
+        
+        if (copy && copy.length > 0)
+            copy.forEach(item => {
+                delete item.id;
+                delete item.index;
+            });
+        
+        return copy;
+    }
+    _createFullElement(tagName="div", attributes={})
+    {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        return elem;
+    }
+    _generateUUID()
+    {
+        return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0, 
+                v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    _getItem(id, withoutindex=true)
+    {
+        let itm = null;
+        let temp = JSON.parse(JSON.stringify(this.data));
+        
+        if (temp && temp.length > 0)
+        {
+            temp.forEach((item, i) => 
+            {
+                if (item.id == id)
+                {
+                    itm = item;
+                    if (!withoutindex) itm['index'] = i;
+                }
+            });
+        }
+        
+        return itm;
+    }
+}
+
+class DateRange extends HTMLElement
+{
+    attributes = null;
+    data = {};
+    onChange = null;
+
+    _iptStr = null;
+    _iptEnd = null;
+    _hiddenInputStr = null;
+    _hiddenInputEnd = null;
+    _contnr = null;
+    _dateContainer = null;
+    _btnEdit = null;
+    _btnDone = null;
+    _btnUndo = null;
+    onChanging = null;
+
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+
+    static get observedAttributes()
+    {
+        return  attributes;
+    }
+
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const shadow = this.attachShadow({ mode: 'closed' });
+            this._contnr = this._createFullElement('div', { id:'DateRange_contnr', class:'w-100 d-flex border'});
+            
+            this._dateContainer = this._createFullElement('div', { class: "grow-1 d-flex flex-wrap gap-2 align-items-center gap-2 ps-2 wrap" })
+            const cntnr1 = this._createFullElement('div', { id: 'DateRange_cntnr1', class:'d-flex wrap align-items-center' });
+            const lblStr = this._createFullElement('span', { id:'DateRange_lblStr', class:'induxsoft-form-label text-secondary m-0'});
+            this._iptStr = this._createFullElement('input', { type: 'date', id: 'DateRange_iptStr', class:'induxsoft-form-control input-date' });
+
+            if (((this.getAttribute('hide-labels')??'') === 'true'))
+            {
+                this.setAttribute("start-label","");
+                this.setAttribute("end-label","");
+            }
+
+            lblStr.textContent = this.hasAttribute("start-label") ?  this.getAttribute("start-label") : "Desde:";
+            cntnr1.appendChild(lblStr);
+            cntnr1.appendChild(this._iptStr);
+            this._dateContainer.appendChild(cntnr1);
+
+            const cntnr2 = this._createFullElement('div', { id:'DateRange_cntnr2', class:'d-flex wrap align-items-center' });
+            const lblEnd = this._createFullElement('span', { id:'DateRange_lblEnd', class:'induxsoft-form-label text-secondary m-0'});
+            this._iptEnd = this._createFullElement('input', { type: 'date', id: 'DateRange_iptEnd', class:'induxsoft-form-control input-date' });
+            lblEnd.textContent = this.hasAttribute("end-label") ?  this.getAttribute("end-label") : "Hasta:";
+            cntnr2.appendChild(lblEnd);
+            cntnr2.appendChild(this._iptEnd);
+            this._dateContainer.appendChild(cntnr2);
+
+            this._contnr.appendChild(this._dateContainer);
+
+            const controlsContainer = this._createFullElement('div', { class: 'd-flex' });
+            this._btnEdit = this._createFullElement('button', { id: 'SafeInput_btnEdit', title: 'Edit', class: 'induxsoft-buttons d-flex justify-content-center align-items-center' });
+            this._btnDone = this._createFullElement('button', { id: 'SafeInput_btnDone', title: 'Save', class: 'd-none induxsoft-buttons d-flex justify-content-center align-items-center' });
+            this._btnUndo = this._createFullElement('button', { id: 'SafeInput_btnUndo', title: 'Cancel', class: 'd-none induxsoft-buttons d-flex justify-content-center align-items-center' });
+
+            this._btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>`;
+            this._btnDone.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>`;
+            this._btnUndo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+            this._btnEdit.classList.toggle('disable-element', ((this.getAttribute('disabled') ?? '') === 'true'));
+
+            controlsContainer.appendChild(this._btnEdit);
+            controlsContainer.appendChild(this._btnDone);
+            controlsContainer.appendChild(this._btnUndo);
+
+            this._contnr.appendChild(controlsContainer);
+
+            this._btnEdit.addEventListener('click', () => {
+                this._startEdit();
+                this._showControlButtons(true);
+                this._iptStr.focus();
+            });
+            this._btnDone.addEventListener('click', async () => {
+                this._confirmEdit();
+            });
+            this._btnUndo.addEventListener('click', () => {
+                this._cancelEdit();
+                this._showControlButtons(false);
+            });
+
+            this._iptStr.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') this._iptEnd.focus();
+            });
+            this._iptEnd.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') this._btnDone.focus();
+            });
+
+            const MO = new MutationObserver(()=>{
+                this._iptStr.toggleAttribute('disabled', ((this.getAttribute('disabled')??'') === 'true'));
+                this._iptEnd.toggleAttribute('disabled', ((this.getAttribute('disabled')??'') === 'true'));
+            });
+
+            MO.observe(this, {
+                attributes: true,
+                attributeFilter: ['disabled']
+            });
+
+            shadow.innerHTML = `
+                <style>
+                    *{ box-sizing: border-box;margin:0;padding:0; }
+                    .d-flex{ display:flex; } .d-none{ display: none !important; }
+                    .wrap{ flex-wrap: wrap; }
+                    .gap-1{gap:4px;} .gap-2{gap:8px;}
+                    .justify-content-start{ justify-content: start; } .justify-content-center{ justify-content: center; } .justify-content-end{ justify-content: end; }
+                    .align-items-start{ align-items: start; } .align-items-center{ align-items: center; } .align-items-end{ align-items: end; }
+                    .grow-1{ flex-grow: 1; }
+                    .w-100{ width: 100%; }
+                    .text-secondary{ color: #888; }
+                    .m-0{ margin: 0 !important; }
+                    .border{ border: 1px solid #ced4da; }
+                    .ps-1 { padding-left: 4px; } .ps-2 { padding-left: 8px; }
+                    .disabled { background-color: #E9ECEF; }
+                    .disable-element{ pointer-events: none; background-color: #e9ecef !important; opacity: 1;}
+                    .waiting{ pointer-events: none; opacity: .5; cursor: progress; }
+
+                    .induxsoft-form-control{ border: none; outline: 1px solid #ced4da; display: block; width: 100%; padding: 0.375rem 0.75rem !important; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; background-color: #fff; background-clip: padding-box; appearance: none; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                    .induxsoft-form-control:disabled, .induxsoft-form-control[readonly] { background-color: #e9ecef; opacity: 1; }
+                    .induxsoft-form-label{ margin-bottom: 0.5rem; }
+                    .induxsoft-buttons{ font-weight: 400;line-height: 1.5;color: #212529;text-align: center;text-decoration: none;vertical-align: middle;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;background-color: #FFF;outline:1px solid #ced4da;border: none;padding: 0.375rem 0.75rem;font-size: 1rem;transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                    .induxsoft-buttons:hover{ color: #212529;background-color: #F5F5F5; }
+
+                    .input-date{
+                        border: none;
+                        outline: none;
+                        text-align: end;
+                        border-bottom: 1px solid transparent;
+                        width: min-content !important;
+                        font-size: .9rem;
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
+                    }
+                    .input-date:focus{
+                        border-bottom: 1px solid #005CC8;
+                    }
+                </style>
+            `
+
+            if (this.hasAttribute('data') && this.getAttribute('data').trim() != '')
+            {
+                try {
+                    this.data = JSON.parse(this.getAttribute('data'));
+                }
+                catch(error) {
+                    alert('El valor del atributo "data" no contiene un formato JSON válido');
+                    this.data = {};
+                }
+            }
+
+            if (this.hasAttribute('start') && this.getAttribute('start').trim() != '')
+                this.data.start = this.getAttribute('start').trim();
+            if (this.hasAttribute('end') && this.getAttribute('end').trim() != '')
+                this.data.end = this.getAttribute('end').trim();
+
+            if (this.hasAttribute('hidden-input-name-end') && this.getAttribute('hidden-input-name-end').trim() != '')
+            {
+                this._hiddenInputEnd = this._createFullElement('input', { type:'hidden', name:this.getAttribute('hidden-input-name-end').trim() });
+                this.after(this._hiddenInputEnd);
+            }
+            if (this.hasAttribute('hidden-input-name-start') && this.getAttribute('hidden-input-name-start').trim() != '')
+            {
+                this._hiddenInputStr = this._createFullElement('input', { type:'hidden', name:this.getAttribute('hidden-input-name-start').trim() });
+                this.after(this._hiddenInputStr);
+            }
+            this._showControlButtons(false);
+            shadow.appendChild(this._contnr);
+            this._refreshDates();
+        });
+    }
+
+    /**
+     * @param {string} tagName Nombre de etiqueta.
+     * @param {object} attributes Objeto que representan los atributos del elemento, ej: {id:'miElement',class:'mi-element'}
+     * @returns Retorna un **nuevo elemento HTML**
+     */
+    _createFullElement(tagName="div", attributes={})
+    {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        return elem;
+    }
+    _refreshDates=()=>
+    {
+        if (this.data && Object.entries(this.data).length > 0)
+        {
+            this._iptStr.value = (this.data.start ?? '');
+            this._iptEnd.value = (this.data.end ?? '');
+            if (this._hiddenInputStr) this._hiddenInputStr.value = (this.data.start ?? '');
+            if (this._hiddenInputEnd) this._hiddenInputEnd.value = (this.data.end ?? '');
+        }
+        else
+        {
+            this._iptStr.value = '';
+            this._iptEnd.value = '';
+            if (this._hiddenInputStr) this._hiddenInputStr.value = '';
+            if (this._hiddenInputEnd) this._hiddenInputEnd.value = '';
+        }
+
+        if (this.onChange) this.onChange(this.data);
+    }
+    
+    // get disabled()
+    // {
+    //     return ((this.getAttribute('disabled')??'') === 'true');
+    // }
+    // set disabled(value)
+    // {
+    //     this.setAttribute('disabled',value);
+    // }
+
+    setData=(obj)=>
+    {
+        this.data = obj;
+        this._refreshDates();
+    }
+    getData=()=>
+    {
+        return this.data;
+    }
+    _showControlButtons = (edit = false) => {
+        this._btnEdit.classList.toggle('d-none', edit);
+        this._btnDone.classList.toggle('d-none', !edit);
+        this._btnUndo.classList.toggle('d-none', !edit);
+        this._iptStr.toggleAttribute('disabled', !edit);
+        this._iptEnd.toggleAttribute('disabled', !edit);
+        this._dateContainer.classList.toggle('disabled', !edit);
+    }
+    _startEdit = () => {
+        this._tempValue = {
+            start: this._iptStr.value,
+            end: this._iptEnd.value,
+        }
+    }
+    _cancelEdit = () => {
+        this._iptStr.value = this._tempValue.start;
+        this._iptEnd.value = this._tempValue.end;
+        if (this._hiddenInputEnd) { this._hiddenInputEnd.value = this._tempValue.end }
+        if (this._hiddenInputStr) { this._hiddenInputStr.value = this._tempValue.start }
+    }
+    _confirmEdit = async () => {
+        this._contnr.classList.add('waiting');
+        this.style.cursor = 'progress';
+        let newValue = {
+            start: this._iptStr.value,
+            end: this._iptEnd.value,
+        }
+        let res = await this._cancelChange(newValue);
+        if (res) {
+            this._cancelEdit();
+        }
+        else {
+            this._showControlButtons(false);
+            if (this._hiddenInputEnd) this._hiddenInputEnd.value = newValue.end;
+            if (this._hiddenInputStr) this._hiddenInputStr.value = newValue.start;
+        }
+        this._contnr.classList.remove('waiting');
+        this.style.cursor = 'initial';
+    }
+    _cancelChange = async (newValue) => {
+        return new Promise(resolve => {
+            if (this.onChanging)
+                resolve(this.onChanging(this._tempValue, newValue));
+            else
+                resolve(false);
+        });
+    }
+}
+
+class SafeInput extends HTMLElement
+{
+    attributes = null;
+    _inputTypes = ['text','email','number','textarea','date','time','datetime','select'];
+    _tempValue = '';
+    
+    _inputSf = null;
+    _inputHd = null;
+    _btnEdit = null;
+    _btnDone = null;
+    _btnUndo = null;
+
+    onChanging = null;
+
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+
+    static get observedAttributes()
+    {
+        return  attributes;
+    }
+
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const shadow = this.attachShadow({ mode: 'closed' });
+            
+            const contanr = this._createFullElement('div', { id:'SafeInput_contnr', class:'d-flex justify-content-center' });
+            this._btnEdit = this._createFullElement('button', { id:'SafeInput_btnEdit', title:'Edit', class:'induxsoft-buttons d-flex justify-content-center align-items-center' });
+            this._btnDone = this._createFullElement('button', { id:'SafeInput_btnDone', title:'Save', class:'d-none induxsoft-buttons d-flex justify-content-center align-items-center' });
+            this._btnUndo = this._createFullElement('button', { id:'SafeInput_btnUndo', title:'Cancel', class:'d-none induxsoft-buttons d-flex justify-content-center align-items-center' });
+            this._inputSf = this._getProcessInput();
+
+            this._btnEdit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>`;
+            this._btnDone.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>`;
+            this._btnUndo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>`;
+            this._btnEdit.classList.toggle('disable-element', ((this.getAttribute('disabled')??'') === 'true'));
+            this._inputSf.setAttribute('disabled','true');
+
+            this._btnEdit.addEventListener('click', () => {
+                this._startEdit();
+                this._showControlButtons(true);
+                this._inputSf.select();
+            });
+            this._inputSf.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && this._inputSf.nodeName != "TEXTAREA")
+                    this._confirmEdit(contanr);
+            });
+            this._btnDone.addEventListener('click', async () => {
+                this._confirmEdit(contanr);
+            });
+            this._btnUndo.addEventListener('click', () => {
+                this._cancelEdit();
+                this._showControlButtons(false);
+            });
+
+            const MO = new MutationObserver(()=>{
+                this._btnEdit.classList.toggle('disable-element', ((this.getAttribute('disabled')??'') === 'true'));
+            });
+
+            MO.observe(this, {
+                attributes: true,
+                attributeFilter: ['disabled']
+            });
+
+            shadow.innerHTML = `
+                <style>
+                    *{ box-sizing: border-box;margin:0;padding:0; }
+                    .d-flex{ display:flex; } .d-none{ display: none !important; }
+                    .wrap{ flex-wrap: wrap; }
+                    .gap-1{gap:4px;} .gap-2{gap:8px;}
+                    .justify-content-start{ justify-content: start; } .justify-content-center{ justify-content: center; } .justify-content-end{ justify-content: end; }
+                    .align-items-start{ align-items: start; } .align-items-center{ align-items: center; } .align-items-end{ align-items: end; }
+                    .grow-1{ flex-grow: 1; }
+                    .w-100{ width: 100%; }
+                    .text-secondary{ color: #888; }
+                    .disable-element{ pointer-events: none; background-color: #e9ecef !important; opacity: 1;}
+                    .waiting{ pointer-events: none; opacity: .5; cursor: progress; }
+
+                    .induxsoft-form-control{ border: none; outline: 1px solid #ced4da; display: block; width: 100%; padding: 0.375rem 0.75rem !important; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; background-color: #fff; background-clip: padding-box; appearance: none; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                    .induxsoft-form-control:disabled, .induxsoft-form-control[readonly] { background-color: #e9ecef; opacity: 1; }
+                    .induxsoft-form-label{ margin-bottom: 0.5rem; }
+                    .induxsoft-form-select{ display: block;width: 100%;padding: 0.375rem 2.25rem 0.375rem 0.75rem !important;-moz-padding-start: calc(0.75rem - 3px);font-size: 1rem;font-weight: 400;line-height: 1.5;color: #212529;background-color: #fff;background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");background-repeat: no-repeat;background-position: right 0.75rem center;background-size: 16px 12px;border: none;outline: 1px solid #ced4da;-webkit-appearance: none;-moz-appearance: none;appearance: none; }
+                    .induxsoft-form-select:disabled, .induxsoft-form-select[readonly] { background-color: #e9ecef; opacity: 1; }
+                    .induxsoft-buttons{ font-weight: 400;line-height: 1.5;color: #212529;text-align: center;text-decoration: none;vertical-align: middle;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;background-color: #FFF;outline:1px solid #ced4da;border: none;padding: 0.375rem 0.75rem;font-size: 1rem;transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                    .induxsoft-buttons:hover{ color: #212529;background-color: #F5F5F5; }
+
+                    ` + (this.getAttribute('control-styles') ?? '') + `
+                </style>
+            `
+
+            contanr.appendChild(this._inputSf);
+            contanr.appendChild(this._btnEdit);
+            contanr.appendChild(this._btnDone);
+            contanr.appendChild(this._btnUndo);
+            shadow.appendChild(contanr);
+        });
+    }
+    /**
+     * @param {string} tagName Nombre de etiqueta.
+     * @param {object} attributes Objeto que representan los atributos del elemento, ej: {id:'miElement',class:'mi-element'}
+     * @returns Retorna un **nuevo elemento HTML**
+     */
+    _createFullElement(tagName="div", attributes={})
+    {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        return elem;
+    }
+    _getProcessInput=()=>
+    {
+        let attrType = (this.hasAttribute('type') ? this.getAttribute('type').trim().toLocaleLowerCase() : 'text');
+        let inputType = (this._inputTypes.find(type => type == attrType) ?? 'text');
+
+        let input = null;
+
+        switch(inputType)
+        {
+            case 'text':
+            case 'email':
+            case 'number':
+            case 'date':
+            case 'time':
+            {
+                input = this._createFullElement('input', { type: inputType, class:'induxsoft-form-control' });
+                break;
+            }
+            case 'datetime':
+            {
+                input = this._createFullElement('input', { type: 'datetime-local', class:'induxsoft-form-control' });
+                break;
+            }
+            case 'select':
+            {
+                input = this._createFullElement(inputType, { class:'induxsoft-form-select' });
+
+                if (this.hasAttribute('data-select') && this.getAttribute('data-select').trim() != '')
+                {
+                    let options = {};
+
+                    try{ options = JSON.parse(this.getAttribute('data-select').trim()); }
+                    catch(error){ alert('El valor del atributo "data" no contiene un formato JSON válido\n'+error); }
+
+                    Object.keys(options).forEach(key => {
+                        let option = this._createFullElement('option', { value:key });
+                        option.textContent = options[key];
+                        input.appendChild(option);
+                    });
+                }
+                break;
+            }
+            default:
+            {
+                input = this._createFullElement(inputType, { class:'induxsoft-form-control' });
+                break;
+            }
+        }
+
+        if (input) {
+            input.value = (this.getAttribute('value')??'');
+            if (this.getAttribute('placeholder')) input.setAttribute('placeholder', this.getAttribute('placeholder'));
+            if (this.hasAttribute('onchange')) input.setAttribute('onchange', this.getAttribute('onchange'));
+        }
+
+        if (this._parseBool(this.getAttribute('hidden-input')))
+        {
+            this._inputHd = this._createFullElement('input', { type:'hidden', id:'SafeInput_inputHd', name:(this.getAttribute('input-name') ?? '') });
+            this._inputHd.value = input.value;
+            this.after(this._inputHd);
+        }
+
+        return input;
+    }
+    _showControlButtons=(edit=false)=>
+    {
+        this._btnEdit.classList.toggle('d-none', edit );
+        this._btnDone.classList.toggle('d-none', !edit);
+        this._btnUndo.classList.toggle('d-none', !edit);
+        this._inputSf.toggleAttribute('disabled', !edit);
+    }
+    _startEdit=()=>
+    {
+        this._tempValue = (this._inputSf?.value ?? '');
+    }
+    _confirmEdit=async(contanr)=>
+    {
+        contanr.classList.add('waiting');
+        this.style.cursor = 'progress';
+        let res = await this._cancelChange();
+        if (res) {
+            this._cancelEdit();
+        }
+        else {
+            this._showControlButtons(false);
+            if (this._inputHd) this._inputHd.value = this._inputSf.value;
+        }
+        contanr.classList.remove('waiting');
+        this.style.cursor = 'initial';
+    }
+    _cancelEdit=()=>
+    {
+        if (this._inputSf) this._inputSf.value = this._tempValue;
+        if (this._inputHd) this._inputHd.value = this._tempValue;
+    }
+    _cancelChange=async()=>
+    {
+        return new Promise(resolve => {
+            if (this.onChanging) 
+                resolve(this.onChanging(this._tempValue, this._inputSf.value));
+            else
+                resolve(false);
+        });
+    }
+    _parseBool=(value, _default = false)=>
+    {
+        if (value) return (value.toString().toLowerCase() === 'true');
+        return _default;
+    }
+}
+
+class MediaList extends HTMLElement
+{
+    attributes = null;
+    data = [];
+    contanr = null;
+    dragSrc = null;
+    _key_id = '__internal_id__';
+
+    canArrange = true;
+    canDrag = true;
+    canDrop = true;
+    canDelete = true;
+    highlightFirst = true;
+    mediaProp = 'url';
+    miniatureProp = 'mini';
+    labelProp = '';
+    removeOnMove = true;
+    backColorMedia = '#FFF';
+    outlineSelected = false;
+    maxSizeMedia = '8rem';
+    onClicking = null;
+
+    constructor() 
+    {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+    static get observedAttributes()
+    {
+        return  attributes;
+    }
+    attributeChangeCallback(property, oldValue, newValue)
+    {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const shadow = this.attachShadow({ mode: 'closed' });
+            const ppanel = this._createFullElement('div', { id:'MediaList_ppanel', class: 'p-1 bordered' });
+            this.contanr = this._createFullElement('div', { id:'MediaList_contnr' });
+
+            this._initProperties();
+            
+            shadow.innerHTML = `
+                <style>
+                    .bordered{ outline: 1px solid #DDD; }
+                    .w-100{ width: 100%; } .h-100{ height: 100%; }
+                    .p-05 { padding: 2px; } .p-1{ padding: 4px; } .p-2{ padding: 8px; } .p-3{ padding: 12px; } .p-4{ padding: 16px; } .p-5{ padding: 32px; }
+                    .ps-1{ padding-left: 4px; }.ps-2{ padding-left: 8px; }.ps-3{ padding-left: 12px; }.ps-4{ padding-left: 16px; }.ps-5{ padding-left: 32px; }
+                    .pe-1{ padding-right: 4px; }.pe-2{ padding-right: 8px; }.pe-3{ padding-right: 12px; }.pe-4{ padding-right: 16px; }.pe-5{ padding-right: 32px; }
+                    
+                    #MediaList_contnr { width: 100%; min-width: 1rem; min-height: 5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(1rem, ${this.maxSizeMedia})); grid-auto-rows: minmax(1rem, ${this.maxSizeMedia}); }
+                    .media-item { border: 8px solid transparent; transition: .5s; position:relative; position: relative; }
+                    .dragging { border: 24px solid transparent; }
+                    .dragging .img { box-shadow: 4px 4px 8px 0 #DDD !important; }
+                    .btn-delete { cursor:pointer; margin: 4px 4px 4px 0; display: flex; align-items:center; justify-content: center; }
+                    .label-img { margin: 4px 0px 4px 4px; text-wrap: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; font-size: 14px; }
+                    .btn-delete, .label-img{ opacity: .9; background-color: #FFF; color: #000; }
+                    .btn-delete:hover, .label-img:hover { opacity: 1; }
+                    /* .label-img:hover{ position: absolute; left:0; text-wrap:wrap; bottom: 0; } */
+                    .container-controls{ display: flex; justify-content: end; gap: 4px; position:absolute; bottom: 0px; right: 0px; width: 100%;}
+                    .border-l { border-left: 24px solid transparent !important; border-top: 24px solid transparent !important; }
+                    .border-r { border-right: 24px solid transparent !important; border-bottom: 24px solid transparent !important; }
+                    .highlight { border-color: #E2F2FF; }
+                    .drag-container { background-color: #F5F5F5; border: 1px dashed; }
+                    .img{ background-repeat: no-repeat; background-size: contain; background-position: center; background-color: #FFF; }
+                    .draggable-item { cursor: move; }
+                    .outline-element { outline: 2px solid #000 !important; }
+                </style>
+            `;
+
+            ppanel.appendChild(this.contanr);
+            shadow.appendChild(ppanel);
+
+            if (this.hasAttribute('data') && this.getAttribute('data').trim()) 
+            {
+                try {
+                    this.setData(JSON.parse(this.getAttribute('data'))); }
+                catch(error) {
+                    alert('El valor del atributo "data" no contiene un formato JSON válido');
+                    this.data = [];
+                }
+            }
+
+            this._refreshView();
+        });
+    }
+
+    // Internal Functions
+    _refreshView(preserveElements=false)
+    {
+        if (preserveElements) this.data = this.getData(false);
+        this.contanr.innerHTML = '';
+
+        if (this.data && this.data.length > 0)
+        {
+            this.data.forEach(item => this.contanr.appendChild(this._createMediaItem(item)));
+        }
+        this._setItemEvents();
+
+        if (this.highlightFirst && this.contanr.firstChild)
+            this.contanr.firstChild.classList.add('highlight');
+        
+    }
+    _createMediaItem(item)
+    {
+        item[this._key_id] = (item[this._key_id] ?? this._generateUUID());
+        const imgi = this._createFullElement('div', { class:'w-100 h-100 img bordered'});
+
+        const container = this._createFullElement('div', { class:'media-item', draggable:'true', data: JSON.stringify(item), id: item[this._key_id] });
+        const containerControls = this._createFullElement('div', { class:'container-controls' });
+        container.appendChild(imgi);
+        imgi.appendChild(containerControls);
+
+        if (this.labelProp != '')
+        {
+            const text = (item[this.labelProp] ?? '')
+            const label = this._createFullElement('small', { class:'p-05 label-img', title:text });
+            label.textContent = text;
+            containerControls.appendChild(label);
+        }
+
+        if (this.canDelete)
+        {
+            let btnDelete = this._createFullElement('div', { class:'p-05 btn-delete', title:'Eliminar' });
+            btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/></svg>';
+            containerControls.appendChild(btnDelete);
+            btnDelete.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.contanr.removeChild(container);
+            });
+        }
+
+        let img = '';
+        if (item[this.miniatureProp])
+            img = (item[this.miniatureProp] ?? '');
+        if (img.trim() == '')
+            img = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="lightgray" class="bi bi-image-alt" viewBox="0 0 16 15"><path d="M7 2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zm4.225 4.053a.5.5 0 0 0-.577.093l-3.71 4.71-2.66-2.772a.5.5 0 0 0-.63.062L.002 13v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4.5l-4.777-3.947z"/></svg>';
+
+        imgi.style.backgroundImage = `url('${img}')`;
+        imgi.style.backgroundColor = this.backColorMedia;
+
+        return container;
+    }
+    _initProperties()
+    {
+        this.canArrange = this._parseBool((this.getAttribute('can-arrange') ?? 'true'), true);
+        this.canDrag = this._parseBool((this.getAttribute('can-drag') ?? 'true'), true);
+        this.canDrop = this._parseBool((this.getAttribute('can-drop') ?? 'true'), true);
+        this.canDelete = this._parseBool((this.getAttribute('can-delete') ?? 'true'), true);
+        this.highlightFirst = this._parseBool((this.getAttribute('highlight-first') ?? 'true'), true);
+        this.mediaProp = (this.getAttribute('media-prop') ?? 'url');
+        this.miniatureProp = (this.getAttribute('miniature-prop') ?? 'mini');
+        this.labelProp = (this.getAttribute('label-prop') ?? '');
+        this.backColorMedia = (this.getAttribute('back-color-media') ?? '#FFF');
+        this.outlineSelected = this._parseBool((this.getAttribute('outline-selected') ?? 'false'), false);
+        let maxsize = (this.getAttribute('max-size-media') ?? '');
+        this.maxSizeMedia = (maxsize.trim() != '' ? maxsize.trim() : '8rem');
+    }
+    _setItemEvents()
+    {
+        let _XPositionDragEvent = 0;
+        const getTarget = (e) =>
+        {
+            let target = e.currentTarget;
+            if (!e.target.classList.contains('media-item'))
+                target = e.target.closest('.media-item');
+            return target;
+        }
+        const handleClick = (e) =>
+        {
+            e.stopPropagation();
+            let target = getTarget(e);
+            this.contanr.querySelectorAll('.media-item').forEach(item => {
+                item.firstChild.classList.remove('outline-element');
+            });
+            if (this.outlineSelected) target.firstChild.classList.add('outline-element');
+            if (this.onClicking) this.onClicking(JSON.parse(target.getAttribute('data')));
+        }
+        const handleDragStart = (e) => 
+        {
+            e.stopPropagation();
+
+            let target = getTarget(e);
+            target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/json', target.getAttribute('data'));
+        }
+        const handleDragOver = (e) => 
+        {
+            e.stopPropagation();
+            e.preventDefault();
+
+            let target = getTarget(e);
+            const rect = target.getBoundingClientRect();
+            const limitx = (rect.x + (rect.width / 2));
+
+            let x = (e.clientX > limitx);
+            _XPositionDragEvent = x;
+
+            target.classList.toggle('border-l', !x);
+            target.classList.toggle('border-r', x);
+        }
+        const handleDragEnter = (e) => 
+        {
+            e.stopPropagation();
+            let target = getTarget(e);
+            target.classList.add('over');
+        }
+        const handleDragLeave = (e) => 
+        {
+            e.stopPropagation();
+            let target = getTarget(e);
+            target.classList.remove('border-l');
+            target.classList.remove('border-r');
+        }
+        const handleDragEnd = (e) => 
+        {
+            e.stopPropagation();
+            let target = getTarget(e);
+            target.classList.remove('dragging');
+            target.classList.remove('border-l');
+            target.classList.remove('border-r');
+            // if (this.removeOnMove)
+            //     target.remove();
+        }
+
+        const handleDrop = (e,dropInItem=true) => 
+        {
+            e.stopPropagation();
+            
+            let itemData = null;
+            let jsonData = e.dataTransfer.getData('application/json')
+            try { itemData = JSON.parse(jsonData); }
+            catch(error) { console.log(jsonData); }
+
+            let target = e.target;
+            if (dropInItem){
+                target = getTarget(e);
+            }
+            
+            target.classList.remove('dragging');
+            target.classList.remove('border-l');
+            target.classList.remove('border-r');
+            target.classList.remove('drag-container');
+
+            if (itemData)
+            {
+                // Obtenemos el item soltado si existe
+                let item = null;
+                this.contanr.querySelectorAll('.media-item').forEach(itm => { if (itm.id == itemData[this._key_id]) item = itm; });
+
+                // Si no existe lo creamos
+                if (!item){
+                    item = this._createMediaItem(itemData);
+                    setEvents(item);
+                }
+                else if(!this.canArrange)
+                {
+                    // Detenemos la operación para ordenación de items existentes
+                    return false;
+                }
+
+                // Agregamos el item al lado del overItem o como hijo si es el contenedor principal
+                if (dropInItem)
+                {
+                    if (_XPositionDragEvent) target.after(item);
+                    else target.before(item);
+                }
+                else
+                {
+                    target.appendChild(item);
+                }
+
+                if (this.highlightFirst)
+                {
+                    this.contanr.childNodes.forEach(item => item.classList.remove('highlight'));
+                    this.contanr.firstChild.classList.add('highlight');
+                }
+            }
+            return false;
+        }
+
+        const dropItem = (e) => { handleDrop(e,true) };
+        const dropMain = (e) => { handleDrop(e,false) };
+
+        const setEvents = (item) => 
+        {
+            item.ondragstart =  (this.canDrag ? handleDragStart : null);
+            item.ondragover =  (this.canDrop ? handleDragOver: null);
+            item.ondragenter =  (this.canDrop ? handleDragEnter: null);
+            item.ondragleave =  handleDragLeave;
+            item.ondragend =  handleDragEnd;
+            item.ondrop =  (this.canDrop ? dropItem : null);
+            item.onclick = handleClick;
+
+            item.classList.toggle('draggable-item', this.canDrag);
+        }
+
+        this.contanr.querySelectorAll('.media-item').forEach(item => {
+            setEvents(item);
+        });
+
+        // Container
+        const handleDragOverCntainr  = (e) => 
+        {
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        }
+        const handleDragEnterCntainr = (e) => 
+        {
+            e.stopPropagation();
+            e.target.classList.add('drag-container');
+        }
+        const handleDragLeaveCntainr = (e) =>
+        {
+            e.stopPropagation();
+            e.target.classList.remove('drag-container');
+        }
+
+        this.contanr.ondragover = (this.canDrop ? handleDragOverCntainr : null);
+        this.contanr.ondragenter = (this.canDrop ? handleDragEnterCntainr : null);
+        this.contanr.ondragleave = handleDragLeaveCntainr;
+        this.contanr.ondrop = (this.canDrop ? dropMain : null);
+    }
+
+    // Public Functions
+    setData(data)
+    {
+        this.data = data;
+        if (this.data && this.data.length > 0) 
+            this.data.forEach(item => item[this._key_id] = (item[this._key_id] ?? this._generateUUID()));
+        this._refreshView();
+    }
+    getData(withoutid=true)
+    {
+        let data = [];
+        this.contanr.querySelectorAll('.media-item').forEach(element => data.push(JSON.parse(element.getAttribute('data'))));
+        if (withoutid) data.forEach(item => delete item[this._key_id]);
+        return data;
+    }
+    addMedia(mediaData)
+    {
+        try
+        {
+            let itemData = (typeof(mediaData) == 'object' ? mediaData : JSON.parse(mediaData) );
+            this.contanr.appendChild(this._createMediaItem(itemData));
+            this._setItemEvents();
+        }
+        catch(error)
+        {
+            alert('No fué posible agregar el elemento, revise que los datos tengan un formato JSON válido\n\n');
+        }
+    }
+    removeMediaByIndex(index)
+    {
+        let items = this.contanr.querySelectorAll('.media-item');
+        
+        if (index <= items.length-1) {
+            items.forEach((item,i) => {
+                if (i == index) this.contanr.removeChild(item);
+            });
+        }
+    }
+    refreshView()
+    {
+        this._refreshView(true);
+    }
+
+    // Util Functions
+    /**
+     * @param {string} tagName Nombre de etiqueta.
+     * @param {object} attributes Objeto que representan los atributos del elemento, ej: {id:'miElement',class:'mi-element'}
+     * @returns Retorna un **nuevo elemento HTML**
+     */
+    _createFullElement(tagName="div", attributes={})
+    {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        return elem;
+    }
+    _parseBool=(value, _default = false)=>
+    {
+        if (value) return (value.toString().toLowerCase() === 'true');
+        return _default;
+    }
+    _generateUUID()
+    {
+        return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0, 
+                v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+}
+
+class FilterText extends HTMLElement
+{
+    attributes = null;
+    actions = { 
+        bloquear:0, 
+        cancelar_filtro:1, 
+        editar:2, 
+        aceptar_edicion:3, 
+        cancelar_edicion:4,
+        default:5
+    };
+    action_handler = null;
+    dispatch_submit = false;
+
+    constructor() {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+    static get observedAttributes() {
+        return attributes;
+    }
+    attributeChangeCallback(property, oldValue, newValue) {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () =>
+        {
+            const shadow = this.attachShadow({ mode: 'closed' });
+            this._writeStyles(shadow);
+            
+            let text_field = ((this.getAttribute('text-field')??'').trim() != '' ? this.getAttribute('text-field') : 's');
+            let placeholder = (this.getAttribute('placeholder') ?? 'Buscar');
+            let autosubmit = ((this.getAttribute('auto-submit') ?? 'false') == 'true');
+            let id_field = this.id ?? text_field;
+            
+            const icon_filter = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="16" height="16" viewBox="0 0 8.4666665 8.4666669" version="1.1" id="svg6448" inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)" sodipodi:docname="filter.svg"><defs id="defs6442" /><sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="2.8" inkscape:cx="-4.7783453" inkscape:cy="89.407866" inkscape:document-units="mm" inkscape:current-layer="layer1" inkscape:document-rotation="0" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1017" inkscape:window-x="-8" inkscape:window-y="-8" inkscape:window-maximized="1" /><metadata id="metadata6445"><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><g inkscape:label="Capa 1" inkscape:groupmode="layer" id="layer1"><path d="M 7.7485116,0.71815461 V 1.4993056 H 7.3579362 l -1.9528767,2.929315 v 3.319891 H 3.0616071 V 4.4286206 L 1.1087301,1.4993056 H 0.71815466 V 0.71815461 Z M 2.0476733,1.4993056 3.8427577,4.1919316 v 2.775429 H 4.6239085 V 4.1919316 L 6.418993,1.4993056 Z" id="path7029" style="stroke-width:0.390575" /></g></svg>';
+            const icon_filter_cancel = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="16" height="16" viewBox="0 0 8.4666665 8.4666669" version="1.1" id="svg6448" sodipodi:docname="filter-cancel.svg" inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"> <defs id="defs6442" /> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="2.8" inkscape:cx="-4.7783453" inkscape:cy="89.407866" inkscape:document-units="mm" inkscape:current-layer="layer1" inkscape:document-rotation="0" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1017" inkscape:window-x="-8" inkscape:window-y="-8" inkscape:window-maximized="1" /> <metadata id="metadata6445"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Capa 1" inkscape:groupmode="layer" id="layer1"> <path d="M 2.4278252,0.43472896 7.4281558,5.4354145 6.9281591,5.9354125 5.5763265,4.5839328 5.2817726,5.0262931 V 8.0319373 H 3.1601415 V 5.0262931 L 1.3921153,2.3742541 H 1.0385105 V 1.6670432 H 2.6597914 L 1.9278274,0.93472689 Z M 3.367,2.3742541 H 2.2421832 l 1.625169,2.4377537 V 7.3247277 H 4.5745619 V 4.8120078 L 5.0667801,4.0740343 Z M 7.4034047,1.6670432 V 2.3742541 H 7.0497977 L 6.3726441,3.3898079 5.8627454,2.8795565 6.199732,2.3742541 H 5.3570904 L 4.6498808,1.6670432 Z" id="path7056" style="stroke-width:0.353605" /> </g> </svg>';
+            const icon_filter_edit = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="16" height="16" viewBox="0 0 8.4666665 8.4666669" version="1.1" id="svg6448" sodipodi:docname="filter-edit.svg" inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"><defs id="defs6442"><style id="style7085">.cls-1{fill:#101820;}</style></defs><sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="11.2" inkscape:cx="15.669823" inkscape:cy="31.978525" inkscape:document-units="mm" inkscape:current-layer="layer1" inkscape:document-rotation="0" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1017" inkscape:window-x="-8" inkscape:window-y="-8" inkscape:window-maximized="1" inkscape:snap-global="false" /><metadata id="metadata6445"><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><g inkscape:label="Capa 1" inkscape:groupmode="layer" id="layer1"><g data-name="Layer 18" id="Layer_18" transform="matrix(0.18406198,0.00894607,-0.00890713,0.1832608,2.7189358,2.4995563)"><path class="cls-1" d="M 2,31 A 1,1 0 0 1 1,29.89 l 0.9,-8.17 a 1,1 0 0 1 0.29,-0.6 L 21.27,2.05 a 3.56,3.56 0 0 1 5.05,0 L 30,5.68 a 3.56,3.56 0 0 1 0,5.05 L 10.88,29.8 a 1,1 0 0 1 -0.6,0.29 L 2.11,31 Z m 8.17,-1.91 z M 3.86,22.28 3.13,28.87 9.72,28.14 28.54,9.31 a 1.58,1.58 0 0 0 0,-2.22 L 24.91,3.46 a 1.58,1.58 0 0 0 -2.22,0 z" id="path7091" /><path class="cls-1" d="m 26.52,13.74 a 1,1 0 0 1 -0.7,-0.29 L 18.55,6.18 A 1.0112616,1.0112616 0 0 1 20,4.77 L 27.23,12 a 1,1 0 0 1 0,1.41 1,1 0 0 1 -0.71,0.33 z" id="path7093" /><rect class="cls-1" height="2" transform="rotate(-45,14.718942,17.283215)" width="12.84" x="8.29" y="16.280001" id="rect7095" /></g><g id="g1095" style="fill:#000000" transform="matrix(0.95940959,0,0,0.95940959,-0.05552833,-0.48615617)"><rect style="fill:#000000;stroke:none;stroke-width:0.330123" id="rect1086" width="7.1343002" height="0.70870537" x="0.37797618" y="0.82682306" /><path style="fill:#000000;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 0.8031994,1.5355282 2.763951,4.204985 2.7403274,7.2287947 3.5199033,6.4728423 V 3.921503 L 1.7008929,1.5119048 Z" id="path1088" /><path style="fill:#000000;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M 6.1421131,1.5355282 4.3231027,4.0159969 4.3467262,5.7405134 5.1026786,5.1263021 5.1263021,4.1813616 7.0870536,1.5355283 Z" id="path1090" /></g></g></svg>';
+            const icon_filter_edit_cancel = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="16" height="16" viewBox="0 0 8.4666665 8.4666669" version="1.1" id="svg6448" sodipodi:docname="filter-edit-cancel.svg" inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"> <defs id="defs6442"> <style id="style7085">.cls-1{fill:#101820;}</style> </defs> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="11.2" inkscape:cx="15.669823" inkscape:cy="31.978525" inkscape:document-units="mm" inkscape:current-layer="layer1" inkscape:document-rotation="0" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1017" inkscape:window-x="-8" inkscape:window-y="-8" inkscape:window-maximized="1" inkscape:snap-global="false" /> <metadata id="metadata6445"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Capa 1" inkscape:groupmode="layer" id="layer1"> <path d="M 7.3658104,4.4192907 C 7.1700608,4.1628903 6.9145586,3.8343028 6.749814,3.6534856 5.9799386,2.8085007 5.1064452,2.3151043 4.0325333,2.3151043 c -2.5057041,0 -3.7254276,1.7302543 -3.7254276,3.9215029 h 0.7843011 c 0,-1.8049948 0.9391242,-3.1372023 2.9411265,-3.1372023 0.8200474,0 1.5028188,0.3856653 2.1375286,1.0822994 0.1658044,0.18198 0.4818476,0.5970606 0.6983295,0.8784521 H 4.6207588 V 5.844457 H 8.1501115 V 2.3151043 H 7.3658104 Z" fill-rule="evenodd" id="path1097" style="stroke-width:0.39215" /> </g> </svg>';
+            const icon_filter_edit_ok = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="16" height="16" viewBox="0 0 8.4666665 8.4666669" version="1.1" id="svg6448" sodipodi:docname="filter-edit-ok.svg" inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"> <defs id="defs6442"> <style id="style7085">.cls-1{fill:#101820;}</style> </defs> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="11.2" inkscape:cx="15.669823" inkscape:cy="31.978525" inkscape:document-units="mm" inkscape:current-layer="layer1" inkscape:document-rotation="0" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1017" inkscape:window-x="-8" inkscape:window-y="-8" inkscape:window-maximized="1" inkscape:snap-global="false" /> <metadata id="metadata6445"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Capa 1" inkscape:groupmode="layer" id="layer1"> <path clip-rule="evenodd" d="m 7.4336501,1.2011754 c -0.09656,-0.097219 -0.2537587,-0.097219 -0.3496598,0 L 3.3992157,4.8688131 c -0.09656,0.097878 -0.2540884,0.097878 -0.3499893,0 L 1.4347275,3.2246541 C 1.3869417,3.1758797 1.324326,3.1518221 1.2613806,3.1514925 1.1977762,3.151163 1.1331831,3.1752206 1.0847382,3.2246541 L 0.37124767,3.8659717 c -0.0474562,0.048774 -0.073161,0.1097421 -0.073161,0.1733468 0,0.063934 0.0257048,0.1308341 0.0734911,0.179279 L 1.9995883,5.92702 c 0.09623,0.097549 0.2540884,0.255736 0.3499893,0.3526257 L 3.0495563,6.985227 c 0.09623,0.09656 0.2534292,0.09656 0.3499893,0 L 8.1339593,2.2593823 c 0.096557,-0.096889 0.096557,-0.2560657 0,-0.3529554 z" fill-rule="evenodd" id="path1108" style="stroke-width:0.329556" /> </g> </svg>';
+
+            const container = this._createFullElement('div', { class: 'd-flex' });
+            const div_search = this._createFullElement('div', { class:'grow-1 p-relative d-flex' })
+            const ipt_search = this._createFullElement('input', { class: 'induxsoft-form-control', placeholder: placeholder });
+            const div_hidden = this._createFullElement('div', { class:'div-hidden' })
+            const ipt_hidden = this._createFullElement('input', { type: "hidden", name: text_field, id: id_field });
+
+            const btn_filter = this._createFullElement('button', { class: 'induxsoft-buttons button-icon', title:'Filtrar' }, icon_filter);
+            const btn_filter_cancel = this._createFullElement('button', { class: 'induxsoft-buttons button-icon', title:'Cancelar' }, icon_filter_cancel);
+            const btn_filter_edit = this._createFullElement('button', { class: 'induxsoft-buttons button-icon', title:'Editar' }, icon_filter_edit);
+            const btn_filter_edit_cancel = this._createFullElement('button', { class: 'induxsoft-buttons button-icon', title:' Cancelar edición' }, icon_filter_edit_cancel);
+            const btn_filter_edit_ok = this._createFullElement('button', { class: 'induxsoft-buttons button-icon', title:'Aplicar' }, icon_filter_edit_ok);
+            
+            div_search.appendChild(ipt_search);
+            div_search.appendChild(div_hidden);
+            container.appendChild(div_search);
+            container.appendChild(btn_filter);
+            container.appendChild(btn_filter_edit);
+            container.appendChild(btn_filter_cancel);
+            container.appendChild(btn_filter_edit_ok);
+            container.appendChild(btn_filter_edit_cancel);
+
+            // Ocultar/mostrar todos los botones
+            const hidde_buttons = (hidde=true) =>
+            {
+                btn_filter.classList.toggle('d-none', hidde);
+                btn_filter_cancel.classList.toggle('d-none', hidde);
+                btn_filter_edit.classList.toggle('d-none', hidde);
+                btn_filter_edit_cancel.classList.toggle('d-none', hidde);
+                btn_filter_edit_ok.classList.toggle('d-none', hidde);
+            }
+
+            // Mostrar un botón
+            const show_button = button =>
+            {
+                button.classList.remove('d-none');
+            }
+
+            // Desactivar/activar input search
+            const disable_input = (disable = true) =>
+            {
+                ipt_search.disabled = disable;
+                div_hidden.classList.toggle('d-none', !disable);
+            }
+
+            // Manejador de acciones del input search
+            let temp_val = '';
+
+            this.action_handler = (action) =>
+            {
+                hidde_buttons(true);
+
+                switch (action) 
+                {
+                    case this.actions.bloquear:
+                    {
+                        show_button(btn_filter_edit);
+                        show_button(btn_filter_cancel);
+                        disable_input(true);
+                        break;
+                    }
+                    case this.actions.cancelar_filtro:
+                    {
+                        ipt_search.value = '';
+                        this._submitFilter(ipt_search, ipt_hidden);
+                        break;
+                    }
+                    case this.actions.editar:
+                    {
+                        temp_val = ipt_search.value;
+                        disable_input(false);
+                        show_button(btn_filter_edit_cancel);
+                        show_button(btn_filter_edit_ok);
+                        ipt_search.select();
+                        break;
+                    }
+                    case this.actions.aceptar_edicion:
+                    {
+                        this._submitFilter(ipt_search, ipt_hidden);
+                        break;
+                    }
+                    case this.actions.cancelar_edicion:
+                    {
+                        ipt_search.value = temp_val;
+                        this.action_handler(this.actions.bloquear);
+                        break;
+                    }
+                    case this.actions.default:
+                    {
+                        show_button(btn_filter);
+                        disable_input(false);
+                        break;
+                    }
+                }
+            }
+
+            // Establecer valor inicial
+            let value = (this.getAttribute('value') ?? '').trim();
+            if (value == '' && (this.getAttribute('url-parse') ?? 'false') == 'true')
+                value = (this._getURLParam(text_field) ?? '');
+
+            ipt_search.value = value;
+            ipt_hidden.value = ipt_search.value;
+
+            // Eventos
+            ipt_search.addEventListener('keydown', e => {
+                if (e.key === "Enter") {
+                    if (autosubmit) this.action_handler(this.actions.aceptar_edicion);
+                    else this.action_handler(this.actions.bloquear);
+                }
+            });
+
+            ipt_search.addEventListener('input', (e) => { ipt_hidden.value = ipt_search.value });
+
+            div_hidden.addEventListener('click', e => this.action_handler(this.actions.editar));
+            btn_filter.addEventListener('click', e => this.action_handler(this.actions.aceptar_edicion));
+            btn_filter_cancel.addEventListener('click', e => this.action_handler(this.actions.cancelar_filtro));
+            btn_filter_edit.addEventListener('click', e => this.action_handler(this.actions.editar));
+            btn_filter_edit_cancel.addEventListener('click', e => this.action_handler(this.actions.cancelar_edicion));
+            btn_filter_edit_ok.addEventListener('click', e => this.action_handler(this.actions.aceptar_edicion));
+
+            let filtered = (ipt_search.value.trim() != '');
+            let initial_action = (filtered ? this.actions.bloquear : this.actions.default);
+            this.action_handler(initial_action);
+
+            shadow.appendChild(container);
+            this.after(ipt_hidden);
+        });
+    }
+    _writeStyles(shadow)
+    {
+        shadow.innerHTML = `
+            <style>
+                .d-flex{ display: flex; }
+                .d-none{ display: none !important; }
+                .grow-1{ flex-grow: 1; }
+                .p-relative{ position: relative; }
+                .induxsoft-form-control{ border: none; outline: 1px solid #ced4da; display: block; width: 100%; padding: 0.375rem 0.75rem !important; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; background-color: #fff; background-clip: padding-box; appearance: none; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                .induxsoft-form-control:disabled, .induxsoft-form-control[readonly] { background-color: #e9ecef; opacity: 1; }
+                .induxsoft-buttons{ font-weight: 400;line-height: 1.5;color: #212529;text-align: center;text-decoration: none;vertical-align: middle;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;background-color: #FFF;outline:1px solid #ced4da;border: none;padding: 0.375rem 0.75rem;font-size: 1rem;transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                .induxsoft-buttons:hover{ color: #212529;background-color: #F5F5F5; }
+                .button-icon{ display: flex; align-items: center; justify-content: center; }
+                .div-hidden{ border: none; outline: none; position: absolute; inset: 0; background-color: transparent; }
+            <style>
+        `;
+    }
+    _createFullElement(tagName = 'div', attributes = {}, html='') {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        if (html) elem.innerHTML = html;
+        return elem;
+    }
+    _getURLParam(param)
+    {
+        let values = window.location.search;
+        const prms = new URLSearchParams(values);
+        return prms.get(param);
+    }
+    _submitFilter(ipt_search, ipt_hidden)
+    {
+        let idform = 'form';
+        if (this.hasAttribute('form') && this.getAttribute('form').trim() != "") idform = this.getAttribute('form');
+        const form = this.closest(idform);
+        
+        if (!form)
+        {
+            alert('No se encontró el formulario con el selector especificado o dentro del documento');
+            return;
+        }
+        
+        ipt_hidden.value = ipt_search.value;
+
+        if (!this.dispatch_submit) {
+            form.submit();
+        }
+        else {
+            const event = new Event('submit');
+            form.dispatchEvent(event);
+        }
+
+        this.action_handler(this.actions.bloquear);
+    }
+}
+
+class FilterDateRange extends HTMLElement
+{
+    attributes = null;
+    _container = null;
+    _field_va1 = null;
+    _field_va2 = null;
+    _field_mod = null;
+    _selection = null;
+
+    modes_panel = [
+        { mode: 'month', panel: 'FDR_pnl_monthly' },
+        { mode: 'lastdays', panel: '' },
+        { mode: 'range', panel: 'FDR_pnl_range' }
+    ]
+
+    constructor() {
+        super();
+        document.addEventListener('DOMContentLoaded', () => this.attributes = this.getAttributeNames());
+    }
+    static get observedAttributes() {
+        return attributes;
+    }
+    attributeChangeCallback(property, oldValue, newValue) {
+        if (newValue === oldValue) return;
+        this[property] = newValue;
+    }
+    connectedCallback()
+    {
+        document.addEventListener('DOMContentLoaded', () =>
+        {
+            const shadow = this.attachShadow({ mode: 'closed' });
+            this._writeStyles(shadow);
+
+            this._container = this._createFullElement('div', { id: 'FDR_container', class: 'border d-flex align-items-center gap-1' });
+            this._field_va1 = this._createFullElement('input', { type: 'hidden', id: 'FDR_ipt_v1' });
+            this._field_va2 = this._createFullElement('input', { type: 'hidden', id: 'FDR_ipt_v2' });
+            this._field_mod = this._createFullElement('input', { type: 'hidden', id: 'FDR_ipt_md', name: (this.getAttribute('mode-field') ?? 'mode') });
+
+            const panel_mode = this._createFullElement('div', { id: 'FDR_pnl_mode' });
+            const panel_monthly = this._createFullElement('div', { id: 'FDR_pnl_monthly', class:'grow-1 panel' });
+            const panel_range = this._createFullElement('div', { id: 'FDR_pnl_range', class:'grow-1 panel d-none' });
+
+            const select_mode = this._createFullElement('select', { id: 'FDR_sel_mode', class: 'induxsoft-form-select' });
+            panel_mode.appendChild(select_mode);
+
+            this._container.appendChild(panel_mode);
+            this._container.appendChild(panel_monthly);
+            this._container.appendChild(panel_range);
+
+            shadow.appendChild(this._container);
+            this.after(this._field_mod);
+            this.after(this._field_va1);
+            this.after(this._field_va2);
+
+            const now = new Date();
+
+            if (!this.hasAttribute("years-options")) {
+                let cy = now.getFullYear();
+                let years = [];
+
+                for (let i = (cy - 3); i < (cy + 4); i++) {
+                    years.push(i);
+                }
+
+                this.setAttribute("years-options",years.join(","));
+            }
+            if (!this.hasAttribute("lastdays-options")) this.setAttribute("lastdays-options","3,7,15,30");
+            if (!this.hasAttribute("custom-range")) this.setAttribute("custom-range","true");
+
+            if ((this.getAttribute('selection')??'').trim() != '')
+            {
+                try { this._selection = JSON.parse((this.getAttribute('selection')??'{}')); }
+                catch { alert('El atributo selection tiene un formato JSON inválido'); }
+            }
+            else if (!this._selection)
+            {
+                this._selection = {
+                    mode: "month",
+                    year: now.getFullYear(),
+                    month: (now.getMonth()+1).toString()
+                }
+            }
+
+            this._fillSelectMode(select_mode);
+            this._printMonths(panel_monthly);
+            this._printRange(panel_range);
+        });
+    }
+
+    _createFullElement(tagName = 'div', attributes = {}, html = '') {
+        const elem = document.createElement(tagName);
+        const keys = Object.keys(attributes);
+        keys.forEach(key => elem.setAttribute(key, attributes[key]));
+        if (html) elem.innerHTML = html;
+        return elem;
+    }
+    _writeStyles(shadow) {
+        shadow.innerHTML = `
+            <style>
+                .text-secondary{ color: #888; }
+                .d-flex{ display: flex; }
+                .grow-1{ flex-grow: 1; }
+                .wrap{ flex-wrap: wrap; }
+                .gap-1{gap:5px;} .gap-2{gap:8px;}
+                .border{ border: 1px solid #ced4da; }
+                .no-border{ border: none !important; outline: none !important; }
+                .d-none{ display: none; }
+                .align-items-center{ align-items: center; }
+                .active-month { background-color: #005CC8 !important; color: #FFF !important; }
+                .input-date{ font-size: .9rem !important; }
+                .input-date:focus{ outline: 2px solid #005CC8 !important; }
+                .fz-9{ font-size: .9rem; }
+                /*#FDR_container{ background-color: #EDEDED; }*/
+                #FDR_div_datef,#FDR_div_datet{ background-color:#FFF; padding-left: 4px;}
+                #FDR_div_months{ display: grid; grid-template-columns: repeat(12, minmax(1rem, 6rem)); }
+                .month-button{text-overflow: ellipsis;overflow: hidden;width: auto;}
+                .induxsoft-form-control{ border: none; outline: 1px solid #ced4da; display: block; width: 100%; padding: 0.375rem 0.75rem !important; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; background-color: #fff; background-clip: padding-box; appearance: none; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                .induxsoft-form-control:disabled, .induxsoft-form-control[readonly] { background-color: #e9ecef; opacity: 1; }
+                .induxsoft-buttons{ font-weight: 400;line-height: 1.5;color: #212529;text-align: center;text-decoration: none;vertical-align: middle;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;user-select: none;background-color: #FFF;outline:1px solid #ced4da;border: none;padding: 0.375rem 0.75rem;font-size: 1rem;transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+                .induxsoft-buttons:hover{ color: #212529;background-color: #F5F5F5; }
+                .induxsoft-form-select { display: block; width: 100%; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; -moz-padding-start: calc(0.75rem - 3px); font-size: 1rem; font-weight: 400; line-height: 1.5; color: #212529; background-color: #fff; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px; border: none; outline: 1px solid #ced4da; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+                #FDR_month_select{ display: none; }
+
+                @media screen and (max-width:768px){
+                    #FDR_div_months{
+                        grid-template-columns: auto;
+                        & .month-button{
+                            display: none;
+                        }
+                        & #FDR_month_select{
+                            display: initial;
+                        }
+                    }
+                }
+            <style>
+        `;
+    }
+    _fillSelectMode(select)
+    {
+        let opt = this._createFullElement('option', { value: 'month' }, (this.getAttribute('label-months') ?? 'Por mes'));
+        select.appendChild(opt);
+
+        let lastDays = (this.getAttribute('lastdays-options') ?? '').split(',');
+        let lablDays = (this.getAttribute('label-days') ?? 'Últ. @lastdays días');
+        lastDays.forEach(day => {
+            let opt = this._createFullElement('option', { value: day }, lablDays.replace('@lastdays', day));
+            select.appendChild(opt);
+        });
+
+        if ((this.getAttribute('custom-range') ?? 'false') == 'true') {
+            let opt = this._createFullElement('option', { value: 'range' }, (this.getAttribute('label-custom') ?? 'Personalizado'));
+            select.appendChild(opt);
+        }
+
+        let range_field = (this.getAttribute('range-field') ?? 'range');
+
+        select.addEventListener('change', e => {
+            this._selectMode(select.value, lastDays);
+            if (this._field_mod.value == 'lastdays')
+            {
+                this._setFieldValues({ name: range_field, value: select.value }, null);
+                this._setTisSelection({[this._field_mod.name]: 'lastdays', [range_field]: select.value});
+                if (this._isAutoSubmit())
+                    this._submitFilter();
+            }
+        });
+
+        if (this._selection && this._selection[this._field_mod.name])
+        {
+            if (this._selection[this._field_mod.name] == 'lastdays')
+            {
+                select.value = (this._selection[range_field] ?? '');
+                this._setFieldValues({ name: range_field, value: select.value }, null);
+            }
+            else
+                select.value = this._selection[this._field_mod.name];
+        }
+        this._selectMode(select.value, lastDays);
+    }
+    _selectMode(mode, lastDays=null)
+    {
+        const panels = this._container.querySelectorAll('.panel');
+        panels.forEach(p => p.classList.add('d-none'));
+
+        let mp = this.modes_panel.find(m => (m.mode == mode || (lastDays && lastDays.includes(mode) && m.mode == 'lastdays')));
+        if (mp) this._field_mod.value = (mp.mode??'');
+        
+        if (mp && mp.panel != '') {
+            const panel = this._container.querySelector('#' + mp.panel);
+            if (panel) panel.classList.remove('d-none');
+            switch (mp.mode)
+            {
+                case 'month': this._printMonths(panel); break;
+                case 'lastdays': break;
+                case 'range': this._printRange(panel); break;
+            }
+        }
+    }
+    _printMonths(panel)
+    {
+        panel.innerHTML = '';
+
+        const container = this._createFullElement('div', { id: 'FDR_cont_montly', class: 'd-flex align-items-center' });
+        const div_years = this._createFullElement('div', { id: 'FDR_div_years', class: 'd-flex' });
+        const div_months = this._createFullElement('div', { id: 'FDR_div_months', class: 'grow-1' });
+
+        const yearfield = (this.getAttribute('year-field') ?? 'year');
+        const monthfield = (this.getAttribute('month-field') ?? 'month');
+
+        const select_year = this._createFullElement('select', { id: 'FDR_sel_year', class: 'induxsoft-form-select', name: yearfield });
+        div_years.appendChild(select_year);
+
+        const now = new Date();
+        
+        let year_opts = (now.getFullYear().toString());
+        if ((this.getAttribute('years-options') ?? '').trim() != '') year_opts = this.getAttribute('years-options');
+        
+        year_opts.split(',').forEach(y => {
+            const opt = this._createFullElement('option', { value: y }, y);
+            select_year.appendChild(opt);
+        });
+
+        const input_mont = this._createFullElement('input', { type: 'hidden', name: monthfield });
+        container.appendChild(input_mont);
+
+        if (this._selection && this._selection[this._field_mod.name] == 'month')
+        {
+            select_year.value = (this._selection[yearfield] ?? '');
+            input_mont.value = (this._selection[monthfield] ?? '');
+            this._setFieldValues(select_year, input_mont);
+        }
+
+        select_year.addEventListener('change', e => { 
+            this._setFieldValues(select_year, input_mont);
+            this._setTisSelection({[this._field_mod.name]: 'month', [yearfield]: select_year.value, [monthfield]: input_mont.value});
+            if (this._isAutoSubmit())
+                this._submitFilter();
+        });
+
+        const active_month = (button) => {
+            div_months.querySelectorAll('.month-button').forEach(b => b.classList.remove('active-month'));
+            button.classList.add('active-month');
+        }
+
+        const month_select = this._createFullElement('select', { id:'FDR_month_select', class:'induxsoft-form-select' });
+        let select_template = ``;
+
+        let names = (this.getAttribute('month-names') ?? 'Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre').split(',');
+        for (let i = 1; i <= 12; i++) {
+            let oc = ((Number((input_mont.value ?? '-1')) != i) ? '' : 'active-month');
+            const month = this._createFullElement('button', { type: 'button', class: 'induxsoft-buttons month-button ' + oc, value: i }, `<small>${(names[i-1] ?? '')}</small>`);
+            div_months.appendChild(month);
+            month.onclick = e => {
+                active_month(month);
+                input_mont.value = month.getAttribute('value');
+                this._setFieldValues(select_year, input_mont);
+                this._setTisSelection({[this._field_mod.name]:'month', [yearfield]: select_year.value, [monthfield]: input_mont.value});
+                if (this._isAutoSubmit())
+                    this._submitFilter();
+            }
+
+            select_template+=`
+                <option value="${i}" ${(oc=='active-month'?'selected':'')}>${(names[i-1] ?? '')}</option>
+            `;
+        }
+
+        month_select.innerHTML = select_template;
+        div_months.appendChild(month_select);
+
+        month_select.onchange = e => {
+            input_mont.value = month_select.value;
+            this._setFieldValues(select_year, input_mont);
+            this._setTisSelection({[this._field_mod.name]:'month', [yearfield]: select_year.value, [monthfield]: input_mont.value});
+            if (this._isAutoSubmit())
+                this._submitFilter();
+        }
+
+        container.appendChild(div_years);
+        container.appendChild(div_months);
+        panel.appendChild(container);
+    }
+    _printRange(panel)
+    {
+        panel.innerHTML = '';
+
+        const container = this._createFullElement('div', { id: 'FDR_cont_range', class: 'd-flex gap-1 align-items-center wrap' });
+
+        const div_datef = this._createFullElement('div', { id: 'FDR_div_datef', class: 'd-flex align-items-center gap-2' }, `<small class="text-secondary">${ (this.getAttribute('label-from') ?? 'Desde:') }</small>`);
+        const div_datet = this._createFullElement('div', { id: 'FDR_div_datet', class: 'd-flex align-items-center gap-2' }, `<small class="text-secondary">${ (this.getAttribute('label-to') ?? 'Hasta:') }</small>`);
+        
+        let name_datef = (this.getAttribute('from-field') ?? 'from');
+        let name_datet = (this.getAttribute('to-field') ?? 'to');
+
+        const input_datef = this._createFullElement('input', { type: 'date', id: 'FDR_ipt_datef', class: 'induxsoft-form-control no-border input-date', disabled: '', name: name_datef });
+        const input_datet = this._createFullElement('input', { type: 'date', id: 'FDR_ipt_datet', class: 'induxsoft-form-control no-border input-date', disabled: '', name: name_datet });
+
+        if (this._selection && this._selection[this._field_mod.name] == 'range')
+        {
+            input_datef.value = (this._selection[name_datef] ?? '');
+            input_datet.value = (this._selection[name_datet] ?? '');
+            this._setFieldValues(input_datef, input_datet);
+        }
+
+        const div_cntrls = this._createFullElement('div', { id:'FDR_div_cntrls', class:'d-flex align-items-center' });
+        const btn_accept = this._createFullElement('button', { id: 'FDR_btn_accept', type: 'button', class: 'induxsoft-buttons no-border d-none' }, '<small>Aplicar</small>');
+        const btn_cancel = this._createFullElement('button', { id: 'FDR_btn_cancel', type: 'button', class: 'induxsoft-buttons no-border d-none' }, '<small>Cancelar</small>');
+        const btn_modify = this._createFullElement('button', { id: 'FDR_btn_modify', type: 'button', class: 'induxsoft-buttons no-border' }, '<small>Modificar</small>');
+
+        div_datef.appendChild(input_datef);
+        div_datet.appendChild(input_datet);
+
+        container.appendChild(div_datef);
+        container.appendChild(div_datet);
+
+        div_cntrls.appendChild(btn_accept);
+        div_cntrls.appendChild(btn_cancel);
+        div_cntrls.appendChild(btn_modify);
+        container.appendChild(div_cntrls);
+
+        panel.appendChild(container);
+
+        const edit_dates = (edit = true) =>
+        {
+            btn_accept.classList.toggle('d-none', !edit);
+            btn_cancel.classList.toggle('d-none', !edit);
+            btn_modify.classList.toggle('d-none', edit);
+
+            input_datef.toggleAttribute('disabled', !edit);
+            input_datet.toggleAttribute('disabled', !edit);
+        }
+
+        let tempf = '';
+        let tempt = '';
+
+        btn_cancel.onclick = () => {
+            input_datef.value = tempf;
+            input_datet.value = tempt;
+            edit_dates(false); 
+        }
+        btn_modify.onclick = () => {
+            edit_dates(true); 
+            input_datef.focus();
+            tempf = input_datef.value;
+            tempt = input_datet.value;
+        }
+        btn_accept.onclick = () => {
+            edit_dates(false);
+            this._setFieldValues(input_datef, input_datet);
+            this._setTisSelection({[this._field_mod.name]:'range', [name_datef]: input_datef.value, [name_datet]: input_datet.value});
+            if (this._isAutoSubmit())
+                this._submitFilter();
+        }
+        input_datef.addEventListener('keyup', e => {
+            if (e.key == 'Enter') input_datet.focus();
+        });
+        input_datet.addEventListener('keyup', e => {
+            if (e.key == 'Enter') btn_accept.focus();
+        });
+    }
+    _setFieldValues(field1, field2)
+    {
+        this._field_va1.removeAttribute('name');
+        this._field_va2.removeAttribute('name');
+        if (field1?.name ?? null) this._field_va1.setAttribute('name', field1.name);
+        if (field2?.name ?? null) this._field_va2.setAttribute('name', field2.name);
+        this._field_va1.value = (field1?.value ?? '');
+        this._field_va2.value = (field2?.value ?? '');
+    }
+    _submitFilter()
+    {
+        let idform = 'form';
+        if (this.hasAttribute('form') && this.getAttribute('form').trim() != "") idform = this.getAttribute('form');
+        const form = this.closest(idform);
+        
+        if (!form)
+        {
+            alert('No se encontró el formulario con el selector especificado o dentro del documento');
+            return;
+        }
+
+        form.submit();
+    }
+    _isAutoSubmit()
+    {
+        return ((this.getAttribute('auto-submit') ?? 'false') == 'true');
+    }
+    _setTisSelection(obj){
+        this._selection = {};
+        Object.keys(obj??{}).forEach(k=>{
+            this._selection[k]=obj[k];
+        });
+    }
+}
+
+customElements.define('edit-select', EditSelect);
+customElements.define('input-key', InputKey);
+customElements.define('check-list', CheckList);
+customElements.define('stack-edit', StackEdit);
+customElements.define('date-range', DateRange);
+customElements.define('safe-input', SafeInput);
+customElements.define('media-list', MediaList);
+customElements.define('filter-text', FilterText);
+customElements.define('filter-date-range', FilterDateRange);

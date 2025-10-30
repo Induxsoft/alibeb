@@ -10,3 +10,17 @@ CA20,Recetas de alimentos o bebidas,alibeb.recetas
 CA21,Agregar receta,alibeb.recetas
 CA22,Editar receta,alibeb.recetas
 CA23,Eliminar receta,alibeb.recetas
+alibeb.gestion_kds,Gestión de KDS,alibeb
+CA30,gestion de KDS,alibeb.gestion_kds
+alibeb.gestion_meseros,Gestión de meseros,alibeb
+CA40,gestion de meseros,alibeb.gestion_meseros
+alibeb.gestion_prn,Gestión de impresoras,alibeb
+CA50,Gestion de impresora,alibeb.gestion_prn
+CA51,Agregar impresora,alibeb.gestion_prn
+CA52,Editar impresora,alibeb.gestion_prn
+CA53,Eliminar impresora,alibeb.gestion_prn
+alibeb.config_prn_cp,Configuración de impresoras en c. prod,alibeb
+CA60,Configuración de impresoras en centro de producción,alibeb.config_prn_cp
+CA61,Agreagar configuración prn,alibeb.config_prn_cp
+CA62,Editar configuración prn,alibeb.config_prn_cp
+CA63,Eliminar configuración prn,alibeb.config_prn_cp

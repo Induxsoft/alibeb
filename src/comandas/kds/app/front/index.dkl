@@ -1,0 +1,66 @@
+﻿#include "dkli.dkh"
+#set "meta-xml-declaration" "<!DOCTYPE html>\r\n"
+
+#!
+module "index"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "website.dkl"
+	
+    view=@@(@http_context,"request/get/view")
+    cprod=@@(@http_context,"request/get/cprod")
+	ws=@@(@http_context,"request/get/dm_scr")
+	token=@@(@http_context,"request/get/token")
+	timerkds=@@(@http_context,"#request/get/segact")
+
+	if @use_bdconfig
+	{
+	 ws=@@(@config,"connection")
+	 if view=="vw_workspace"{view=""}
+	}
+
+	if timerkds!=0{@timer_kds=1000 * timerkds}
+	if ws==""{view="vw_workspace"}
+
+    #$
+    div(class="" style="height: 100%;")
+    {
+    	#!
+    	switch view
+	    {
+	    	case "kds"{
+	    		@module="login"
+	    		include path.concat(@path_view,"vw_kds.dkl")
+	    	}
+			case "vw_workspace"{
+				@module="kds"
+				include path.concat(@path_view,"vw_workspace.dkl")
+			}
+			default
+			{
+				@module="vw_workspace"
+				include path.concat(@path_view,"login.dkl")
+			}
+	    }
+	    #!
+	    #include "_views/modals.dkl"
+    	#$
+    	style{$'#<file.rtext(@style_css)>'}
+    	script
+    	{
+    		$'
+    			var timer_kds=#<@timer_kds>;
+    			var cprod="#<cprod>";
+    			var ws="#<ws>";
+    			var token="#<token>";
+				#<ftext(file.rtext(@model_js))>
+    			#<ftext(file.rtext(@driver_js))>
+    			#<ftext(file.rtext(@view_js))>
+
+    			$(document).ready(function(){});
+    		'
+    	}
+    }
+    
+}

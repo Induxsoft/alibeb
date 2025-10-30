@@ -1,0 +1,42 @@
+#include "dkli.dkh"
+
+#!
+module "login"
+{
+	#$
+	div(class="contain-full")
+	{
+		#!
+		include path.concat(@path_include,"navbar.dkl")
+		#$
+		div(class="log-contain")
+		{
+			div(class="full-model")
+			{
+				div(class="log-module")
+				{
+					label("for"="selectwaiter"){"Centro de Producción:"}
+					select(class="input-select" id="select_cprods"){$""}br{}
+
+					label("for"="pwd"){"Contraseña:"}
+					input(class="input-pw" type="password" id="pwd" placeholder="")
+
+					div(class="module-click")
+					{
+						button(class="btn-login" id="btnlogin" onclick="controller.login(this)"){"Aceptar"}
+					}
+					
+				}
+			}
+			
+		}
+		script
+		{
+			$'
+			$(document).ready(function(){
+				controller.get_cprods();
+			});
+			'
+		}
+	}
+}

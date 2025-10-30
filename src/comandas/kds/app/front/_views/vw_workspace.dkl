@@ -1,0 +1,31 @@
+#include "dkli.dkh"
+
+#!
+module "login"
+{
+	#$
+	div(class="contain-full")
+	{
+		#!
+		include path.concat(@path_include,"navbar.dkl")
+		#$
+		div(class="log-contain #<@token>")
+		{
+			div(class="full-model")
+			{
+				div(class="model-log")
+				{
+					label("for"="idws"){"Id workspace:"}
+					input(class="input-ws" type="" id="idws" placeholder="")
+
+					div(class="module-click")
+					{
+						button(class="btn-login" id="btnws" onclick="controller.workspace()"){"Aceptar"}
+					}
+					
+				}
+			}
+						
+		}
+	}
+}

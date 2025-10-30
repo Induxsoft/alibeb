@@ -3,7 +3,10 @@
 module
 {
     #include "functions.dkh"
-
+    limpiarTexto::texto
+	{
+        return tolower(trim(replace(ranychars(texto,'\\/:*?"<>|(-)[+]#$%&=,'," ")," ","_")))
+	}
     function valide_duplicate(&fields, table, error, code)
     {
         if contains(tolower(error),"duplicate entry")

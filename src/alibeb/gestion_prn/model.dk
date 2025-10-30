@@ -1,0 +1,111 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    @table_name="ut_dm_tmm_gprn"
+    @list_query="select * from #<@table_name>"
+    @read_query="select * from #<@table_name> where id=@_entity_id"
+    
+    list::&db,&params
+    {
+        do dbr.apps.action.grant("CA50")
+
+        ref data=dbr.list(db,ftext(@list_query),params)
+        ref entitys=list.create()
+        for i = 0; i < @count(data)
+        {
+            ref itm=@item(data,i)
+            ref entity=from.json(@@(itm,"$data"))
+            entity<"id">:itm.id
+            do list.add(entitys,entity)
+        }
+        return entitys
+    }
+    read::&db,&params
+    {
+        do dbr.apps.action.grant("CA50")
+        ref data=dbr.rec(db,ftext(@read_query),params)
+        if isnull(data){do rise_error(500,"Elemento no encontrado")}
+
+        ref entity=from.json(@@(data,"$data"))
+        entity<"id">:data.id
+
+        do prepareView(db,params,entity)
+
+        return entity
+    }
+    getDataEntity::&data
+    {
+        if trim(@@(data,"$id"))==""{do rise_error(500,"No ha indicado un ID")}
+        if trim(@@(data,"$address"))==""{do rise_error(500,"No ha indicado un Dirección")}
+        if trim(@@(data,"$port"))==""{do rise_error(500,"No ha indicado un Puerto")}
+
+        ref datos=record.copy(data,"driver,type,address,port,timeout,dpi,printWidth,charsPerLine")
+        new entity
+        {
+            @"id":limpiarTexto(@@(data,"$id"))
+            @"data":to.json(datos)
+        }
+
+        return entity
+    }
+    create::&db,&params,&data
+    {
+        do dbr.apps.action.grant("CA51")
+
+        ref entity=getDataEntity(data)
+
+        do dbr.insert(db,@table_name,entity)
+        params<"_entity_id">:@@(data,"$id")
+        return read(db,params)
+    }
+
+    update::&db,&params,&data
+    {
+        do dbr.apps.action.grant("CA52")
+        
+        ref entity=getDataEntity(data)
+
+        do dbr.update(db,@table_name,entity,"id=@_entity_id",params)
+        
+        return data
+    }
+    delete::&db,&params
+    {
+        do dbr.apps.action.grant("CA53")
+        do dbr.delete(db,@table_name,"id=@_entity_id",params)
+        return params
+    }
+    blank::&db,&params
+    {
+        ref entity=from.json('{
+                    "driver":"generic",
+                    "type":"ethernet",//ethernet,usb,stream_linux,file
+                    "address":"",//192.168.0.87,COM4,/dev/usb/lp0,path
+                    "port":"9100",
+                    "timeout":15,
+                    "dpi":203,
+                    "printWidth":60,
+                    "charsPerLine":46
+                }')
+        do prepareView(db,params,entity)
+
+        return entity
+    }
+    prepareView::&db,&params,&data
+    {
+        using data
+        {
+            @"ethernet_placeholder":"Ejemplo: 192.168.0.87"
+            @"usb_placeholder":"Ejemplo: COM4"
+            @"stream_linux_placeholder":"Ejemplo: /dev/usb/lp0"
+            @"file_placeholder":"Ejemplo: C:/impresiones/"
+        }
+    }
+    point @blank to blank
+    point @delete to delete
+    point @list to list
+    point @read to read
+    point @create to create
+    point @update to update
+}

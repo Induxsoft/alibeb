@@ -1,0 +1,229 @@
+
+#$
+// **********************modal*********************
+	div(id="loadings" class="loadings")
+    {
+        $""
+        // div(class="control-x")
+        // {
+        //     svg(xmlns="http://www.w3.org/2000/svg" id="cancel_btn_modal_install" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        //     {
+        //         path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        //     }
+        // }
+        // div(class="just-cont-center" style="display:flex;")..
+        // {
+        //     h4(id="title_modal_install"){$"Cargando..."}
+        // }
+        // div(class=" just-cont-center" style="display:flex;")
+        // {
+        //    $""
+        //    span(class="induxsoftLoginFormSpinner just-cont-center just-itm-center" style="display:flex;border: none;" id="spa-rotate"){img(width="30" height="30" src="_icons/hamburguer.png"){""}""}
+        // }
+    }
+
+    //***************** modals abrir mesa*********************
+    div(id="open-table" class="show_modal_center open-table hidde_control modal-responsive")
+    {
+        $""
+         div(class="control-x" onclick="controller.hide_modal(\'#open-table\');")
+         {
+             svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+             {
+                 path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+            }
+        }
+        div(class="just-cont-center" style="display:flex;")
+        {
+            h4(id=""){$"Abrir mesa"}br{}br{}
+        }
+        div(class="d-flex mt-2 just-itm-center just-cont-center" id="div-modal" style="display:flex;")
+        {
+           $""
+           div(class="form-table")
+           {
+	           	div(class="form-group")
+	           	{
+	           		small{"Mesa: "}
+		            input(type="text" id="txttable" class="form-control" autofocus="true" ){""}
+                    
+                    // div(class="datalist-container")
+                    // {
+                    //     input(type="text" id="txttable" class="form-select combo-input" autofocus="true" onclick="views.mostrarLista()" autocomplete="off"){""}
+                    //     ul(class="combo-list d-none" id="data-list")
+                    //     {
+                    //         li(onclick="views.seleccionar(this)"){"Mesa 1"}
+                    //         li(onclick="views.seleccionar(this)"){"Mesa 2"}
+                    //         li(onclick="views.seleccionar(this)"){"Mesa 3"}
+                    //     }
+                    // }
+	           	}
+	           	div(class="form-group")
+	           	{
+	           		small{"Personas:"}
+	           		input(type="number" min="1" value="2" id="txtnumpeople" class="form-control")
+	           	}
+           		div(class="form-group" style="grid-column:1/3;")
+           		{
+           			small{"Notas: "}
+           			textarea(type="text" id="txtnotas" class="form-textarea txtarea_rsz"){""}
+           		}
+	          
+	           
+           }br{}
+           div(class="input-group hidde_control" style="display:none")
+           {
+           		select(id="selet-tables" class="form-select-g form-control hidde_control")
+           		{
+           			option{"1.- "}
+           		}
+           		input(class="form-control" id="inp-mesa")
+           		span(class="input-group-text" onclick="controller.show_select_group();"){
+           		svg(xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16")
+           		{
+				  path(d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"){""}
+           		}""}
+           }
+        }
+        div(class="footer text-end")
+        {
+            button(class="blue_button" id="" onclick="controller.open_table();"){"Aceptar"}
+            button(class="white_button" id="" onclick="controller.hide_modal(\'#open-table\')"){"Cancelar"}
+        }
+    }
+
+    //*******************modal indicaciones****************************************
+    div(id="modal-indicaciones" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+    {
+        $""
+         div(class="control-x" onclick="controller.hide_modal(\'#modal-indicaciones\');")
+         {
+             svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+             {
+                 path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+            }
+        }
+        div(class="just-cont-center" style="display:flex;")
+        {
+            h4(id=""){$"Indicaciones"}br{}br{}
+        }
+        div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
+        {
+           $""
+           div(class="div-time w-100 d-flex just-cont-end just-itm-center" id="times")
+           {
+                $""
+                label(class="d-flex align-itm-center"){"Tiempos: "}
+                button(class="btn card-border" id="time_1" value="1" onclick="controller.time(this);"){"1"}
+                button(class="btn card-border" id="time_2" value="2" onclick="controller.time(this);"){"2"}
+                button(class="btn card-border" id="time_3" value="3" onclick="controller.time(this);"){"3"}
+                button(class="btn card-border" id="time_4" value="4" onclick="controller.time(this);"){"4"}
+                button(class="btn card-border" id="time_5" value="5" onclick="controller.time(this);"){"5"}
+           }
+           div(class="card w-100 card-border mb-2" id="div-multiples" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
+           {
+            $""
+           }
+           div(class="card w-100 card-border mb-2 div-singles" id="div-singles" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
+           {
+            $""
+           }
+           div(class="card w-100 card-border mb-2")
+           {
+                label{"Notas:"}br{}
+                textarea(class="form-control form-textarea-apparence " id="txtnotas-indicacion"){$""}
+           }
+        }
+        div(class="footer text-end")
+        {
+            button(class="blue_button" id="btn_addcs" onclick=""){"Aceptar"}
+            button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-indicaciones\')"){"Cancelar"}
+        }
+    }
+
+    //modal ingresos o egresos
+    div(class="modal fade " id="modal_ingreso_egreso" tabindex="-1" "data-bs-backdrop"="false" "data-bs-keyboard"="false") //"aria-hidden"="true"
+        {
+            div(class="modal-dialog modal-lg modal-dialog-centered mx-auto") // modal-dialog-scrollable modal-dialog-centered
+            {
+                div(class="modal-content rounded-0 p-0 border shadow")
+                {
+                    div(class="modal-header p-3")
+                    {
+                        h6(class="modal-title fw-bold" id="modal_ingreso_egreso_title"){$""}
+                        div(class="w-100 rounded" role="alert" style="height:8px; background-color:#FCFCFC"){$""}
+                        button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
+                    }
+                    div(class="modal-body py-0 px-2 pt-2" )
+                    {
+                        form(id="frm_ingreso_egreso" onsubmit="return false" class="form-table d-flex")
+                        {
+                            div(class="row")
+                            {
+                                div(class="col-md-4")
+                                {
+                                    label(class="fw-bold" "for"="referencia"){"Referencia:"}
+                                    input(class="input-login" type="" name="referencia" value="" id="referencia" maxLength="50" onfocus="views.SelectAll(this)" required="")
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="" "for"="fecha"){"Fecha:"}
+                                    input(class="input-login" type="date" name="fecha" value="#<date_str(now(),'yyyy-MM-dd')>" id="fecha" maxLength="32" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-6")
+                                {
+                                    label(class="fw-bold" "for"="importe"){"Categoría:"}
+                                    select(class="input-login form-select shadow-none" name="categoria" id="categoria" required="")
+                                    {$""
+                                        #!
+                                        if isset("categorias")
+                                        {
+                                            for i = 0; i < @count(categorias)
+                                            {
+                                                ref cat=@item(categorias,i)
+                                                #$ option(value="#<@@(cat,'$sys_pk')>"){"#<@@(cat,'$descripcion')>"}
+                                            }
+                                        }
+                                        #$
+                                    }
+                                }
+                                div(class="col-md-6")
+                                {
+                                    label(class="fw-bold" "for"="divisa"){"Divisa:"}
+                                    select(class="input-login form-select shadow-none" name="divisa" id="divisa" required="")
+                                    {$""
+                                        #!
+                                        if isset("divisas")
+                                        {
+                                            #!
+                                            for i = 0; i < @count(divisas)
+                                            {
+                                                ref d=@item(divisas,i)
+                                                selected=@@(@__divisa,"#sys_pk") == @@(d,"#sys_pk")
+                                                #$ option(value="#<@@(d,'$sys_pk')>" "#<ifstr(selected,'selected','')>"="true"){"#<@@(d,'$descripcion')>"}
+                                            }
+                                        }
+                                        #$
+                                    }
+                                }
+                                div(class="col-md-12")
+                                {
+                                    label(class="" "for"="descripcion"){"Descripción:"}
+                                    textarea(class="input-login" name="descripcion" id="descripcion" maxLength="1024" onfocus="views.SelectAll(this)"){""}
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="fw-bold" "for"="tcambio"){"Efectivo:"}
+                                    input(class="input-login" type="number" name="efectivo" value="0" min="0.1" max="9999999999999" step="0.000001" id="efectivo" onfocus="views.SelectAll(this)" required="")
+                                }
+                                
+                            }
+                        }
+                    }
+                    div(class="modal-footer")
+                    {
+                        button(class="btn-admin" type="button" onclick="controller.ProcessMovimiento()"){$"Aceptar"}
+                    }
+                }
+            }
+        }

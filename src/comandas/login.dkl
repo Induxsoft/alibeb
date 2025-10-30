@@ -1,0 +1,164 @@
+#include "dkli.dkh"
+
+#!
+module "login"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "website.dkl"
+
+	#!
+	/////////////////////////////////////////////////////////////////////////////
+	qname=""
+	message=""
+	method=toupper(@@(@http_context,"request/headers/REQUEST_METHOD"))
+	success=@@(@http_context,"request/get/success")
+
+	if @use_bdconfig && @@(@http_context,"session/user/ids")!=""{do session.logout(@@(@http_context,"session/user/ids"))}
+	if method=="POST"
+	{
+		if isset("@config"){qname=@@(@config,"connection")}
+
+		uid=@@(@http_context,"request/post/user")
+		pwd=@@(@http_context,"request/post/pwd")
+		success=@@(@http_context,"request/post/success")
+         //do dbr.setHashUnicode(@true)
+		ref db=dbr.login(qname, uid,pwd)
+
+		token=dbr.getSID(db)
+
+		url=url_dcode(success)
+		url=replace(url,"@token",token)
+		url=replace(url,"@ids",token)
+
+		@http_context<"response/headers/Location">:url
+
+		return
+
+		exception
+		{
+			message=last_error()
+		}
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////
+
+	// error=@@(@http_context,"request/get/error")
+	
+	
+	// if error!=""{error=url_dcode(error)}
+
+	#$
+	div(class="container-all")
+	{
+		#$
+		div(class="nabvar")
+		{
+			div(class="title-induxsoft" id="" style="position:fixed;")
+			{
+					$""
+					#$
+					div(class="name_waiter"){
+						h3{$"Login"}
+						span(id="caption-cprod"){"Inicio de sesión"}
+						#$
+					}
+					
+			}
+		}
+		#$
+		div(class="container-login")
+		{
+			div(class="module-all")
+			{
+
+				div(class="module-login")
+				{
+					form(method="POST" action="." onsubmit="return access.validate();")
+					{
+						label("for"="user"){"Usuario:"}
+						input(class="input-login" type="text" name="user" id="user")br{}
+
+						label("for"="pwd"){"Contraseña:"}
+						input(class="input-login" type="password" name="pwd" id="pwd" placeholder="")br{}
+						label(style="color: #000;"){input(type="checkbox" id="checkpwd" onchange="access.showpwd(this)")$" Mostrar contraseña"}br{}
+						input(type="hidden" name="success" value="#<success>")
+						input(type="hidden" name="dkl_render" value="true")
+						div(class="error" style="width:20rem;display:flex")
+						{
+							label(id="error" style="color:red;" value=""){$"#<message>"}
+						}
+						
+						div(class="module-click" style="padding-top:20px")
+						{
+							button(class="btn-admin" id="btnlogin" style="width:30%;height:40px;justify-content: center;"){"Ingresar"}
+						}
+					}
+					
+					
+				}
+			}
+			script
+			{
+				$'
+
+				var access={
+					setError:function(error)
+					{
+						var er=document.querySelector("#error");
+						if(er)
+							er.innerHTML=error;
+						// setTimeout(1000,er.innerHTML="");
+					},
+					redirect:function(url)
+					{
+						window.location.href=url;
+					},
+					validate:function()
+					{
+						var user=document.querySelector("#user");
+						var pwd=document.querySelector("#pwd");
+
+						if(user.value=="")
+						{
+							access.setError("Debe ingresar un usuario");
+							return false;
+						}
+						// else if(pwd.value=="")
+						// {
+						// 	access.setError("Debe ingresar una contraseña");
+						// 	return false;
+						// }
+						return true;
+					},
+					setError:function(error="")
+					{
+						var er=document.querySelector("#error");
+						if(er)
+							er.innerHTML=error;
+						setTimeout(function(){
+							er.innerHTML="";
+						}, 4000);
+						
+					},
+					showpwd:function(e)
+					{
+						var pwd=document.querySelector("#pwd");
+						if(e.checked)
+						{
+							pwd.setAttribute("type","");
+						}else{
+							pwd.setAttribute("type","password");
+						}
+					}
+				}
+				setTimeout(access.setError, 4000);
+
+				'
+			}
+			
+		}
+		
+	}
+}

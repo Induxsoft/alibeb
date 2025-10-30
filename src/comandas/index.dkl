@@ -1,0 +1,41 @@
+﻿#include "dkli.dkh"
+#!
+module ""
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "website.dkl"
+	
+	#$
+	div(class="container-all")
+	{
+		#!
+		include path.concat("comandas","dmcm/app/front/_include/navbar.dkl")
+		#$
+		div(class="card")
+		{
+			div(class="card-header")
+			{
+				div(class="d-flex justify-content-center")
+				{
+					h2{"MENÚ"}
+				}
+			}
+			div(class="card-body")
+			{
+				div(class="row")
+				{
+					div(class="col-md-6 ")
+					{
+						a(class="btn-admin" id="" href="/comandas/"){$"COMANDAS"}
+					}
+					div(class="col-md-6")
+					{
+						a(class="btn-admin" id="" href="/fastfood/"){$"COMIDA RÁPIDA"}
+					}
+				}
+				
+			}
+		}
+	}
+}

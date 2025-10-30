@@ -30,6 +30,19 @@ model "alibeb"
         // 2-"Almacén virtual o imaginario"
     }
     //configuración de la terminal de meseros
+    entity "ut_dm_tmm_gprn"
+    {
+        @"id" string(32) key unique required
+        @"data" memo
+    }
+    
+    entity "ut_dm_tmm_cgprn"
+    {
+        @"id" string(32) key unique required
+        @"ref_cprod" ref:"cproduccion" required
+        @"ref_gprn" ref:"ut_dm_tmm_gprn" required
+    }
+
     entity "ut_dm_tmm"
     {
         @"sys_pk" int key required autoincrement

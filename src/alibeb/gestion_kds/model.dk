@@ -2,8 +2,18 @@
 #!
 module ":gkds"
 {
-    list::&db,&params{return list.create()}
-    read::&db,&params{return record.create()}
+    list::&db,&params
+    {
+        do dbr.apps.action.grant("CA30")
+
+        return list.create()
+    }
+    read::&db,&params
+    {
+        do dbr.apps.action.grant("CA30")
+
+        return record.create()
+    }
     
 
     point @list to gkds.list

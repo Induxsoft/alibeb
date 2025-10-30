@@ -1,0 +1,10 @@
+{
+	"driver":"generic",
+	"type":"stream_linux",//ethernet,usb,stream_linux,file,//bluetooth
+	"address":"/dev/usb/lp0",//192.168.0.87,COM4,/dev/usb/lp0,path
+	"port":"9100",
+	"timeout":15,
+	"dpi":203,
+	"printWidth":60,
+	"charsPerLine":46
+}

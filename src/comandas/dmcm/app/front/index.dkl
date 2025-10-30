@@ -1,0 +1,159 @@
+#include "dkli.dkh"
+#set "meta-xml-declaration" "<!DOCTYPE html>\r\n"
+#!
+module "index"
+{
+	
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "config.dkl"
+	#include "website.dkl"
+	#include "uielements.dkl"
+	#include "dbr.vars.dkl"
+
+	ref @GET=@@(@http_context,"&request/get")
+	view=@@(@http_context,"request/get/view")
+	
+	ref @waiter=from.json(@json)
+
+	@idtable=@@(@http_context,"request/get/idtable")
+	@token=@@(@http_context,"request/get/dmtm_token")
+	@ws=@@(@http_context,"request/get/dm_scr")
+	
+	@url_redir=trim(@@(@http_context,"$request/get/url_redir"))
+	if @url_redir!=""{@url_redir=url_dcode(@url_redir)}
+
+	if @use_bdconfig
+	{
+	 	@ws=@@(@config,"connection")
+	 	if view=="vw_workspace"{view=""}
+	}
+
+	if @ws=="" && (@token!="" || @token==""){view="vw_workspace"}
+	else if @token==""{view=""}
+
+	@module=""
+	file_include=""
+	ref @__divisa=@null
+	pos_card_procesor=""
+	switch view
+	{
+		case "vw_principal"
+		{
+			@module="login"
+			ref @__divisa=GetDataDivisaPred()
+			ref divisas=GetDivisas()
+			ref categorias=GetCategorias()
+			file_include= path.concat(@path_view,"vw_principal.dkl")
+			break
+		}
+		case "vw_infocuenta"
+		{
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"vw_infocuenta.dkl")
+			break
+		}
+		case "newcommand"
+		{
+			@command=@true
+			@module="vw_infocuenta"
+			file_include=path.concat(@path_view,"new_command.dkl")
+			break
+		}
+		case "vw_workspace"
+		{
+			@token=""
+			file_include=path.concat(@path_view,"vw_workspace.dkl")
+			break
+		}
+		// case "page-cobro"
+		// {
+		// 	file_include=path.concat(@path_view,"payments.dkl")
+		// 	break
+		// }
+		case "cobrar"
+		{
+			ref @__divisa=GetDataDivisaPred()
+			pos_card_procesor=trim(GetVars("pos_card_procesor"))
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"payments.dkl")
+			break
+		}
+		case "corte-caja"
+		{
+			ref @__divisa=GetDataDivisaPred()
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"cortecaja.dkl")
+			break
+		}
+		case "config-prn"
+		{
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"config-prn.dkl")
+			break
+		}
+		default
+		{
+			@token=""
+			file_include=path.concat(@path_view,"login.dkl")
+		}
+			
+	}
+	
+	#$
+	div(style="height: 100%;")
+	{
+		script(src="#<@js_epos_prn>"){""}
+		script(src="#<@js_epos_prn_imin>"){""}
+		script(src="#<@js_epos_imin_printer>"){""}
+		script(src="/_js/bootstrap.bundle.min.js"){""}
+
+		div(class="container-all" style="overflow:auto")
+		{
+			#!
+            include path.concat(@path_include,"navbar.dkl")
+
+			include file_include
+            #$
+		}
+		#!
+		#include "_views/modals.dkl"	 
+		#$
+		script
+		{
+			$'
+			var ws="#<@ws>";
+			var token="#<@token>";
+			var view_first="vw_principal";
+			var view_second="vw_infocuenta";
+			var idtable="#<@idtable>"
+			var name_addcs="__adds";
+
+			var module="#<ifstr(@module=="login" && view=="vw_principal",1,0)>";
+			#<ftext(file.rtext(@styles_js))>
+			#<ftext(file.rtext(@views_js))>
+			#<ftext(file.rtext(@model_js))>
+			#<ftext(file.rtext(@driver_js))>
+
+			var $cc="#<@@(@waiter,"cc")>";
+			var waiter_key="#<@@(@waiter,"key")>";
+			var caption="#<@@(@waiter,"caption")>";
+			var zone="#<@@(@waiter,"zone")>";
+
+			
+			const css_class_mesa="mesas";
+
+			if(token!=""){controller.gettoken("#<@token>");}
+
+			controller.iminCnn=#<to.json(@iminCnn)>;
+			controller.getData=#<to.json(@GET)>;
+			controller.url_redir="#<@url_redir>";
+			'
+		}
+		#!
+
+	}
+	
+	
+}

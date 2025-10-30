@@ -1,0 +1,2 @@
+*: /$/* > $comandas/_static/*
+GET: /_/* > $comandas/*

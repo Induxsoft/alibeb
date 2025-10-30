@@ -1,0 +1,138 @@
+#include "dkli.dkh"
+#!
+module "index.dkl"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+    #include "webcl.dkh"
+	#include "dbr.dkh"
+    #include "dbr.vars.dkl"
+
+	@SITE_INCLUDES="config.dk,lib.dk,list_query.dk,impuesto.dk"
+	#include "website.dkl"
+	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
+	
+	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
+	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
+    @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
+
+    if @@(@http_context,"request/headers/REQUEST_METHOD")=="OPTIONS"{return}
+
+    go api_base_service (responseJSONdata:response) 
+	{
+		method=@@(@http_context,"request/headers/REQUEST_METHOD")
+		ref params=@@(@http_context,"&request/get")
+		ref postData=@@(@http_context,"&request/post")
+        
+        poststring=trim(field.dstr(@http_context,"request/post_string","{}"))
+        if poststring==""{poststring="{}"}
+        if isnull(postData){ref postData=from.json(poststring)}
+
+        auth=@@(@http_context,"$request/headers/http_Authorization")
+        if auth=="" { do rise_error(0,"No autorizado") }
+
+        if contains(tolower(auth),"bearer"){ auth=trim(replace(tolower(auth),"bearer","")) }
+        ref dauth=split(auth,"+")
+        
+        workspace=""
+        dm_token=""
+        
+        if @count(dauth)>1
+        {
+            workspace=list.str(dauth,0)
+            dm_token=list.str(dauth,1)
+        }
+        
+        if trim(dm_token)==""{do rise_error(500,"No autorizado")}
+
+        qname=@@(@config,"$connection")
+        ref db=open.db(qname)
+        
+        @dmtoken=dm_token
+        do token.data.validate(db,@true)
+        
+        ref data=@null
+        switch toupper(method)
+        {
+            case "POST"
+            {
+                if trim(@@(postData,"$caller"))==""{do rise_error(500,"No ha indicado un ID de terminal de mesero o de caja `caller`")}
+
+                pos_card_procesor=dbr.vars.get(db,"pos_card_procesor")
+                if trim(pos_card_procesor)==""{do rise_error(500,"No ha configurado el procesador de tarjetas `pos_card_procesor`")}
+                params<"card_procesor">:pos_card_procesor
+
+                ref pcardprocessor=dbr.rec(db,"select * from pos_present_card_processor where id=@card_procesor",params)
+                if isnull(pcardprocessor){do rise_error(500,"No se encontró datos del procesador de tarjetas configurado en `pos_card_procesor` ")}
+                if trim(@@(pcardprocessor,"$driver"))==""{do rise_error(500,"No ha definido un controlador para el procesaro de tarjetas")}
+
+                include @@(pcardprocessor,"$driver")
+                namespace "globalpay"
+                ref @database=db
+
+                caller=trim(@@(postData,"$caller"))
+                traceid=trim(@@(postData,"$traceid"))
+                transid=trim(@@(postData,"$transid"))
+                followid=trim(@@(postData,"$followid"))
+                transaction=trim(@@(postData,"$transaction"))
+                amount=@@(postData,"#amount")
+
+                switch @@(postData,"$action")
+                {
+                    case "sale"
+                    {
+                        if trim(@@(postData,"$transaction"))==""{do rise_error(500,"No ha indicado la referencia de la venta `transaction`")}
+
+                        if amount < 1{do rise_error(500,"No ha indicado un monto `amount`")}
+                        ref data=sale(caller,traceid,followid,transaction,amount)
+                        break
+                    }
+                    case "cancel"
+                    {
+                        if trim(@@(postData,"$transaction"))==""{do rise_error(500,"No ha indicado la referencia de la venta `transaction`")}
+                        if transid!=""{traceid=transid}
+                        //traceid -> puede ser el trace o id de la transacción devuelta al momento de hacer la venta (sale) ,recomendado id de la transacción de venta
+                        ref data=cancel(caller,traceid,transaction)
+                        break
+                    }
+                    case "refund"
+                    {
+                        if trim(@@(postData,"$transaction"))==""{do rise_error(500,"No ha indicado la referencia de la venta `transaction`")}
+                        if amount < 1{do rise_error(500,"No ha indicado un monto `amount`")}
+
+                        if transid!=""{traceid=transid}
+                        ref data=refund(caller,traceid,transaction,amount)
+                        break
+                    }
+                    case "status"
+                    {
+                        if transid!=""{traceid=transid}
+                        ref data=status(caller,traceid)
+                        break
+                    }
+                }
+                break
+            }
+            default
+            {
+                do rise_error(500,"Acción no implementado")
+                break
+            }
+        }
+        if dbr.is_open(db){do dbr.close(db)}
+        using response
+        {
+            @"data*":data
+        }
+
+        exception
+		{
+			if isset("db"){if dbr.is_open(db){do dbr.close(db)}}
+			using response
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+		}
+    }
+}

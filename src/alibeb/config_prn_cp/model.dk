@@ -1,0 +1,103 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    @table_name="ut_dm_tmm_cgprn"
+
+    @list_query="SELECT c.id, CONCAT(p.codigo,' - ',p.descripcion)cprod,gp.id AS impresora 
+    FROM #<@table_name> c
+    INNER JOIN cproduccion p ON c.ref_cprod=p.sys_pk
+    INNER JOIN ut_dm_tmm_gprn gp ON c.ref_gprn=gp.id "
+
+    @read_query="select * from #<@table_name> where id=@_entity_id"
+    
+    list::&db,&params
+    {
+        do dbr.apps.action.grant("CA60")
+
+        ref data=dbr.list(db,ftext(@list_query),params)
+       
+        return data
+    }
+    read::&db,&params
+    {
+        do dbr.apps.action.grant("CA60")
+
+        ref data=dbr.rec(db,ftext(@read_query),params)
+        if isnull(data){do rise_error(500,"Elemento no encontrado")}
+
+        do prepareView(db,params,data)
+
+        return data
+    }
+    getDataEntity::&data
+    {
+        if trim(@@(data,"$id"))==""{do rise_error(500,"No ha indicado un ID")}
+        if trim(@@(data,"$ref_cprod"))==""{do rise_error(500,"No ha indicado un centro de producción")}
+        if trim(@@(data,"$ref_gprn"))==""{do rise_error(500,"No ha indicado una impresora")}
+
+        using data
+        {
+            @"id":limpiarTexto(@@(data,"$id"))
+        }
+
+        return data
+    }
+    create::&db,&params,&data
+    {
+        do dbr.apps.action.grant("CA51")
+
+        ref entity=getDataEntity(data)
+
+        do dbr.insert(db,@table_name,entity)
+        params<"_entity_id">:@@(data,"$id")
+        return read(db,params)
+    }
+
+    update::&db,&params,&data
+    {
+        do dbr.apps.action.grant("CA52")
+        
+        ref entity=getDataEntity(data)
+
+        do dbr.update(db,@table_name,entity,"id=@_entity_id",params)
+        
+        return data
+    }
+    delete::&db,&params
+    {
+        do dbr.apps.action.grant("CA53")
+        do dbr.delete(db,@table_name,"id=@_entity_id",params)
+        return params
+    }
+    blank::&db,&params
+    {
+        ref entity=from.json('{
+                    "driver":"generic",
+                    "type":"ethernet",//ethernet,usb,stream_linux,file
+                    "address":"",//192.168.0.87,COM4,/dev/usb/lp0,path
+                    "port":"9100",
+                    "timeout":15,
+                    "dpi":203,
+                    "printWidth":60,
+                    "charsPerLine":46
+                }')
+        do prepareView(db,params,entity)
+
+        return entity
+    }
+    prepareView::&db,&params,&data
+    {
+        using data
+        {
+            @"cprods*":dbr.list(db,"SELECT cp.sys_pk,CONCAT(cp.codigo,' - ',cp.descripcion)cprod FROM cproduccion cp WHERE IFNULL(sys_deleted,0)=0",params)
+            @"impresoras*":dbr.list(db,"SELECT * from ut_dm_tmm_gprn gp; ",params)
+        }
+    }
+    point @blank to blank
+    point @delete to delete
+    point @list to list
+    point @read to read
+    point @create to create
+    point @update to update
+}

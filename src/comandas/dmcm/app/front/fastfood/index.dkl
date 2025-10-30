@@ -1,0 +1,72 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+	#include "../config.dkl"
+	#include "website.dkl"
+	#include "uielements.dkl"
+
+    ref @GET=@@(@http_context,"&request/get")
+    view=@@(@GET,"$view")
+    @ws=@@(@config,"connection")
+    ref @waiter=from.json(@json)
+    @module=""
+	file_include=path.concat(@path_view,"fastfood.dkl")
+
+    @token=trim(@@(@http_context,"request/get/dmtm_token"))
+    if @token==""
+    {
+        @http_context<"response/headers/location">:"/?url_redir="+url_encode("/fastfood/?dmtm_token=@dmtm_token")
+        return
+    }
+
+    #$
+	div(style="height: 100%;")
+	{
+		script(src="#<@js_epos_prn>"){""}
+		script(src="#<@js_epos_prn_imin>"){""}
+		script(src="#<@js_epos_imin_printer>"){""}
+        div(class="container-all" style="overflow:auto")
+        {
+            #!
+            include path.concat(@path_include,"navbar.dkl")
+            
+            include file_include
+            #$
+        }
+        script
+        {
+            $'
+            var ws="#<@ws>";
+			var token="#<@token>";
+			var view_first="vw_principal";
+			var view_second="vw_infocuenta";
+			var idtable="#<@idtable>"
+			var name_addcs="__adds";
+
+			var module="#<ifstr(@module=="login" && view=="vw_principal",1,0)>";
+			#<ftext(file.rtext(@styles_js))>
+			#<ftext(file.rtext(@views_js))>
+			#<ftext(file.rtext(@model_js))>
+			#<ftext(file.rtext(@driver_js))>
+
+			var $cc="#<@@(@waiter,"cc")>";
+			var waiter_key="#<@@(@waiter,"key")>";
+			var caption="#<@@(@waiter,"caption")>";
+			var zone="#<@@(@waiter,"zone")>";
+
+			
+			const css_class_mesa="mesas";
+
+			if(token!=""){controller.gettoken("#<@token>");}
+
+            controller.iminCnn=#<to.json(@iminCnn)>;
+			controller.getData=#<to.json(@GET)>;
+            '
+        }
+    }
+
+}

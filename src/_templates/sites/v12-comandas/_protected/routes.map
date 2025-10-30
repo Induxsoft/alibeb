@@ -1,0 +1,22 @@
+*: /comandas/ > $comandas/dmcm/app/front/index.dkl
+*: /fastfood/ > $comandas/dmcm/app/front/fastfood/index.dkl
+*: /gestion-meseros/ > $comandas/dmcm/admin/front/index.dkl
+*: /kds/ > $comandas/kds/app/front/index.dkl
+*: /gestion-kds/ > $comandas/kds/admin/front/index.dkl
+*: /login/ > $comandas/login.dkl
+
+*: /kds/admin/{module}/{process}/{entity} > $comandas/kds/admin/svc/index.dkl
+*: /kds/admin/{module}/{process}/{entity}/{idcprod} > $comandas/kds/admin/svc/index.dkl
+
+*: /dmcm/admin/{module}/{process}/{entity} > $comandas/dmcm/admin/svc/index.dkl
+*: /dmcm/admin/{module}/{process}/{entity}/{id_table} > $comandas/dmcm/admin/svc/index.dkl
+
+*: /kds/{module}/{process}/{entity} > $comandas/kds/app/svc/index.dkl
+*: /kds/{module}/{process}/{entity}/{idkdf} > $comandas/kds/app/svc/index.dkl
+
+*: /dmcm/{module}/{process}/{entity} > $comandas/dmcm/app/svc/index.dkl
+*: /dmcm/{module}/{process}/{entity}/{id_table} > $comandas/dmcm/app/svc/index.dkl
+
+*: /terminal/{trace?}/ > $comandas/dmcm/app/svc/terminal/index.dkl
+GET: / > $comandas/dmcm/app/front/index.dkl
+GET: /_css/principal.css > $comandas/dmcm/app/front/_css/principal.css

@@ -1,0 +1,116 @@
+#include "dkli.dkh"
+#!
+module "lib.dk"
+{
+	DocumentRoot::
+	{
+		return @@(@http_context,"$request/headers/DOCUMENT_ROOT")
+	}
+
+    @preserve_querystr_params="dmtm_token,dm_scr"
+    preserveQSParams::url
+	{
+		preserve=@preserve_querystr_params
+		//Pasar a url los parámetros en la url actual que se indican delimitados por comas
+		ref ops=record.create()
+		u=replace(field.dstr(@http_context,"request/headers/request_uri","/"),"\\","/")
+
+		q=""
+		if contains(u,"?")
+		{
+			ref oqs=split(u,"?")
+			u=list.str(oqs,0) 
+			q=list.str(oqs,1) 
+
+			ref qps=split(q,"&")
+			for i=0;i<@count(qps)
+			{
+				kv=list.str(qps,i)
+				if contains(kv,"=")
+				{
+					ref lkv=split(kv,"=")
+					if isanyword(list.str(lkv,0),preserve)
+					{
+						ops<list.str(lkv,0)>:list.str(lkv,1)
+					}
+				}
+			}
+			fd="?"
+			if contains(url,"?"){fd="&"}
+			ref l=list.create_from_fields(ops)
+			if @count(l)>0
+			{
+				for i=0;i<@count(l)
+				{
+					if not(contains(url,list.str(l,i)+"="))
+					{
+						url=url+fd+list.str(l,i)+"="+field.str(ops,list.str(l,i))
+						fd="&"
+					}
+				}
+			}
+
+		}
+		
+		exception{}
+		return url
+	}
+	#!
+	api_base_service::
+    {
+        expose responseJSONdata
+
+        new responseJSONdata
+        {
+            @"success":@true
+        }
+        
+        that
+        
+        @http_context<"response/headers/Content-Type">:"application/json;charset=utf-8"
+        @http_context<"response/output">:"text"
+        @http_context<"response/text">: to.json(responseJSONdata)
+    }
+
+    #!
+	ref @database=@null
+    open.db::qname
+    {
+        module
+        {
+            do reset()
+            exception{}
+        }
+        if qname!=""{return dbr.open(qname)}
+        
+        return dbr.open(@@(@config,"connection"))
+    }
+	//si qname es vacio obtendrá de la configuración
+	getDatabase::qname
+	{
+		if isnull(@database){ref @database=open.db(qname)}
+
+		return @database
+	}
+	GetVars::var
+	{
+		ref db=getDatabase("")
+		return dbr.vars.get(db,var)
+	}
+	#!
+	GetDataDivisaPred::
+	{
+		ref db=getDatabase("")
+		divisa =parse.num(dbr.vars.get(db,"FXCA013"))
+		divisa >> p
+
+		return dbr.rec(db,"select sys_pk,codigo,descripcion,tcambio from divisa where sys_pk=@divisa",p)
+	}
+    #!
+    session.logout::ids
+    {
+        ref db=dbr.reconnect(@@(@config,"connection"),ids)
+        do dbr.logout(db)
+        exception{}
+    }
+}

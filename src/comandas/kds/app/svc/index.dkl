@@ -1,0 +1,85 @@
+#include "dkli.dkh"
+#!
+module "index.dkl"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	
+	@SITE_INCLUDES="config.dk,lib.dk,list_query.dk,impuesto.dk"
+	#include "website.dkl"
+	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
+	
+	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
+	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
+    @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
+
+    if @@(@http_context,"request/headers/REQUEST_METHOD")=="OPTIONS"{return}
+   	
+	go api_base_service (responseJSONdata:response) 
+	{
+		method=@@(@http_context,"request/headers/REQUEST_METHOD")
+		ref params=@@(@http_context,"&request/get")
+		ref postData=@@(@http_context,"&request/post")
+
+		if isnull(postData) && (method=="POST" || method=="PATCH")
+		{
+			ref postData=from.json(field.dstr(@http_context,"request/post_string","{}"))
+		}
+
+		// qname=""
+		admin=@@(@http_context,"request/headers/HTTP_ADMIN")
+		if contains(admin,"@"){qname=admin}
+		else{qname="Connections@Induxsoft/ws"+trim(admin)+"@workspaces"}
+		if not(@accept_qnames) && contains(qname,"@"){do rise_error(99,"No se aceptan nombres cualificados.")}
+		
+		ref db=open.db(qname)
+
+		switch method
+		{
+			case "GET"
+			{
+				if @@(params,"entity")=="kdf" && @@(params,"idkdf")=="" && @@(params,"history")==""{ref data=kdf.get.ordenes(db,params)}
+				else if @@(params,"entity")=="kdf" && @@(params,"idkdf")!=""{ref data=kdf.get.lastorders(db,params)}
+				else if @@(params,"entity")=="kdf" && @@(params,"idkdf")=="" && @@(params,"history")!=""{ref data=kds.gethistory(db,params)}
+				
+			}
+			case "POST"{}
+			case "PATCH"
+			{
+				switch @@(postData,"act")
+				{
+					case "close"
+					{
+						if @@(params,"entity")=="kdf" && @@(params,"idkdf")!=""{ref data=kdf.close.table(db,params)}
+					}
+					case "re_open"
+					{
+						if @@(params,"entity")=="kdf" && @@(params,"idkdf")!=""{ref data=kds.update_history(db,params)}
+					}
+					default{do rise_error(99,"Operación no encontrado.")}
+				}
+				
+			}
+			case "PUT"{}
+			default{do rise_error(99,"No operación no encontrado.")}
+		}
+
+		if dbr.is_open(db){do dbr.close(db)}
+		using response
+		{
+			@"success":@true
+			@"data*":data
+		}
+
+		exception
+		{
+			// if dbr.is_open(db){do dbr.close(db)}
+			using response
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+		}
+	}
+}

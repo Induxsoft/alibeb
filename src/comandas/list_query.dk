@@ -1,0 +1,312 @@
+#include "dkli.dkh"
+#!
+module "lista de consultas"
+{
+    @where=""
+
+	@flag="select d.bandera from dmnsmesa d where d.id=@code"
+
+	@available="select d.personas from dmnsmesa d where d.id=@code"
+
+	@exist_table="select dmnsmesa from  venta v INNER JOIN agente a ON v.iagente=a.sys_pk
+                where v.dmnsmesa=@code and v.StatusAdministrativo=1 AND a.codigo=@waiter;"
+
+    @table_paid="select ifnull(v.sys_pk,0)pk_venta from  venta v INNER JOIN agente a ON v.iagente=a.sys_pk
+                where v.dmnsmesa=@code 
+                and v.StatusAdministrativo<>3 
+                and v.statusentrega<>3
+                and trim(ifnull(v.sys_info,''))=''
+                AND a.codigo=@waiter;"
+
+	@lifespan="select hour(v.sys_dtcreated)as hours,minute(v.sys_dtcreated)as minutes,second(v.sys_dtcreated) as seconds from venta v where v.sys_pk=@sys_pk"
+	@foodbev="select cc.codigo cod_cc,cp.codigo cod_cp,cc.descripcion desc_cc,cp.descripcion desc_cp, p.codigo as sku,p.sys_pk as pkprod,q.sys_pk as sys_pk,q.descripcion as 'description',q.precio1,q.precio2,q.precio3,q.precio4,
+				q.precio5,q.i1venta,q.i2venta,q.i3venta,q.i4venta,q.unidad as unit,q.ilinea as line 
+				from qproddmnsxcprod q inner join producto p on q.sys_pk=p.sys_pk inner join cconsumo_cproduccion_ cccp on cccp.icproduccion=q.icentrosproduccion 
+				inner join cconsumo cc on cc.sys_pk=cccp.iconsumo inner join cproduccion cp on cp.sys_pk=cccp.icproduccion 
+                where cc.sys_pk=@cc"//select p.codigo as sku,q.sys_pk as sys_pk,q.descripcion as 'description',q.precio1,q.precio2,q.precio3,q.precio4,q.precio5,q.i1venta,q.i2venta,q.i3venta,q.i4venta,q.unidad as unit,q.ilinea as line from qproddmnsxcprod q inner join producto p on q.sys_pk=p.sys_pk
+
+	@prod="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad from producto p where p.sys_pk=@sys_pk"
+    
+    @prodc="select cp.sys_pk,cp.codigo from cproduccion cp where cp.codigo=@code"
+
+    @dataventa="select v.sys_pk,v.dmnsmesa,v.referencia from venta v where v.sys_guid=@id_table"
+
+    @dataorden="select importe from orden where iventa=@sys_pk"
+    @datadorden="select sys_pk from dorden where sys_guid=@sys_guid"
+
+    @deletedventa="delete dventa from dventa inner join producto on dventa.iproducto=producto.sys_pk where producto.iclase=2 and dventa.fk_venta_detalle=@sys_pk"
+
+    @dataadds="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad from producto p where p.codigo=@sku"
+
+    @getordennew="select sys_pk from orden where sys_guid=@sys_guid" 
+
+    @block="select f.sys_pk,f.cancelado,f.fecha,f.folio,f.block from foliosdocumentos f where f.sys_guid=@sys_guid"
+    @blockdoc="SELECT serie FROM blockdocumentos WHERE sys_pk=6;"
+
+    @getdorden="select d.iproducto,d.precio precio, sum(d.cantidad) cantidad, sum(d.d1) d1, sum(d.d2) d2
+                from dorden d
+                inner join orden o on o.sys_pk=d.fk_orden_detalle
+                inner join venta v on o.iventa=v.sys_pk
+                inner join producto p on d.iproducto=p.sys_pk
+                where v.sys_pk=@sys_pk and p.iclase=2
+                group by d.iproducto, d.precio;"
+
+    @totaldventa="select ifnull(sum(dv.precio*dv.cantidad),0) subtotal, ifnull(sum(dv.descuento1),0)d1,ifnull(sum(dv.descuento2),0)d2,ifnull(sum(dv.impuesto1),0)i1,ifnull(sum(dv.impuesto2),0)i2,
+                ifnull(sum(dv.impuesto3),0)i3,ifnull(sum(dv.impuesto4),0)i4 from dventa dv inner join producto p on dv.iproducto=p.sys_pk where dv.fk_venta_detalle=@sys_pk" // and p.iclase=2;
+
+	@updateventa="update venta v set v.sys_timestamp=now(),v.subtotal=@subtotal,v.descuento1=@d1,v.descuento2=@d2,v.impuesto1=@i1,v.impuesto2=@i2,v.impuesto3=@i3,v.impuesto4=@i4 where v.sys_pk=@sys_pk"
+
+    @updatedvt="update dventa dv INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+                set dv.cantidad=@cantidad,dv.#<@campo_iva>=@i3 where dv.iproducto=@producto AND v.sys_pk=@id_table" //
+
+    @updatedorden="update dorden d INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk 
+                    set d.cantidad=@cantidad where d.iproducto=@producto AND o.iventa=@id_table AND d.sys_pk=@pkdorden;"
+
+    @deletedvt="delete dv from dventa dv INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+                where dv.iproducto=@producto AND v.sys_pk=@id_table"
+
+    @getdorden_prod="SELECT d.cantidad,o.sys_pk as pkorden,d.precio FROM dorden d INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk
+                    WHERE d.iproducto=@producto AND o.iventa=@id_table AND d.sys_pk=@pkdorden;"
+
+    @deletedorden="delete d FROM dorden d INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk
+                    WHERE d.iproducto=@producto AND o.iventa=@id_table AND d.sys_pk=@pkdorden;"
+
+    @delete_orden="delete o from orden o where o.iventa=@id_table AND o.sys_pk=@pkorden"
+    @deleteadds="delete da FROM dadicionales da WHERE da.fk_dorden_adicionales=@pkdorden"
+
+    @getquantitydv="SELECT dv.cantidad,dv.precio FROM dventa dv INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+                        WHERE v.sys_pk=@id_table AND dv.IProducto=@producto"
+
+    @list_mesas_zona="select 0 as 'sys_pk',0 as 'occupied_seats','' as 'sys_guid',d.id as 'code',coalesce(d.mesero,'') as 'waiter' ,d.personas as 'available_seats' 
+                        from dmnsmesa d 
+                      inner join dmnszona z on d.izona=z.sys_pk
+                      where (ifnull(@zone,'')='' or z.id=@zone) ;"
+
+    @countdorden="SELECT COUNT(d.fk_orden_detalle) FROM dorden d WHERE d.fk_orden_detalle=@pkorden"
+    @list_mesa_waiter_cc="select qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
+                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'icc',qv.iagente as 'ag'
+                            from qventasserviciomesa qv "
+
+    @data_mesa="select
+        qv.dmnsmesa as 'code',
+        qv.sys_pk as 'sys_pk',
+        qv.sys_guid as 'sys_guid',
+        qv.referencia as 'reference',
+        qv.statusadministrativo as 'status',
+        qv.dmnspersonas as 'occupied_seats',
+        qv.notas,
+        qv.dmnsnota as 'notetable',
+        qv.total as 'balance',
+        '' as 'owner',
+        0 as is_birthday,
+        0 as is_celebration,
+        qv.icliente as 'cliente',
+        qv.icconsumo as 'cc',
+        qv.iagente as 'ag',
+        qv.icaja,
+        qv.subtotal,
+        qv.descuento1 as d1,
+        qv.descuento2 as d2,
+        qv.impuesto1 as i1,
+        qv.impuesto2 as i2,
+        qv.impuesto3 as i3,
+        qv.impuesto4 as i4,
+        qv.idivisa,
+        qv.imovcaja,
+        sc.const status_admin,
+        sf.const status_fact,
+        se.const status_entg,
+        csf.const status_financiero,
+        qv.statusadministrativo,
+        qv.statusfacturacion,
+        qv.statusentrega,
+        qv.statusfinanciero,
+        qv.importeadicional,
+        (case qv.statusadministrativo
+		  	when 0 then '-SIN USO-'
+		  	when 1 then '-ABIERTO-'
+		  	when 2 then '-CERRADO-'
+		  	when 3 then ''
+		  	when 4 then '-POR ENTREGAR-'
+		  	when 5 then '-REPARTO-'
+		  	when 99 then '-CANCELADO-'
+		  END) text_status_admin
+    from
+        qventasserviciomesa qv
+        left join cstatusadministrativos sc on qv.statusadministrativo=sc.id
+        left join cstatusfacturacion sf on qv.statusfacturacion=sf.id
+        left join cstatusentrega se on qv.statusentrega=se.id
+        left join cstatusfinancieros csf on qv.statusfinanciero=csf.id
+        where
+            qv.sys_pk = @id_table;"
+
+
+    @_list_dorden="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 
+                        dorden.cantidad,producto.descripcion,dorden.especificaciones,dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
+                        cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta,producto.unidad  from (dorden inner join (orden inner join 
+                        venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
+                        inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
+                        where (orden.iventa=@iventa or orden.sys_pk=@_orden)"
+    
+    @_list_articulos="SELECT p.codigo AS sku,p.sys_pk,p.ilinea as linea,0 pkorden,0 pkorden, dv.sys_timestamp, dv.cantidad, p.descripcion, '' especificaciones, dv.precio, dv.descuento1 d1, dv.descuento2 d2, 0 tiempo, cfg.i1venta,
+                        cfg.i2venta,
+                        cfg.i3venta,
+                        cfg.i4venta,
+                        p.unidad
+                        FROM dventa dv INNER JOIN producto p ON dv.iproducto=p.Sys_PK 
+                        INNER JOIN cfgimpuesto cfg ON p.Impuestos=cfg.Sys_PK 
+                        WHERE dv.fk_venta_detalle=@iventa AND p.IClase<>2;"
+
+    @list_ordenes=@_list_dorden+ " UNION all "+ @_list_articulos
+
+    @customer="select c.codigo as 'code',c.sys_pk,c.nombre as 'name' from cliente c where c.sys_pk=@cliente"
+
+    @zone="select z.sys_pk,z.nombre from zona z where z.sys_pk=@zona"
+
+    @cc="select c.sys_pk as 'sys_pk',c.codigo as 'code',c.descripcion as 'description' from cconsumo c where c.sys_pk=@cc"
+    @ccxcode="select c.sys_pk as 'sys_pk',c.codigo as 'code',c.descripcion as 'description' from cconsumo c where c.codigo=@cc"
+
+    if not(isset("@waiter"))
+    {
+        @waiter="select a.codigo as 'code',a.sys_pk as 'sys_pk',a.nombre as 'nombre' from agente a where a.sys_pk=@ag"
+    }
+    
+    @waiter_cd="select a.codigo as 'code',a.sys_pk as 'sys_pk',a.nombre as 'nombre' from agente a where a.codigo=@ag"
+
+    @prodc_x_cc="select cproduccion.sys_pk as 'sys_pk', cproduccion.codigo as sku, cproduccion.descripcion as 'description', 
+                cproduccion.almacenmp as 'storemp',cproduccion.almacenpt as 'storept' from cproduccion inner join cconsumo_cproduccion_ on cproduccion.sys_pk=cconsumo_cproduccion_.icproduccion
+                where cconsumo_cproduccion_.iconsumo=@cc order by cproduccion.codigo"
+
+    @lines_x_prodc="select q.sys_pk as 'sys_pk',q.codigo as sku,q.descripcion as 'description',q.icproduccion,q.color,q.visible from qlineasxcprod q where visible<>0 and icproduccion=@prodc"
+    @all_lines="select sys_pk as 'sys_pk',codigo,descripcion as 'description', color as 'color' from linea where visible<>0 and clase=2 order by linea.codigo;"
+    @line="select sys_pk,codigo as code,descripcion as description from linea where sys_pk=@line"
+
+    @bars_prod="select db.nombre as 'name',if(db.tipo=0,'single','multiple')as 'type',ds.auto as 'required',
+                db.opciones as 'values'
+                 from qbarrasdmns db inner join  dmnsasignbarra ds on db.pkasignadoa=ds.fk where pkasignadoa=@sys_pk group by db.sys_pk ;"
+
+    @bars_line="select db.nombre as 'name',if(db.tipo=0,'single','multiple')as 'type',ds.auto as 'required',
+        db.opciones as 'values'
+         from qbarrasdmns db inner join  dmnsasignbarra ds on db.pkasignadoa=ds.fk where pkasignadoa=@line group by db.sys_pk ;"
+
+    @bars_prod_plazamundial="select pv.sys_pk,pv.producto,pv.json as 'data' from prod_variante pv where pv.producto=@sku;"
+
+
+    @adcs_dmns="select p.codigo as sku,p.descripcion as 'text',p.padic1,p.padic2,p.padic3,p.padic4,p.padic5,
+                c.i1venta,c.i2venta,c.i3venta,c.i4venta
+                from producto p
+                inner join cfgimpuesto c on p.impuestos=c.sys_pk 
+                where p.adicional order by p.codigo"
+
+    @addOrdendmns="select d.sys_pk as pkadd,d.cantidad,d.precio,d.iproducto as pkprod,d.fk_dorden_adicionales as pkdorden,p.codigo as sku,p.descripcion 
+                from dadicionales d inner join producto p on d.iproducto=p.sys_pk
+                where d.fk_dorden_adicionales=@pkdorden"
+
+    @getorden_xsys_guid="select o.sys_pk,o.sys_timestamp,c.sys_pk pkcp,c.codigo code from orden o inner join cproduccion c on o.icproduccion=c.sys_pk
+                        where o.sys_guid=@sys_guid"
+
+
+    // ****************************************query waiters*****************************************
+    @getwaiters="select a.sys_pk,a.sys_timestamp,a.sys_guid,a.codigo,a.codnomina,a.email,a.nombre,a.notas,a.pcomision,a.telefono,
+                ifnull(u.access_movil,0)access_movil,ifnull(u.cc,0)cc,ifnull(u.zn,0)zn from agente a
+                left JOIN ut_dm_tmm u ON a.Sys_PK=u.agente "
+    @getwaiter="select a.sys_pk,a.sys_timestamp,a.sys_guid,a.codigo,a.codnomina,a.email,a.nombre,a.notas,a.pcomision,a.telefono from agente a where a.@_key=@waiter;"
+    @updatewaiter="update agente a set a.email=@email,a.nombre=@name,a.notas=@notes,a.telefono=@telephone where a.sys_pk=@waiter "
+    @deletewaiter="delete from agente where @_key=@waiter"
+    @getccs="select cc.sys_pk,cc.sys_guid,cc.codigo,cc.descripcion from cconsumo cc "
+    @getzones="select d.sys_pk,d.sys_guid,d.id as descripcion from dmnszona d"
+    @getzone="select d.sys_pk,d.sys_guid,d.id as descripcion from dmnszona d where d.sys_pk=@zn"
+    @login="SELECT * FROM ut_dm_tmm u WHERE u.agente=@waiter AND pwd=@pwd;"
+    @updatepwddms="update dmnspwdagente set pwd=md5(@pwd) where fkagente=@waiter"
+    @updatepwdaccesm="update ut_dm_tmm set access_movil=@access_movil,cc=@cc,zn=@zn,pwd=if(@pwd<>'',@pwd,pwd) where agente=@waiter"
+    @getdatapwd="select * from ut_dm_tmm where pwd=@pwd and agente=@waiter limit 1"
+    @existwaiter="select * from ut_dm_tmm where agente=@waiter limit 1"
+    @getdatatoken="select * from ut_dn_dmm_token"
+    @updatedatatoken="update ut_dn_dmm_token set revocado=1 where sys_pk=@sys_pk"
+
+    // **********************************************query kds**********************************************
+    @kdf_tables_orders="select distinct qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
+                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'cc',qv.iagente as 'ag',o.sys_pk pkorden
+                            from qventasserviciomesa qv INNER JOIN orden o ON o.IVenta=qv.Sys_PK 
+                            INNER JOIN cproduccion cp ON o.ICProduccion=cp.Sys_PK
+                            WHERE cp.Codigo=@cprod and (o.`status`=0 OR o.`status`=1 OR o.`status`=2) #<@where> GROUP BY qv.sys_guid "
+
+
+    @kdf_last_order="select count(o.sys_pk) from orden o
+                    inner join cproduccion cp on cp.sys_pk=o.icproduccion
+                    where o.sys_pk>@idkdf and cp.codigo=@cprod"
+    
+    @kds_orders="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 
+                        dorden.cantidad 'quantity',producto.descripcion 'description',ifnull(dorden.especificaciones,'') 'notes',dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
+                        cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta  from (dorden inner join (orden inner join 
+                        venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
+                        inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
+                        INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
+                        where orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`status`=0 OR orden.`status`=1 OR orden.`status`=2)"
+   
+   @kds.updateventa="update venta set StatusAdministrativo=@StatusAdministrativo where sys_pk=@idkdf"
+
+   @kds.updateorder="update orden o inner join cproduccion cp on o.icproduccion=cp.sys_pk
+                    inner join qventasserviciomesa v on o.iventa=v.sys_pk 
+                    SET o.`status`=@status,o.sys_timestamp=@sys_timestamp,o.hproduccion=@hproduccion,o.fproduccion=@fproduccion
+                     where v.sys_pk=@idkdf and cp.codigo=@cprod"
+
+    @kdf_tables_orders_history="select distinct qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
+                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'cc',qv.iagente as 'ag'
+                            from qventasserviciomesa qv INNER JOIN orden o ON o.IVenta=qv.Sys_PK 
+                            INNER JOIN cproduccion cp ON o.ICProduccion=cp.Sys_PK
+                            WHERE cp.Codigo=@cprod and (o.`status`=3) AND DATE(NOW())=DATE(o.sys_timestamp)  AND HOUR(NOW())=HOUR(o.sys_timestamp) order BY o.sys_timestamp DESC  LIMIT  10 "
+                            
+    @kds_orders_history="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 
+                        dorden.cantidad 'quantity',producto.descripcion 'description',ifnull(dorden.especificaciones,'') 'notes',dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
+                        cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta  from (dorden inner join (orden inner join 
+                        venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
+                        inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
+                        INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
+                        where orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`status`=3) AND DATE(NOW())=DATE(orden.sys_timestamp)  AND HOUR(NOW())=HOUR(orden.sys_timestamp) order BY orden.sys_timestamp DESC  LIMIT  10 "
+    // *************************************************************************************************************
+
+    // ******************************************************kds admin***********************************************
+    @list_cprods="select cp.sys_pk,cp.sys_timestamp,cp.sys_guid,cp.codigo,cp.descripcion,cp.almacenmp,cp.almacenpt,cp.sys_recver,ifnull(dm.pwd,'')pwd,
+                ifnull(dm.shortpool,0)shortpool,ifnull(dm.cproduccion=cp.sys_pk,0) AS fieldexist from cproduccion cp
+                LEFT JOIN dm_kds dm ON cp.sys_pk=dm.cproduccion"
+
+    @list_almacen="select a.sys_pk,a.codigo,a.descripcion from almacen a"
+
+    @get.dm_kds="select cp.sys_pk,cp.codigo,cp.descripcion from dm_kds d inner join cproduccion cp on d.cproduccion=cp.sys_pk"
+    @dm_kds_login="SELECT cp.sys_pk,cp.codigo,cp.descripcion,d.shortpool from dm_kds d inner join cproduccion cp on d.cproduccion=cp.sys_pk WHERE d.cproduccion=@idcprod AND d.pwd=MD5(@pwd)"
+
+    @cpro_admin="select sys_pk from cproduccion where sys_guid=@Sys_GUID"
+    @res_pwd="select pwd from dm_kds where cproduccion=@idcprod"
+    @cprod="select sys_pk from cproduccion where sys_pk=@idcprod"
+    // ************************************************************************************************************
+
+    //******************************************query dmcm*********************************************************
+    @agente_mesero="select sys_pk from agente where codigo=@mesero"
+    @folio_doc="SELECT ifnull(MAX(folio),0)+1 FROM foliosdocumentos WHERE BLOCK=6;"
+    @ia_gente="SELECT sys_pk FROM agente WHERE codigo =@waiter"
+    @ic_cliente="SELECT sys_pk FROM cliente WHERE codigo=@cliente"
+    @max_venta="select max(sys_pk) from venta limit 1"
+
+    //**************************************************************************************************************
+
+
+    //****************************************dmcm admin************************************************************
+    @pk_max="select max(sys_pk) from agente"
+
+    //====================cobro con tarjeta=======================================
+    //cargar ventas con tarjetas ya realizadas
+    sql_notin = "SELECT p.parent FROM globalpay p 
+                                WHERE p.pk_venta = @idt
+                                AND(IFNULL(p.is_dev, 0) = 1 or IFNULL(p.is_cancel, 0) = 1)
+                                AND trim(IFNULL(p.response,''))<> ''
+                                AND IFNULL(p.success,0)= 1"
+
+    @sql_transaciones_realizadas = "SELECT *,date_format(g.sys_dtcreated,'%Y-%m-%d %H:%i:%s')fecha FROM globalpay g
+                        WHERE g.pk_venta = @idt
+                        AND IFNULL(g.is_dev,0)= 0 AND IFNULL(g.is_cancel,0)= 0
+                        AND trim(IFNULL(g.response,''))<> ''
+                        AND IFNULL(g.success,0)= 1
+                        AND g.sys_pk NOT IN(" + sql_notin + "); "
+
+}	

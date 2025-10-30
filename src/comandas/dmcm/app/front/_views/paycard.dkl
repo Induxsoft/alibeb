@@ -1,0 +1,228 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+
+    CreateModuleCardProcesor::
+    {
+        #$
+        form(action="" method="" id="frmtarjeta" onsubmit="return false")
+        {
+            div(class="row")
+            {
+                div(class="col-md-12")
+                {
+                    div(class="row")
+                    {
+                        div(class="col-md-6")
+                        {
+                            label(class="fw-bold" "for"="importe"){"Importe"}
+                            div(class="d-flex justify-content-end align-items-center")
+                            {
+                                input(class="input-login" type="number" name="tarjeta_importe" value="0" id="tarjeta_importe" onfocus="views.SelectAll(this)")    
+                                button(class="btn-admin" type="button" id="tarjeta_btncobrar"){$"Procesar"}
+                                label(class="fw-bold ms-2" "for"=""){"MXN"}
+                            }
+                        }
+                        div(class="col-md-6 d-flex justify-content-md-end justify-content-between mt-2 mt-md-4")
+                        {
+                            h6(class="fw-bold"){"Tarjeta: "}
+                            h5(class="ms-2" id="cobro_lblimporte_tarjeta"){" $ 0.00"}
+                        }
+                    }
+                }
+                div(class="col-md-12 mt-2")
+                {
+                    div(class="d-flex justify-content-end")
+                    {
+                        // small(class="fw-bold flex-grow-1"){"Transacciones:"}
+                        button(class="btn-admin" type="button" id="tarjeta_btncancelar"){$"Cancelar transacción"}
+                    }
+                    
+                    select(class="input-login" name="tarjeta_transacciones" id="tarjeta_transacciones" multiple="" size="3"){""}
+                }
+                div(class="col-md-12 mt-2")
+                {
+                    small{"Logs:"}
+                    textarea(class="input-login" name="tajeta_logs" id="tajeta_logs" rows="3" placeholder="logs..."){""}
+                }
+            }
+        }
+        
+        #!
+    }
+    CreateCardEditTable::
+    {
+        @DECIMAL_PRECISION=parse.num(GetVars("FXCA001"))
+        ref data=list.create()
+        #$
+        form(action="" method="" id="frmtarjeta" onsubmit="return false")
+        {
+            div(class="mb-2 d-flex gap-2")
+            {
+                button(class="btn-admin" type="button" onclick="controller.showModal('modal_tarjeta')"){$"Agregar"}
+                button(class="btn-admin" type="button" onclick="controller.tarjeta.EditTarjeta()"){$"Editar"}
+                button(class="btn-admin" type="button" onclick="controller.tarjeta.DeleteTarjeta()"){$"Eliminar"}
+                span(class="flex-grow-1"){""}
+                div(class="d-flex")
+                {
+                    h6(class="fw-bold"){"Tarjeta: "}
+                    h5(class="ms-2" id="cobro_lblimporte_tarjeta"){" $ 0.00"}
+                }
+            }
+
+            "edit-table"(id="tbl_tarjetas" style="width:100%;" data="#<to.json(data)>"
+            "auto-confirm"="true"
+            "row-height"="1.2rem"
+            "control-styles"="
+                tr th { font-size:.9rem; font-weight:500 !important; outline:none !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
+                tr td { font-size:.8rem; }
+                #__table_input { font-size:unset !important; }
+            ")
+            {
+                "edit-thead"
+                {
+                    "edit-tr"
+                    {
+                        "edit-th"(type="NoEditable" field="ftipo"){$"Tipo"}
+                        "edit-th"(type="NoEditable" field="numero"){$"Número"}
+                        "edit-th"(type="NoEditable" field="importe" textalign="end" format="true" thousandssep="true" decs="#<@DECIMAL_PRECISION>" prefix="$ "){$"Importe"}
+                        "edit-th"(type="NoEditable" field="noautorizacion"){$"No. Autorización"}
+                        "edit-th"(type="NoEditable" field="cvv"){$"CVV"}
+                        "edit-th"(type="NoEditable" field="nombre"){$"Nombre"}
+                        "edit-th"(type="NoEditable" field="fdivisa"){$"Divisa"}
+                        "edit-th"(type="NoEditable" field="tcambio" textalign="end" format="true" thousandssep="true" decs="#<@DECIMAL_PRECISION>" prefix="$ "){$"Tipo de cambio"}
+                        "edit-th"(type="NoEditable" field="domicilio"){$"Domicilio"}
+                    }
+                }
+            }
+        }
+        #!
+    }
+
+    CreateModalTarjeta::
+    {
+        ref tipo=GetTiposTarjetas()
+        ref divisas=GetDivisas()
+
+        #$
+        //modals
+        div(class="modal fade " id="modal_tarjeta" tabindex="-1" "data-bs-backdrop"="false" "data-bs-keyboard"="false") //"aria-hidden"="true"
+        {
+            div(class="modal-dialog modal-lg modal-dialog-centered mx-auto") // modal-dialog-scrollable modal-dialog-centered
+            {
+                div(class="modal-content rounded-0 p-0 border shadow")
+                {
+                    div(class="modal-header p-3")
+                    {
+                        h6(class="modal-title fw-bold"){$"Tarjeta"}
+                        div(class="w-100 rounded" role="alert" style="height:8px; background-color:#FCFCFC"){$""}
+                        button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
+                    }
+                    div(class="modal-body py-0 px-2 pt-2" )
+                    {
+                        form(id="container_tarjeta" onsubmit="return false" class="form-table d-flex")
+                        {
+                            div(class="row")
+                            {
+                                div(class="col-md-3")
+                                {
+                                    label(class="fw-bold" "for"=""){"Tipo:"}
+                                    select(class="input-login form-select shadow-none" name="tipo" id="tipo" required="" "data-array"="#<to.json(tipo)>")
+                                    {$""
+                                        #!
+                                        for i = 0; i < @count(tipo)
+                                        {
+                                            ref t=@item(tipo,i)
+                                            #$ option(value="#<@@(t,'$sys_pk')>"){"#<@@(t,'$descripcion')>"}
+                                        }
+                                    }
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="" "for"="numero"){"Número:"}
+                                    input(class="input-login" type="" name="numero" value="" id="numero" maxLength="32" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="fw-bold" "for"="importe"){"Importe"}
+                                    input(class="input-login" type="number" name="importe" value="0" id="importe" min="0.1" max="999999999" step="0.000001" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="" "for"="noautorizacion"){"No. Autorización"}
+                                    input(class="input-login" type="" name="noautorizacion" value="" id="noautorizacion" maxLength="50" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="" "for"="cvv"){"CVV:"}
+                                    input(class="input-login" type="" name="cvv" value="" id="cvv" maxLength="10" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="" "for"="nombre"){"Nombre:"}
+                                    input(class="input-login" type="" name="nombre" value="" id="nombre" maxLength="50" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="fw-bold" "for"="divisa"){"Divisa:"}
+                                    select(class="input-login form-select shadow-none" name="divisa" id="divisa" "data-array"="#<to.json(divisas)>")
+                                    {$""
+                                        #!
+                                        for i = 0; i < @count(divisas)
+                                        {
+                                            ref d=@item(divisas,i)
+                                            selected=@@(@__divisa,"#sys_pk") == @@(d,"#sys_pk")
+                                            #$ option(value="#<@@(d,'$sys_pk')>" "#<ifstr(selected,'selected','')>"="true"){"#<@@(d,'$descripcion')>"}
+                                        }
+                                    }
+                                }
+                                div(class="col-md-3")
+                                {
+                                    label(class="fw-bold" "for"="tcambio"){"T. cambio:"}
+                                    input(class="input-login" type="number" name="tcambio" value="1" id="tcambio" onfocus="views.SelectAll(this)")
+                                }
+                                div(class="col-md-12")
+                                {
+                                    label(class="" "for"="domicilio"){"Domicilio:"}
+                                    textarea(class="input-login" name="domicilio" id="domicilio" maxLength="1024" onfocus="views.SelectAll(this)"){""}
+                                }
+                            }
+                        }
+                    }
+                    div(class="modal-footer")
+                    {
+                        button(class="btn-admin" type="button" onclick="controller.tarjeta.AddTarjeta()"){$"Aceptar"}
+                    }
+                }
+            }
+        }
+        #!
+    }
+    #$
+    div(class="card w-100 mt-4")
+    {
+        script(src="/_js/induxsoft.controls.editable.js"){""}
+    
+        div(class="card-header")
+        {
+            div(class="d-flex gap-2")
+            {
+                b(class="flex-grow-1"){"Tarjetas"}
+            }
+        }
+        div(class="card-body")
+        {
+            #!
+            if pos_card_procesor != ""{do CreateModuleCardProcesor()}
+            else
+            {
+                do CreateCardEditTable()
+                do CreateModalTarjeta()
+            }
+        }
+    }
+    
+}

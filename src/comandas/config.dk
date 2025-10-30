@@ -1,0 +1,80 @@
+#include "dkli.dkh"
+
+#!
+module "config.dkl"
+{
+	@id_reopen="_open"
+	@idtables="tables"
+	@idlines="fblines"
+	@idfooddbev="foodbev"
+	@idadcdmns="foodbev-adds"
+	@idwaiters="waiters"
+	@idccs="ccs"
+	@idzns="zns"
+	@idaccessmovil="accessmovil"
+	@idlogin="login"
+	@token="token"
+	@documento_venta= 6 //ticket
+	@formapago= 1//contado
+	@divisa= 1 //peso mexicano
+	@path_map=""
+	@THOUSANDS_SEPARATOR=","
+	@DECIMAL_SEPARATOR="."
+	@DECIMAL_PRECISION= 2
+	@DOCUMENTO_INGRESO= 33 
+	@DOCUMENTO_EGRESO= 34
+	
+	@SYMBOLE_DIVISA="$"
+	@folder_map="prod_printers/"
+	//imagenes default
+	@img_default_lines="/$/img/default-linea.png"
+	@img_default_foodbev="/$/img/default-foodbev.jpg"
+
+	@module=""
+	@name_company="Induxsoft"
+	@as_company=""
+
+	//configuración default cobro con tarjeta
+	new @cobro_tarjeta
+	{	
+		@"divisa_mxn":"MXN"
+		@"divisa_usd":"USD"
+	}
+	
+	if isset("@http_context")
+	{
+		if @@(@http_context,"request/headers/path_translated")!=""{@path_map=dir.name(@@(@http_context,"request/headers/path_translated"))+"/"}
+		else{@path_map=@@(@http_context,"request/headers/DOCUMENT_ROOT")+"/dmcm/app/svc/"}
+		@path_map=path.concat(@path_map,@folder_map)
+		@path_map=replace(@path_map,"\\","/")
+	}
+	//acrhivos js de impresión de ticket imin
+	@js_epos_prn="/_js/epos_prn.js"
+	@js_epos_prn_dantsu="/_js/epos_prn_dantsu.js"
+	@js_epos_prn_imin="/_js/epos_prn_imin.js"
+	@js_epos_imin_printer="/_js/imin-printer.min.js"
+
+	new @iminCnn 
+	{ 
+		@"driver":"imin"
+		@"type":"ethernet"
+		@"address":"127.0.0.1"
+		@"port":8080
+		@"timeout":15
+		@"dpi":203
+		@"printWidth":60
+		@"charsPerLine":46
+	}
+	
+	@path_file_device_drivers="comandas/_static/json/device_drivers.json"
+	@path_file_map=@path_map+"printers.map"
+	@id_printer_tickets="tickets"
+
+	@use_bdconfig=@true
+	@accept_qnames=@true
+
+	new @config
+	{
+		@"connection":@@(@http_context,"$session/idp/qname")
+	}
+}

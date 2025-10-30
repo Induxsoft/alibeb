@@ -1,0 +1,127 @@
+#include "dkli.dkh"
+#!
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "uielements.dkl"
+    #include "uielements.v12.dkl"
+    #include "../_lib/config.dk"
+    #include "../_lib/icons.dk"
+
+    do @context.begin(@crud_context)
+    ref data=ifnull(@("&."),record.create())
+
+    n_print_buttons::
+    {
+        act_btn_cls = "btn btn-sm border-secondary induxsoft-corners btn-main-action"
+        
+        #$
+        button(class="#<act_btn_cls>" type="submit" id="btn_guardar" form="frm_gprn" title="Guardar"){$"#<@ICON_SAVE>"}
+        #!
+    }
+
+    point n_print_buttons to n_print_buttons
+    new nav_config
+    {
+        @"title": "Gestión de impresoras"
+        @"urlexit": ".."
+        @"buttons*":n_print_buttons
+        new member "hidden"
+        {
+            @"csv":@true
+            @"print":@true
+            @"copy":@true
+        }
+    }
+
+    new fil_types
+    {
+        @"datatable*": from.json('[
+                    {"id":"ethernet","caption":"Ethernet"},
+                    {"id":"usb","caption":"USB (Windows)"},
+                    {"id":"stream_linux","caption":"Stream Linux"},
+                    {"id":"file","caption":"Archivo"}
+                    ]')
+        @"id": "type"
+        member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "type"
+            @"required":""
+        }
+        @"value_field": "id"
+        @"text_field": "caption"
+        @"selected": @("$./type")
+    }
+    
+    addres_placehoder=@@(data,@@(data,"$type") + "_placeholder")
+    
+    #$ 
+    div(class="container")
+    {
+        section(id="top_area")
+        {
+            #! 
+            do uie.printV12FormBar(nav_config)
+            #$
+        }
+        section(id="work_area")
+        {
+            div(class="alert alert-danger overflow-auto mb-2 #<ifstr(@('$error/message')!='','','d-none')>" id="frm_alerts"){$"#<@('error/message')>"}
+            form(action="." method="POST" id="frm_gprn")
+            {
+                div(class="row")
+                {
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"ID:"}
+                        input(class="induxsoft-form-control" type="" name="id" value="#<@@(data,'$id')>" id="id" required="true" maxlength="32")
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Controlador:"}
+                        input(class="induxsoft-form-control shadow-none" name="driver" id="driver" value="#<@@(data,'$driver')>" required="true" readonly="true")
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Tipo (Type):"}
+                        #!
+                        do uie.dbSelect(fil_types)
+                        #$
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Dirección(addres):"}
+                        input(class="induxsoft-form-control" type="" name="address" id="address" value="#<@@(data,'$address')>" required="true" placeholder="#<addres_placehoder>")
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Puerto:"}
+                        input(class="induxsoft-form-control" type="number" name="port" id="port" value="#<@@(data,'#port')>" required="true")
+                    }
+                }
+            }
+        }
+
+        script(type="text/javascript")
+        {$'
+            let data=#<to.json(data)>;
+
+            document.addEventListener("DOMContentLoaded",()=>
+            {
+                let type=document.getElementById("type");
+                let address=document.getElementById("address");
+
+                if(type)type.addEventListener("change",()=>
+                {
+                    if(address)address.placeholder=data[type.value+"_placeholder"]??"";
+                });
+
+                tools.trigger(type,"change");
+            });
+            
+        '}
+    }
+}

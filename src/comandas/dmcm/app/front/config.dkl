@@ -1,0 +1,32 @@
+#include "dkli.dkh"
+
+#!
+module "config.dkl"
+{
+	#include "cookies.dkl"
+
+	@SITE_INCLUDES="config.dk,lib.dk,lib.query.dk"
+	@path_absolute=path.concat("comandas","dmcm/app/front")
+	
+	@path_view=path.concat(@path_absolute,"_views")
+	@path_view_admin=path.concat(@path_absolute,"admin")
+	@path_include=path.concat(@path_absolute,"_include")
+
+	@styles_js=path.concat(@path_absolute,"_js/principal.js")
+	@model_js=path.concat(@path_absolute,"_js/model.js")
+	@views_js=path.concat(@path_absolute,"_js/view.js")
+	@driver_js=path.concat(@path_absolute,"_js/controller.js")
+
+	//key Clave asociada, por ejemplo el código del mesero
+	@cadenaformato="000000000"
+	@code_publico_general="(PG)"
+
+	@end_point_service="/dmcm/"//sys-beta.induxsoft.net
+	@json='{
+			"key":"",
+			"caption":"",
+			"zone":"",
+			"cc":""
+		}'
+
+}

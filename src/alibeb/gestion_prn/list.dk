@@ -1,0 +1,76 @@
+#include "dkli.dkh"
+#!
+module "list.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+    #include "dbr.apps.dkl"
+    #include "dbr.dkh"
+    #include "../_lib/config.dk"
+
+    do @context.begin(@crud_context)
+
+    new table_definition
+    {
+        @"datatable*": @("&.")
+        @"table_footer": "Mostrando las primeras # filas"
+        member @"columns"
+        {
+            member @"id" { @"caption":"ID" }
+            member @"type" { @"caption":"Tipo" }
+            member @"address" { @"caption":"Dirección" }
+            member @"port" { @"caption":"Puerto" }
+            member @"_actions" 
+            { 
+                @"caption":"Acciones" 
+                @"template":ftext('
+                    <div style="display:flex;gap:8px;justify-content:center;width:100%;" class="no-print">
+                        <a href="./${DataRow.id}/" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
+                        <button onclick="InduxsoftCrudlModel.Delete(\'${DataRow.id}\')" style="cursor:pointer; border: none; outline: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Eliminar</button>
+                    </div>')
+                @"no-print":@true
+            }
+        }
+    }
+
+    buttons::
+    {
+        #$
+        a(class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print" href="./_new/"){"Agregar"}
+        #!
+    }
+    point bts to buttons
+
+    url_exit="/"
+    if @("$parameters/url_exit")!=""{url_exit=url_dcode(@("$parameters/url_exit"))}
+    
+    new nav_config
+    {
+        @"title": "Gestión de impresoras"
+        @"urlexit": url_exit
+        @"buttons*":bts
+        new member "hidden"
+        {
+            @"csv":@true
+            @"print":@true
+            @"copy":@true
+        }
+    }
+
+    #$ div(class="container p-0" id="view")
+    {
+        section(id="top_area")
+        {
+            #! 
+            do uie.printV12FormBar(nav_config)
+            #$
+        }
+        section(id="work_area")
+        {
+            #!
+             do uie.dbeditable(table_definition, "tbl_gestion_prn")
+             #$
+        }
+    }
+}

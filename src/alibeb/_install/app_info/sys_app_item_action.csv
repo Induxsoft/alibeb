@@ -7,3 +7,5 @@
 "CA23","Eliminar receta","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","alibeb.recetas","DET045","1","action","Eliminar receta"
 "CA30","Gestión de KDS","","/!/alibeb/gestion-kds/","0","alibeb.gestion_kds","DET045","0","shortcut","KDS"
 "CA40","Gestión de meseros","","/!/alibeb/gestion-meseros/","0","alibeb.gestion_meseros","DET045","0","shortcut","Meseros"
+"CA50","Gestión de impresoras","","/!/alibeb/gestion-prn/","0","alibeb.gestion_prn","DET045","0","shortcut","Impresoras"
+"CA60","Configuracion de impresora de centro de producción","","/!/alibeb/config-prn-cp/","0","alibeb.config_prn_cp","DET045","0","shortcut","cofig-prn-cp"

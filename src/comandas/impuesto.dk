@@ -1,0 +1,68 @@
+#include "dkli.dkh"
+#!
+module "impuestos"
+{
+	@DecimalesEnImportes=2 //Pendiente: Tomar este valor de la configuración 
+	@zonaImpuesto=0 //0-Interior y 1-frontera
+	@PrecioVenta=1 //Precio 1 a 5
+	@PrecioAdcs=1 //precio de los productos adicionales 1 a 5
+	@PrioridadBarras=0 //0-Prioridad a barras de Déminus (producto, linea), 1-Prioridad a barras de plaza mundial(producto, line) y 2-Ambas (producto, plazamundial y linea)
+
+	@formato_moneda="$ #,#.00"
+	// @decimales_montos=4
+	@tasa_iva=.16
+	@campo_iva="impuesto3"
+
+	#!
+	aplImpuestos:: p, i1, i2, i3, i4
+	{
+		p=round( p, @DecimalesEnImportes)
+
+		x=round( if(i1>0,(p*i1/100),0), @DecimalesEnImportes)
+		y=round( if(i2>0,(p*i2/100),0), @DecimalesEnImportes)
+
+		p=p+x+y
+
+		x=round( if(i3>0,(p*i3/100),0), @DecimalesEnImportes)
+		y=round( if(i4>0,(p*i4/100),0), @DecimalesEnImportes)
+
+		p=p+x+y
+
+		return round(p, @DecimalesEnImportes)
+	}
+
+	#!
+	parseImpuesto:: cad, zona
+	{
+		if trim(cad)==""
+		{
+			return 0
+		}
+
+		ref l=split(cad,"|")
+
+		return val(replace(list.str(l,zona),"%",""))
+
+		exception
+		{
+			return 0
+		}
+	}
+
+	#!
+	campoPrecioR5::np
+	{
+		if np>5
+		{
+			return "precio"+str(100+np)
+		}
+
+		return "precio"+str(np)
+	}
+
+	#!
+	campoPrecioAdcR5::np
+	{
+		return "padic"+str(np)
+	}
+}

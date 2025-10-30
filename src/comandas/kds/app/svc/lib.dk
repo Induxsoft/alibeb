@@ -1,0 +1,106 @@
+#include "dkli.dkh"
+#!
+module "lib.dk"
+{
+
+    // *****************************functions de kds***********************************
+    #!
+    kds.get.ordenes_adcs::&db,&params
+    {
+        ref list_ords=dbr.list(db,@kds_orders,params)
+        for i=0;i<@count(list_ords)
+        {
+            ref itm=@item(list_ords,i)
+            itm<"adds*">:dbr.list(db,@addOrdendmns,itm)
+        }
+        return list_ords
+    }
+
+    #!
+    kdf.get.ordenes::&db,&params
+    {
+        ref list_commands=dbr.list(db,ftext(@kdf_tables_orders),params)
+
+        for i=0;i<@count(list_commands)
+        {
+            ref item=@item(list_commands,i)
+            new p{
+                @"iventa":@@(item,"sys_pk")
+                @"cprod":@@(params,"cprod")
+            }
+            item<"orders*">:kds.get.ordenes_adcs(db,p)//get.ordenes(db,p)
+        }
+        return list_commands
+    }
+
+    #!
+    kdf.close.table::&db,&params
+    {
+       return kds.updata.status(db,params,3)
+    }
+    kds.updata.status::&db,&params,status
+    {
+        ref now=now()
+        new table
+        {
+            @"StatusAdministrativo":status
+            @"status":status
+            @"idkdf":@@(params,"idkdf")
+            @"cprod":@@(params,"cprod")
+            @"sys_timestamp*":now
+            @"hproduccion*":now
+            @"fproduccion*":dbr.sql("date(now())")
+        }
+        do dbr.execute(db,@kds.updateorder,table)
+        return table
+    }
+
+    #!
+    kdf.get.lastorders::&db,&params
+    {
+
+        order=dbr.num(db,@kdf_last_order,params)
+        if order<=0{return @null}
+
+        //@kdf_tables_orders=@kdf_tables_orders+
+
+        @where=" and o.sys_pk>@idkdf"
+        return kdf.get.ordenes(db,params)
+    }
+
+    #!
+    kds.get.orders_history::&db,&params
+    {
+        ref list_ords=dbr.list(db,@kds_orders_history,params)
+        for i=0;i<@count(list_ords)
+        {
+            ref itm=@item(list_ords,i)
+            itm<"adds*">:dbr.list(db,@addOrdendmns,itm)
+        }
+        return list_ords
+    }
+    
+    #!
+    kds.gethistory::&db,&params
+    {
+        ref list_history=dbr.list(db,@kdf_tables_orders_history,params)
+        for i=0;i<@count(list_history)
+        {
+            ref item=@item(list_history,i)
+            new p{
+                @"iventa":@@(item,"sys_pk")
+                @"cprod":@@(params,"cprod")
+            }
+            item<"orders*">:kds.get.orders_history(db,p)
+        }
+        return list_history
+    }
+
+    #!
+    kds.update_history::&db,&params
+    {
+        return kds.updata.status(db,params,0)
+    }
+    // ********************************************************************************
+
+}

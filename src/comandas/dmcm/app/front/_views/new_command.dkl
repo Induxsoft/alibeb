@@ -1,0 +1,82 @@
+#include "dkli.dkh"
+#!
+module "nueva commanda"
+{
+	line=@@(@http_context,"request/get/line")
+	sku=@@(@http_context,"request/get/sku")
+	#$
+	div(class="container-command" id="")
+	{
+		$""
+		input(type="checkbox" class="checkbox" id="check" name="")
+		label(class="hidden-panel menu hidde_control" "for"="check")
+		{
+			$""
+			span(class="counter"){
+				$""
+				span(id="count"){$""}
+				svg(xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16")
+				{
+					path(d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"){""}
+				}
+			}	
+		}
+		// div(class="name_table")
+		// {
+		// 	h3{"-#<namet>  "}
+		// 	h3{"-#<ticket>"}
+		// 	h3(id="totalcurrent" total="#<totalcurrent>"){"$ #<totalcurrent>"}
+		// }
+		div(class="command")
+		{
+			div(class="command-product left-panel")
+			{
+				div(class="list-products")
+				{
+					$""
+					ul(class="list-group list-products-li"){$""}
+					// div(class="total-all"){h2{$"$ 0.00"}}
+				}
+				div(id="div-total-all"){
+					span{$"Total: "}$"$ 0.00"
+				}
+			}
+			
+			div(class="command-content")
+			{
+				div(class="barr-atr"){$""}
+				div(class="content-grid"){
+					div(class="column-content"){$""}
+				}
+				
+			}
+		}
+	}
+
+	script
+	{
+		$'
+		$(document).ready(function(){
+			// controller.foodbev();
+			// controller.get_prodc("#<@@(@waiter,"cc")>");
+			var line="#<line>";
+			var sku="#<sku>";
+			controller.get_adds_dmns();
+			if(line!="")
+			{
+				controller.foodbev(null,"",line,"",sku);
+				
+			}else{
+				controller.get_lines();
+			}
+
+			const titleNavBar = document.querySelector(".name_waiter");
+			titleNavBar.style="width:0;";
+			if(titleNavBar) titleNavBar.innerHTML="";	
+
+			const nav_info = document.getElementById("nav_info");
+			if(nav_info) nav_info.style.width="100%";		
+		});
+		'
+	}
+}

@@ -1,0 +1,94 @@
+
+#$
+
+
+// **********************modal*********************
+	div(id="loadings" class="loadings")
+    {
+        $""
+        // div(class="control-x")
+        // {
+        //     svg(xmlns="http://www.w3.org/2000/svg" id="cancel_btn_modal_install" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        //     {
+        //         path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        //     }
+        // }
+        // div(class="just-cont-center" style="display:flex;")..
+        // {
+        //     h4(id="title_modal_install"){$"Cargando..."}
+        // }
+        // div(class=" just-cont-center" style="display:flex;")
+        // {
+        //    $""
+        //    span(class="induxsoftLoginFormSpinner just-cont-center just-itm-center" style="display:flex;border: none;" id="spa-rotate"){img(width="30" height="30" src="_icons/hamburguer.png"){""}""}
+        // }
+    }
+
+
+    //*******************modal indicaciones****************************************
+    div(id="modal-historial" class="show_modal_center hidde_control modal-responsive modal-lg" style="top:10% !important")
+    {
+        $""
+         div(class="control-x")
+         {
+             svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" onclick="controller.close_modal('modal-historial')" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+             {
+                 path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+            }
+        }
+        div(class="just-cont-center" style="display:flex;")
+        {
+            h4(id=""){$"Historial"}br{}br{}
+        }
+        div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
+        {
+           $""
+           div(class="content-commands c-commands-history")
+            {
+                
+                $""
+                div(class="c-command")
+                {
+                    
+                    div(class="cmmd-header")
+                    {
+                        $""
+                        div(class="cmmd-table"){$""}
+                        div(class="cmmd-ticket"){$""}
+                    }
+                    $"========================================"
+                    div(class="cmmd-body")
+                    {
+                        $""
+                        div(class="cmmd-details")
+                        {
+                            div(class="details")
+                            {
+                                label{""}
+                                div(class="datails-adcs"){
+                                    small(class="adcs"){$""}
+                                }
+                                div(class="datails-adcs"){
+                                    small(class="adcs"){$""}
+                                }
+                            }
+                            div(class="details")
+                            {
+                                label{""}
+                                div(class="datails-adcs"){
+                                    small(class="adcs"){$""}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        div(class="footer text-end")
+        {
+            $""
+            // button(class="button-aceptar" id="btn_addcs" onclick=""){"Aceptar"}
+            // button(class="button-cancelar" id="" onclick="controller.close_modal('modal-historial')"){"Cancelar"}
+        }
+
+    }

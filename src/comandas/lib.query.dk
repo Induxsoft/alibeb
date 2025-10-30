@@ -1,0 +1,35 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    GetCajas::
+    {
+        ref db=getDatabase("")
+
+        return dbr.list(db,"select codigo,descripcion from caja where ifnull(sys_deleted,0)=0",@null)
+    }
+    GetCajeros::
+    {
+        ref db=getDatabase("")
+
+        return dbr.list(db,"select codigo,nombre from cajero where ifnull(sys_deleted,0)=0",@null)
+    }
+    GetTiposTarjetas::
+    {
+        ref db=getDatabase("")
+
+        return dbr.list(db,"select sys_pk,concat(codigo,' - ',descripcion)descripcion from tarjetacredito where ifnull(sys_deleted,0)=0 ",@null)
+    }
+    GetDivisas::
+    {
+        ref db=getDatabase("")
+
+        return dbr.list(db,"select sys_pk,concat(codigo,' - ',descripcion)descripcion,ifnull(tcambio,1)tcambio from divisa where ifnull(sys_deleted,0)=0 ",@null)
+    }
+    GetCategorias::
+    {
+        ref db=getDatabase("")
+
+        return dbr.list(db,"select sys_pk,concat(codigo,' - ',descripcion)descripcion from categoria where ifnull(sys_deleted,0)=0 ",@null)
+    }
+}

@@ -1,0 +1,38 @@
+#$
+div(class="card")
+{
+    div(class="card-header")
+    {
+        h4(class="text-center"){"Corte de caja"}
+    }
+    div(class="card-body")
+    {
+        h5{"#<@@(@__divisa,'$codigo')> - #<@@(@__divisa,'$descripcion')>"}
+        form(action="." method="POST" id="frm_corte_caja")
+        {
+            div(class="column")
+            {
+                div(class="col-md-3")
+                {
+                    label(class="" "for"=""){"Efectivo en caja:"}
+                    input(class="input-login" type="number" name="efectivo_caja" id="efectivo_caja" value="0.00" onfocus="views.SelectAll(this)")
+                }
+                div(class="col-md-3")
+                {
+                    label(class="" "for"=""){"Retiro al corte:"}
+                    input(class="input-login" type="number" name="retiro_corte" id="retiro_corte" value="0.00" onfocus="views.SelectAll(this)")
+                }
+                div(class="col-md-3")
+                {
+                    label(class="" "for"=""){"Fondo siguiente turno:"}
+                    input(class="input-login" type="number" name="importe_sig_turno" id="importe_sig_turno" disabled="true" readonly="true" value="0.00")
+                }
+            }
+        }   
+    }
+    div(class="card-footer")
+    {
+        button(class="btn-admin" type="button" id="btn_corte_caja"){$"Realizar corte"}
+    }
+
+}
