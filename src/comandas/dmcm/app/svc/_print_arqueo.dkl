@@ -1,0 +1,167 @@
+
+#include "dkli.dkh"
+#!
+program ""
+{
+    #include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "esc_pos.dkh"
+    ref @http_context=@@(@printer_context,"&http")
+    #include "website.dkl"
+
+    @character_width= 45
+    TextBetween::text,tleft
+    {
+        lt=length(text)+length(tleft)
+        if lt >= @character_width {return text+tleft}
+        l=abs(@character_width - lt)
+        return text + padright("",l," ") + tleft
+    }
+    divider_full=padright("",@character_width,"=")
+    spacing_left=TextBetween("","============")
+
+    ref data=@printer_context
+	path_config=@@(data,"$printer")
+
+ 	if not(file.exists(path_config)){do rise_error(99,"No se encontro un archivo de configuración del cprod.")}
+	
+	ref db=@@(data,"&database")
+
+    do escpos.centeralign()
+	do escpos.set.styles(128)
+    
+    do escpos.printline(@@(data,"$title"))
+    do escpos.leftalign()
+    do escpos.printline("\n")
+
+    do escpos.printline(divider_full)
+    do escpos.printline(@@(data,"$text_corte"))
+    do escpos.printline(@@(data,"$text_del"))
+    do escpos.printline(@@(data,"$text_al"))
+    do escpos.printline(@@(data,"$text_caja"))
+    do escpos.printline(@@(data,"$text_cajero"))
+    do escpos.printline(date_str(now(),"yyyy-MM-dd HH:mm:ss"))
+    do escpos.printline(divider_full)
+
+    //ventas
+    do escpos.centeralign()
+    do escpos.printline(@@(data,"$text_venta"))
+    do escpos.leftalign()
+    do escpos.printline("\n")
+    ref detalle=@@(data,"&venta_detalle")
+    ref venta_detalle=@@(detalle,"&detalle")
+
+    for i = 0; i < @count(venta_detalle)
+    {
+        ref vd=@item(venta_detalle,i)
+        do escpos.printline(TextBetween(@@(vd,"$referencia") , @@(vd,"$text_status")))
+    }
+    do escpos.printline(spacing_left)
+    do escpos.printline(TextBetween(@@(detalle,"$text_total"), @@(detalle,"$str_total")))
+    do escpos.printline(TextBetween(@@(detalle,"$text_credito"), @@(detalle,"$str_credito")))
+    do escpos.printline(TextBetween(@@(detalle,"$text_contado"), @@(detalle,"$str_contado")))
+    do escpos.printline(spacing_left)
+    do escpos.printline(TextBetween(@@(detalle,"$text_total"),@@(detalle,"$str_total")))
+
+    do escpos.printline(TextBetween(@@(detalle,"$text_propina"), @@(detalle,"$str_propinas")))
+    do escpos.printline(spacing_left)
+    do escpos.printline(TextBetween(@@(detalle,"$text_ingreso_caja") ,@@(detalle,"$str_ingreso_caja")))
+
+    do escpos.printline(@@(detalle,"$text_footer"))
+
+    do escpos.printline("\n\n")
+    
+    #!
+    ref divisa_movcaja=@@(data,"&divisa_movcaja")
+    
+    text_ingreso=@@(data,"$text_ingreso")
+    text_egreso=@@(data,"$text_egreso")
+    text_saldoinicial=@@(data,"$text_saldoinicial")
+    divisa_predet=@@(data,"#divisa_predet")
+    
+    for i = 0; i < @count(divisa_movcaja)
+    {
+        ref dm=@item(divisa_movcaja,i)
+        ref ingresos_categoria=@@(dm,"&ingresos_categoria")
+        ref egresos_categoria=@@(dm,"&egresos_categoria")
+        ref formas_ing_pagos=@@(dm,"&formas_ing_pagos")
+        divisa=@@(dm,"#idivisa")
+        
+        saldo_inicial=@@(dm,"#saldo_inicial")
+        
+        do escpos.printline(divider_full)
+        do escpos.printline(@@(dm,"$descripcion"))
+        do escpos.printline(divider_full)  
+        do escpos.centeralign()  
+        do escpos.printline(text_ingreso)
+        do escpos.leftalign()
+        do escpos.printline("\n")
+        
+        do escpos.printline(TextBetween(text_saldoinicial , number_format(saldo_inicial)))
+        // IMPRIMIR DATOS DE INGRESOS
+        total_ingreso= 0
+        for a = 0; a < @count(ingresos_categoria)
+        {
+            ref ic=@item(ingresos_categoria,a)
+            total=@@(ic,"#total")
+            
+            if divisa != divisa_predet
+            {
+                total=total * @@(ic,"#tipocambio")
+                do escpos.printline(TextBetween(" X TCambio",number_format(@@(ic,"#tipocambio"))))
+            }
+
+            total_ingreso=total_ingreso + number_round(total)
+            do escpos.printline(TextBetween(@@(ic,"$movcategoria"), number_format(total)))
+        }
+        do escpos.printline(spacing_left)
+        do escpos.printline(TextBetween("TOTAL",number_format(total_ingreso + saldo_inicial)))
+
+        do escpos.leftalign()
+        do escpos.printline("\n")
+        do escpos.printline(TextBetween("BILLETES",number_format(@@(formas_ing_pagos,"#efectivo"))))
+        do escpos.printline(TextBetween("TARJETAS",number_format(@@(formas_ing_pagos,"#tarjetas"))))
+        do escpos.printline(TextBetween("CHEQUES",number_format(@@(formas_ing_pagos,"#cheques"))))
+        do escpos.printline(TextBetween("DEPOSITOS",number_format(@@(formas_ing_pagos,"#depositos"))))
+        do escpos.printline(TextBetween("VALES",number_format(@@(formas_ing_pagos,"#vales"))))
+
+        do escpos.printline(spacing_left)
+        do escpos.printline(TextBetween("TOTAL",number_format(total_ingreso)))
+        do escpos.printline("\n")
+        //IMPRIMIR DATOS DE EGRESOS
+        do escpos.centeralign()
+        do escpos.printline("\n")
+        do escpos.printline(text_egreso)
+
+        total_egreso= 0
+        for a = 0; a < @count(egresos_categoria)
+        {
+            ref ec=@item(egresos_categoria,a)
+            total=@@(ec,"#total")
+            total_egreso=total_egreso + number_round(total)
+
+            if divisa != divisa_predet
+            {
+                total=total * @@(ec,"#tipocambio")
+                do escpos.printline(TextBetween(" X TCambio",number_format(@@(ec,"#tipocambio"))))
+            }
+
+            do escpos.printline(TextBetween(@@(ec,"$movcategoria"),number_format(total)))
+
+        }
+        do escpos.printline(spacing_left)
+        do escpos.printline(TextBetween("TOTAL",number_format(total_egreso)))
+        do escpos.printline("\n")
+        //total neto
+        do escpos.printline(spacing_left)
+        do escpos.printline(TextBetween("TOTAL NETO",number_format(saldo_inicial + total_ingreso + total_egreso)))
+    }
+    
+    //imprimir
+    ref cfg=from.json(file.rtext(path_config))
+
+ 	log=printer.print(cfg)
+
+	do escpos.clear()
+}

@@ -1,0 +1,85 @@
+#include "dkli.dkh"
+#!
+program
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "esc_pos.dkh"
+
+	ref data=@printer_context
+	ref cfg=@@(data,"&config")
+	if isnull(data){do rise_error(99,"Párametros imcompletos.")}
+ 	if isnull(cfg){do rise_error(99,"No se encontro una configuración de impresión.")}
+
+	ref ticket=@@(data,"&ticket")
+	
+	//base de datos abierta
+	ref db=@@(data,"&database")
+
+	divider_full="================================================"
+	ref cconsumo=@@(ticket,"&cconsumo")
+	ref mesero=@@(ticket,"&mesero")
+	ref cliente=@@(ticket,"&cliente")
+	ref cajero=@@(ticket,"&cajero")
+	ref divisa=@@(ticket,"&divisa")
+
+	do escpos.centeralign()
+	// do escpos.set.styles(128)
+	do escpos.printline(@@(ticket,"$empresa"))
+	do escpos.printline("")
+	do escpos.leftalign()
+	do escpos.printline("Ticket: "+@@(ticket,"$referencia")+"			 Date: "+date_str(now(),"yyyy-MM-dd  hh:mm:ss"))
+	do escpos.printline(divider_full)
+	do escpos.leftalign()
+	do escpos.printline("CC: "+@@(cconsumo,"$description"))
+	
+	do escpos.printline("Mesa: "+@@(ticket,"$mesa"))
+	do escpos.printline("Mesero: "+@@(mesero,"$nombre"))
+	do escpos.printline("Cajero: "+@@(cajero,"$nombre"))
+	do escpos.printline("Cliente: "+@@(cliente,"$name"))
+	do escpos.printline(divider_full)
+	do escpos.centeralign()
+	do escpos.printline("-DETALLE DE SU COMPRA-")
+	do escpos.leftalign()
+	do escpos.printline(divider_full)
+	
+	do escpos.printline("DESCRIP  			         CANT  	  UNID  	  IMPORTE")
+
+	ref list_dorden=@@(ticket,"&detalle")
+
+	for i=0;i<@count(list_dorden)
+ 	{
+ 		ref itm=@item(list_dorden,i)
+		rou=round(@@(itm,"$quantity"),2)
+ 		do escpos.printline(@@(itm,"$description")+"		 "+str(rou)+"		   "+@@(itm,"$unidad")+"	      $"+format(@@(itm,"$price"),"#,#.00"))
+ 	}
+
+ 	do escpos.printline(divider_full)
+	do escpos.rightalign()
+	// do escpos.printline("Subtotal: $ "+format(@@(ticket,"$subtotal"),"#,#.00"))
+	do escpos.printline("Total: $ "+format(@@(ticket,"$total"),"#,#.00"))
+	
+	do escpos.printline("\n")
+	do escpos.printline(@@(ticket,"$importe_letras")+ " "+ @@(divisa,"$codigo"))
+
+	do escpos.printline("\n")
+	do escpos.centeralign()
+	do escpos.printline("-Forma de pago-")
+	do escpos.printline(@@(ticket,"$nota_adicional"))
+	do escpos.leftalign()
+
+	do escpos.printline("\n")
+	do escpos.printline(@@(ticket,"$text_footer"))
+
+	do escpos.fullcut_afterfeed(50)
+
+ 	log=printer.print(cfg)
+
+	do escpos.clear()
+
+	do print(log)
+ 	// exception
+ 	// {
+ 	// }
+}

@@ -4,22 +4,6 @@
 	div(id="loadings" class="loadings")
     {
         $""
-        // div(class="control-x")
-        // {
-        //     svg(xmlns="http://www.w3.org/2000/svg" id="cancel_btn_modal_install" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
-        //     {
-        //         path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
-        //     }
-        // }
-        // div(class="just-cont-center" style="display:flex;")..
-        // {
-        //     h4(id="title_modal_install"){$"Cargando..."}
-        // }
-        // div(class=" just-cont-center" style="display:flex;")
-        // {
-        //    $""
-        //    span(class="induxsoftLoginFormSpinner just-cont-center just-itm-center" style="display:flex;border: none;" id="spa-rotate"){img(width="30" height="30" src="_icons/hamburguer.png"){""}""}
-        // }
     }
 
     //***************** modals abrir mesa*********************
@@ -46,17 +30,6 @@
 	           	{
 	           		small{"Mesa: "}
 		            input(type="text" id="txttable" class="form-control" autofocus="true" ){""}
-                    
-                    // div(class="datalist-container")
-                    // {
-                    //     input(type="text" id="txttable" class="form-select combo-input" autofocus="true" onclick="views.mostrarLista()" autocomplete="off"){""}
-                    //     ul(class="combo-list d-none" id="data-list")
-                    //     {
-                    //         li(onclick="views.seleccionar(this)"){"Mesa 1"}
-                    //         li(onclick="views.seleccionar(this)"){"Mesa 2"}
-                    //         li(onclick="views.seleccionar(this)"){"Mesa 3"}
-                    //     }
-                    // }
 	           	}
 	           	div(class="form-group")
 	           	{
@@ -109,10 +82,8 @@
         }
         div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
         {
-           $""
            div(class="div-time w-100 d-flex just-cont-end just-itm-center" id="times")
            {
-                $""
                 label(class="d-flex align-itm-center"){"Tiempos: "}
                 button(class="btn card-border" id="time_1" value="1" onclick="controller.time(this);"){"1"}
                 button(class="btn card-border" id="time_2" value="2" onclick="controller.time(this);"){"2"}
@@ -130,8 +101,11 @@
            }
            div(class="card w-100 card-border mb-2")
            {
+                div(class="d-grid" id="modl_indicaciones" style="grid-template-columns: repeat(auto-fill, 9rem);gap: 2px;")
+                {$""
+                }
                 label{"Notas:"}br{}
-                textarea(class="form-control form-textarea-apparence " id="txtnotas-indicacion"){$""}
+                textarea(class="form-control" id="txtnotas-indicacion" rows="6"){$""}
            }
         }
         div(class="footer text-end")

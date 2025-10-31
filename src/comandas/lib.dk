@@ -113,4 +113,56 @@ module "lib.dk"
         do dbr.logout(db)
         exception{}
     }
+
+	#!
+	GetFilePrn::file
+	{
+		host=@@(@http_context,"$request/headers/http_host")
+
+		path_file=path.concat(replace(@path_files_prn,"@host",host),file)
+		_file_host=file.exists(path_file)
+		
+		if not(_file_host){path_file=path.concat(@path_file_prn_default,file)}
+		
+		if not(file.exists(path_file)){do rise_error(500,"No se encontró el archivo indicado:"+file)}
+
+		ext=tolower(trim(file.extension(file)))
+
+		if ext==".js"
+		{
+			if _file_host{return path.concat(replace(@path_route_prn_config,"@host",host),file)}
+
+			return path.concat(@path_route_prn,file)
+		}
+
+		return path_file
+	}
+	PrnParseConfig::&db,&config
+	{
+		if @@(config,"$printer")=="device"
+		{
+			config<"req_data">:@true
+			return config
+		}
+		else if @@(config,"$printer")=="server"
+		{
+			ref cprinter=dbr.rec(db,"SELECT * FROM ut_dm_tmm_gprn WHERE id=@driver",config)
+			if trim(@@(cprinter,"$data"))==""{return @null}
+
+			return from.json(@@(cprinter,"$data"))
+		}
+		else{return @null}
+	}
+	PrnParseConfigCmmd::&db,cprod
+	{
+		cprod >> p
+		ref config=dbr.rec(db,"select gp.* from ut_dm_tmm_cgprn udm
+		inner join cproduccion cp on udm.ref_cprod=cp.sys_pk
+		inner join  ut_dm_tmm_gprn gp on udm.ref_gprn=gp.id
+		where cp.codigo=@cprod",p)
+
+		if trim(@@(config,"$data"))==""{return @null}
+
+		return from.json(@@(config,"$data"))
+	}
 }

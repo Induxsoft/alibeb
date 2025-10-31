@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded",()=>
 {
   controller.init();
 });
+
 var controller=
 {
     pos_porcentaje_propina:0,
@@ -17,143 +18,7 @@ var controller=
       controller.tarjeta.SetOptions();
       controller.SetTotal(true);
     },
-    PrinTicket(data,callbackinterval=null)
-    {
-      let url_redir=data.url_redir;
-      if(!eposprn || !controller.iminCnn)
-      {
-        if(url_redir)window.location.href=url_redir;
-        return;
-      }
-    
-      let interval=setInterval(() => 
-      {
-        if(eposprn.driver.connection && !(eposprn.driver?.isConnected??false))
-        { 
-          let ws=eposprn.driver.connection.ws;
-          if(eposprn.driver.connection.l_timer>=controller.ltimer)
-          {
-            if(ws && ws.readyState>=3)
-            {
-              if(interval)clearInterval(interval);
-              if(url_redir)window.location.href=url_redir;
-              if(callbackinterval)callbackinterval(data);
-            }
-            else if(!ws)
-            {
-              if(interval)clearInterval(interval);
-              if(url_redir)window.location.href=url_redir;
-              if(callbackinterval)callbackinterval(data);
-            }
-          }
-        }else if(interval)clearInterval(interval);
-      }, 300);
-
-      eposprn.connect(controller.iminCnn, (status)=>
-      {
-        if(!eposprn.driver.isConnected)
-        {
-          if(url_redir)window.location.href=data.url_redir;
-          return;
-        }
-        let divider="=========================";
-        let totales=data.totales??{};
-        let data_orden=data.data_orden??{};
-        let data_empresa=data.data_empresa??{};
-        let list_dorden=data.list_dorden??{};
-        let divisa=data.divisa??{};
-        let cajero=data.cajero??{};
-
-        eposprn.setAlign(1) //1 -> center
-        eposprn.printText(data_empresa.varvalue);
-        eposprn.setAlign(0) //1 -> izquierda
-
-        eposprn.printText(divider);
-
-        eposprn.printText(data.fecha??"");
-        eposprn.printText("Mesa: "+data_orden.dmnsMesa??"");
-        eposprn.printText("CP: "+data_orden.desc_cc??"");
-        eposprn.printText("Ticket: "+data_orden.referencia);
-        eposprn.printText("Mesero: "+data_orden.nombre);
-        eposprn.printText("Cliente: "+data_orden.name_cliente);
-        if(cajero.nombre)eposprn.printText("Cajero: "+cajero.nombre??"NA");
-
-        eposprn.printText(divider);
-        eposprn.setAlign(1) //1 -> center
-        eposprn.printText("-DETALLE DE SU COMPRA-");
-        eposprn.printText(divider);
-        eposprn.setAlign(0) //1 -> izquierda
-                           
-        eposprn.printText("DESC  CANT  UNID  IMPORTE");
-
-        for (let i = 0; i < list_dorden.length; i++) 
-        {
-          const row = list_dorden[i];
-          eposprn.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.price,controller.decimals,".",",")}`);
-        }
-
-        eposprn.printText(divider);
-
-        eposprn.setAlign(2) //2 -> derecha
-
-        let propina=(data.propina??0);
-        let total_apagar=(totales.total??0);
-
-        eposprn.printText(`Total:       $ ${views.format(totales.importe,controller.decimals,".",",")}`);
-        if(propina>0)eposprn.printText(`Propina:     $ ${views.format(propina,controller.decimals,".",",")}`);
-        
-        if(total_apagar>0)
-        {
-          eposprn.printText(`--------------`);
-          eposprn.printText(`A pagar:     $ ${views.format(total_apagar,controller.decimals,".",",")}`);
-        }
-
-        eposprn.printText("\n");
-        eposprn.setAlign(0); //0 -> izquierda
-        eposprn.printText(`${data.total_letras??""} ${divisa.codigo??""}`);
-        
-        // eposprn.printText("\n");
-
-        eposprn.setAlign(2) //2 -> derecha
-        eposprn.printText("-Forma de pago-");
-
-        let efectivo=(data.efectivo??0);
-        let tarjeta=(data.tarjeta??0);
-        let cambio=(data.cambio??0);
-
-        if(efectivo>0)eposprn.printText(`Efectivo: ${efectivo}`);
-        if(tarjeta>0)eposprn.printText(`Tarjeta: ${tarjeta}`);
-        if(cambio>0)eposprn.printText(`Cambio: ${cambio}`);
-
-        eposprn.setAlign(0); //0 -> izquierda
-
-        if(efectivo==0 && tarjeta==0 && cambio==0)
-        {
-          eposprn.printText("\n");
-          eposprn.printText("*NO ES UN COMPROBANTE DE PAGO*");
-          eposprn.printText("\n");
-        }
-        eposprn.printText(`${data.text_footer}`);
-
-        if((data.folio_factura??"")!="")
-        {
-          eposprn.printText("Folio de Facturación");
-          eposprn.printText(data.folio_factura);
-        }
-        eposprn.printText("\n");
-        eposprn.printText("\n");
-        eposprn.cut();
-        data.success=true;
-        if(data.url_redir)window.location.href=data.url_redir;
-        else if(callbackinterval)callbackinterval(data);
-      },
-      (error)=>
-      {
-        alert(error);
-        if(data.url_redir)window.location.href=data.url_redir;
-        else if(callbackinterval)callbackinterval(error);
-      });
-    },
+    PrinTicket(data,callbackinterval=null){model_prn.print_ticket(data,callbackinterval);},
     ResetImporte()
     {
       if(views.efectivo_importe)views.efectivo_importe.value=0;
@@ -780,6 +645,9 @@ var controller=
         (data)=>
         {
           this.hideModal("modal_ingreso_egreso");
+          
+          if(this._movimiento==1 && data.printer)model_prn.print_ingreso(data.printer);
+          else if(data.printer)model_prn.print_egreso(data.printer);
         }
         ,(error)=>
         {
@@ -1048,6 +916,7 @@ var controller=
       {
         views.print_ordenes(data);
         views.PaindItem(data);
+        controller.PrinTicket(data.printer);
       },
       function(error) 
       {
@@ -1073,12 +942,12 @@ var controller=
       }
       
       var uri=`${url}pos/dinner/foodbev/?prodc=${$prodc}&line=${$line}&cc=${$cc}&idt=${controller.getData?.idt??0}`;
-      model.invoke_service(uri,null,function(data) {
+      model.invoke_service(uri,null,function(data) 
+      {
+        views.Print_Indicaciones(data.line);
         views.print_foodbev(data.foodbev,data.line.description);
-        // views.print_foodbev(data.foodbev,data.line.description);
         var food=document.querySelector("#foodbev_"+sku);
-        if(food)
-          food.click();
+        if(food)food.click();
       },
       function(error) {
         alert(error.message);
@@ -1401,12 +1270,15 @@ var controller=
     {
       var time=document.querySelector(`#${e.id}`);
       var times=document.querySelectorAll("#times > button");
-      times.forEach(function(elem,i){
+      
+      times.forEach(function(elem,i)
+      {
         if(elem.classList.contains("hover-btn"))
         {
           elem.classList.remove("hover-btn");
         }
       });
+
       time.classList.add("hover-btn");
     },
     isrequired:function(options)
@@ -1426,7 +1298,7 @@ var controller=
       var data={action:"reprint"}
       model.invoke_service(uri,data,function(data) 
       {
-        if(data.prin_timin)controller.PrinTicket(data,(_data)=>
+        controller.PrinTicket(data,(_data)=>
         {
           if(!_data.success)window.location.reload();
         });

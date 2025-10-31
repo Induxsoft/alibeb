@@ -54,22 +54,15 @@ module "config.dkl"
 	@js_epos_prn_imin="/_js/epos_prn_imin.js"
 	@js_epos_imin_printer="/_js/imin-printer.min.js"
 
-	new @iminCnn 
-	{ 
-		@"driver":"imin"
-		@"type":"ethernet"
-		@"address":"127.0.0.1"
-		@"port":8080
-		@"timeout":15
-		@"dpi":203
-		@"printWidth":60
-		@"charsPerLine":46
-	}
-	
 	@path_file_device_drivers="comandas/_static/json/device_drivers.json"
 	@path_file_map=@path_map+"printers.map"
 	@id_printer_tickets="tickets"
+	@path_file_prn_default="comandas/_prn/"
+	@path_files_prn="_config/@host/_prn/"
 
+	@path_route_prn="/_/_prn/"
+	@path_route_prn_config="/_/config/@host/_prn/"
+	
 	@use_bdconfig=@true
 	@accept_qnames=@true
 

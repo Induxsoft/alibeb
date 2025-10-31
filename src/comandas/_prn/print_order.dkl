@@ -1,0 +1,92 @@
+#include "dkli.dkh"
+#!
+program
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+	#include "esc_pos.dkh"
+
+	ref data=@printer_context
+	ref fecha_hoy=now()
+	
+	ref cfg=@@(data,"&config")
+ 	if isnull(cfg){do rise_error(99,"No se encontro un archivo de configuración del cprod.")}
+	
+	ref db=@@(data,"&database")
+
+	query_detalle="select  orden.Sys_PK AS orde,Venta.Referencia as Refti,Venta.StatusAdministrativo AS EstadoA,Orden.ICProduccion as produc,Venta.dmnsMesa AS Mesa,
+	venta.dmnsmesa as mesa ,agente.nombre as mesero,cproduccion.descripcion as cpdescripcion
+ 	from (orden inner join (venta left join agente on venta.iagente=agente.sys_pk) 
+	on orden.iventa=venta.sys_pk) inner join cproduccion on orden.icproduccion=cproduccion.sys_pk where orden.sys_guid=@order_guid"
+
+	query="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 
+                        dorden.cantidad,producto.descripcion,dorden.especificaciones,dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
+                        cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta  from (dorden inner join (orden inner join 
+                        venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
+                        inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk where orden.sys_guid=@order_guid"
+
+     if isnull(data){do rise_error(99,"Párametros imcompletos.")}
+     if isnull(db){do rise_error(99,"Falta una conexión a la base de datos.")}
+
+	
+	 new t{@"order_guid":@@(data,"order_guid")}
+     ref list_dorden=dbr.list(db,query,t)
+
+	 query_empresa="SELECT sys_pk,sys_guid,varvalue FROM globalvar g WHERE g.VarName='FXCA112';"
+	 ref data_empresa=dbr.rec(db,query_empresa,@null)
+
+	 ref data_detalle=dbr.rec(db,query_detalle,t)
+	 mm=""
+	 if @@(data_detalle,"$Mesa")=="" && @@(data_detalle,"#EstadoA")==1{mm="Comida Rapida"}
+	 if @@(data_detalle,"$Mesa")=="" && @@(data_detalle,"#EstadoA")==4{mm="Servicio a Domicilio"}
+	 if @@(data_detalle,"$Mesa")!="" && @@(data_detalle,"#EstadoA")==1{mm="Servicio a Mesa"}
+
+	do escpos.centeralign()
+	do escpos.set.styles(128)
+	do escpos.set.styles(0)
+	do escpos.printline("")
+	do escpos.leftalign()
+	do escpos.printline("                    "+@@(data_empresa,"$varvalue")+"        ")
+	do escpos.printline("================================================")
+	// do PrintLine("")
+	do escpos.printline("Date: " + date_str(fecha_hoy,"dd/MM/yyyy  hh:mm:ss"))
+	do escpos.PrintLine("")
+	do escpos.PrintLine("CP: "+@@(data_detalle,"$cpdescripcion"))
+	do escpos.PrintLine(mm)
+	do escpos.PrintLine("Orden: " +@@(data_detalle,"$orde"))
+	do escpos.PrintLine("Mesa: " +@@(data_detalle,"$Mesa"))
+	do escpos.PrintLine("Mesero: "+@@(data_detalle,"$mesero") )
+	do escpos.PrintLine("Ticket: "+@@(data_detalle,"$Refti"))
+	do escpos.printline("================================================")
+	
+	do escpos.leftalign()
+	for i=0;i<@count(list_dorden)
+ 	{
+ 		ref itm=@item(list_dorden,i)
+		rou=round(@@(itm,"$cantidad"),2)
+		do escpos.printline("-"+@@(itm,"$descripcion") +"      "+ str(rou)+"      "+"PZA")
+		if trim(@@(itm,"$especificaciones"))!=""
+		{
+			do escpos.printline("Instrucciones adicionales:");
+			do escpos.printline(" "+@@(itm,"$especificaciones"))
+		}
+ 	}
+
+	do escpos.rightalign()
+	// do escpos.printline("total: $300")
+	// do escpos.printline("Subtotal: $50 centavos")
+	do escpos.fullcut_afterfeed(50)
+
+ 	log=printer.print(cfg)
+	do escpos.clear()
+	do escpos.open.cashpin2(120,240)
+
+	do print(log)
+
+ 	// exception
+ 	// {
+ 	// 	// plog=path.concat(path_log,uuid()+".txt")
+ 	// 	// do file.wtext(plog,last_error())
+ 	// }
+}

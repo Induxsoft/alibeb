@@ -36,8 +36,10 @@ var model=
 
           if (params)
           {
-          	request.dataType="json";
-          	request.data=JSON.stringify(params);
+                if(model_prn)params["_config_prn"]=model_prn.GetConfigPrinter();
+
+                request.dataType="json";
+                request.data=JSON.stringify(params);
           }
 
 

@@ -74,7 +74,6 @@ module "index.dkl"
 			}
 		}
 		
-		
 		if isnull(postData) && (method=="POST" || method=="PATCH")
 		{
 			ref postData=from.json(field.dstr(@http_context,"request/post_string","{}"))
@@ -186,9 +185,9 @@ module "index.dkl"
 			case "PATCH"
 			{
 				if @@(params,"id_table")==""{do rise_error(99,"Falta un identificador de la mesa")}
-				else if @@(postData,"action")!=""
+				else if @@(postData,"$action")!=""
 				{
-					switch tolower(@@(postData,"action"))
+					switch tolower(@@(postData,"$action"))
 					{
 						case "open"{ref data=reopen.table(db,params,postData)}
 						case "close"{ref data=close.table(db,params,postData)}
@@ -199,7 +198,7 @@ module "index.dkl"
 						}
 						case "reprint"
 						{
-							ref data= printer_ordertable(db,@@(params,"#id_table"))
+							ref data=printer_ordertable(db,@@(params,"#id_table"),postData)
 						}
 						default{do rise_error(99,"Acción no encontrada.")}
 					}

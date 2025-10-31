@@ -120,6 +120,12 @@ module "index"
 		#!
 		#include "_views/modals.dkl"	 
 		#$
+		script(src="#<GetFilePrn('model_prn.js')>"){""}
+		script(src="#<GetFilePrn('prn_arqueo.js')>"){""}
+		script(src="#<GetFilePrn('prn_egreso.js')>"){""}
+		script(src="#<GetFilePrn('prn_ingreso.js')>"){""}
+		script(src="#<GetFilePrn('prn_ticket.js')>"){""}
+		
 		script
 		{
 			$'
@@ -146,7 +152,6 @@ module "index"
 
 			if(token!=""){controller.gettoken("#<@token>");}
 
-			controller.iminCnn=#<to.json(@iminCnn)>;
 			controller.getData=#<to.json(@GET)>;
 			controller.url_redir="#<@url_redir>";
 			'

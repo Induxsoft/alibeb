@@ -130,7 +130,8 @@ module "lista de consultas"
 		  	when 4 then '-POR ENTREGAR-'
 		  	when 5 then '-REPARTO-'
 		  	when 99 then '-CANCELADO-'
-		  END) text_status_admin
+		  END) text_status_admin,
+          qv.icorte
     from
         qventasserviciomesa qv
         left join cstatusadministrativos sc on qv.statusadministrativo=sc.id
@@ -179,7 +180,7 @@ module "lista de consultas"
 
     @lines_x_prodc="select q.sys_pk as 'sys_pk',q.codigo as sku,q.descripcion as 'description',q.icproduccion,q.color,q.visible from qlineasxcprod q where visible<>0 and icproduccion=@prodc"
     @all_lines="select sys_pk as 'sys_pk',codigo,descripcion as 'description', color as 'color' from linea where visible<>0 and clase=2 order by linea.codigo;"
-    @line="select sys_pk,codigo as code,descripcion as description from linea where sys_pk=@line"
+    @line="select sys_pk,codigo as code,descripcion as description,uf_indicaciones as indicaciones from linea where sys_pk=@line"
 
     @bars_prod="select db.nombre as 'name',if(db.tipo=0,'single','multiple')as 'type',ds.auto as 'required',
                 db.opciones as 'values'

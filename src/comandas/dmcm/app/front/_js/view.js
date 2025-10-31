@@ -288,6 +288,26 @@ var views=
             event.hide_loading();
 
       },
+      Print_Indicaciones(linea)
+      {
+            let element=document.getElementById("modl_indicaciones");
+            if(!linea || !linea.indicaciones || !element)return;
+
+            let html="";
+            for (let i = 0; i < linea.indicaciones.length; i++) 
+            {
+                  const indicacion = linea.indicaciones[i];
+                  html+=`<button class="btn-admin" onclick="views.setIndicacion('${indicacion.trim()}')">${indicacion.trim()}</button>`;
+            }
+            element.innerHTML=html;
+      },
+      setIndicacion(indicacion)
+      {
+            let element=document.getElementById("txtnotas-indicacion");
+            if(!element)return;
+
+            element.value = (element.value.trim()!=""? element.value.trim()+"\n"+indicacion:indicacion);
+      },
       exist_adds:function(options)
       {
              for(l=0;l<options.length;l++)
@@ -306,24 +326,25 @@ var views=
             var html=lista_foodbev.innerHTML;
             for (var i = 0; i<data_foodbev.length; i++) 
             {
-                var itm=data_foodbev[i];
-                var countadd=1;
-                if(itm.options && list_adds_dmns && !views.exist_adds(itm.options)){
-                  itm.options.push(list_adds_dmns);
-                }
+                  var itm=data_foodbev[i];
+                  var countadd=1;
+                  if(itm.options && list_adds_dmns && !views.exist_adds(itm.options))
+                  {
+                        itm.options.push(list_adds_dmns);
+                  }
                         
-                        
-
                 if(sys_pk===itm.sys_pk)
                 {
                   var uuid=controller.guid();
                   var options=itm.options;
                   var required=false;
-                  var prodcenter={
+                  var prodcenter=
+                  {
                         code:itm.cod_cp,
                         description:itm.desc_cp
                   }
-                  var sku={
+                  var sku=
+                  {
                         prodcenter:prodcenter,
                         uuid:uuid,
                         sku:itm,
@@ -491,135 +512,144 @@ var views=
             var html_select="";
             list_requireds=[];
 
-            if(!options)
-                  var options=[];
-
-
+            if(!options)options=[];
+            
             if(options)
-                  for (var a = 0;a<options.length; a++) {
-                        
-                  var itm=options[a];
-                  var itm_val=itm.values;
-
-                  var html_val="";
-
-                  if(itm.required)
-                        list_requireds.push(itm);
-
-
-                  if(itm.type==="multiple")
+            {
+                  for (var a = 0;a<options.length; a++) 
                   {
-                        for(j=0;j<itm_val.length;j++)
-                        {
-                              var val=itm_val[j];
-                              var checked=false;
-                              list_orders.forEach(function(elem,index) {
-                                    if(elem.uuid===uuid || elem.uuid===uuid_ant)
-                                    {
-                                          if(elem.options)
-                                          {
-                                                elem.options.forEach(function(el,i){
-                                                      var values_list=el.values;
-                                                      values_list.forEach(function(e,ind){
-                                                            if(val.text.replace(/ /g,"")==e.text.replace(/ /g,""))
-                                                            {
-                                                                  checked=true;
-                                                                  return false;
-                                                            }
-                                                      });
-                                                });
-                                          }
-                                    }
-                                    
-                              });
-                              var check="";
-                              if(checked)
-                                    check="checked";
-                              var sku="";
-                              if(val.sku)
-                                    sku=val.sku;
-                              html_val+=`<div class="div-check_${itm.name.replace(/ /g,"")}">
-                                          <input type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,2,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}">
-                                          <label for="${val.text.replace(/ /g,"")}">${val.text}</label>
-                                    </div>`;
+                              
+                        var itm=options[a];
+                        var itm_val=itm.values;
 
-                        }
-                        var name="";
-                        if(itm.name===name_addcs){name="Adiccional";}
-                        else{name=itm.name;}
-                        html+=`<h3 class="h3-name" value="${itm.name}">${name}</h3>
-                        <div class="div-multiple">
-                              ${html_val}
-                        </div>
-                        `;
-                  }
-                  else if(itm.type==="single")
-                  {
-                        var selectoption=`<select id="single_${itm.name.replace(/ /g,"")}_" class="form-control w-100 select-apparence ">
-                        <option value=""></option>`;
-                        for(t=0;t<itm_val.length;t++)
+                        var html_val="";
+
+                        if(itm.required)
+                              list_requireds.push(itm);
+
+
+                        if(itm.type==="multiple")
                         {
-                              var valt=itm_val[t];
-                              var selected=false;
-                              for(var v=0;v<list_orders.length;v++)
+                              for(j=0;j<itm_val.length;j++)
                               {
-                                    var elem=list_orders[v];
-                                    if(elem.uuid===uuid)
+                                    var val=itm_val[j];
+                                    var checked=false;
+                                    list_orders.forEach(function(elem,index) 
                                     {
-
-                                          if(elem.options)
+                                          if(elem.uuid===uuid || elem.uuid===uuid_ant)
                                           {
-                                                for (var el =0; el<elem.options.length; el++) {
-                                                      var values_list=elem.options[el].values;
-                                                      for(var e=0;e<values_list.length;e++)
+                                                if(elem.options)
+                                                {
+                                                      elem.options.forEach(function(el,i){
+                                                            var values_list=el.values;
+                                                            values_list.forEach(function(e,ind){
+                                                                  if(val.text.replace(/ /g,"")==e.text.replace(/ /g,""))
+                                                                  {
+                                                                        checked=true;
+                                                                        return false;
+                                                                  }
+                                                            });
+                                                      });
+                                                }
+                                          }
+                                          
+                                    });
+                                    
+                                    var check="";
+                                    if(checked)
+                                          check="checked";
+
+                                    var sku="";
+                                    if(val.sku)
+                                          sku=val.sku;
+
+                                    html_val+=`<div class="div-check_${itm.name.replace(/ /g,"")}">
+                                                <input type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,2,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}">
+                                                <label for="${val.text.replace(/ /g,"")}">${val.text}</label>
+                                          </div>`;
+                              }
+                              var name="";
+                              if(itm.name===name_addcs){name="Adicional";}
+                              else{name=itm.name;}
+
+                              if(html_val.trim()!="")
+                              {
+                                    html+=`<h3 class="h3-name" value="${itm.name}">${name}</h3>
+                                    <div class="div-multiple">
+                                          ${html_val}
+                                    </div>
+                                    `;
+                              }
+                              
+                        }
+                        else if(itm.type==="single")
+                        {
+                              var selectoption=`<select id="single_${itm.name.replace(/ /g,"")}_" class="form-control w-100 select-apparence ">
+                              <option value=""></option>`;
+                              for(t=0;t<itm_val.length;t++)
+                              {
+                                    var valt=itm_val[t];
+                                    var selected=false;
+                                    for(var v=0;v<list_orders.length;v++)
+                                    {
+                                          var elem=list_orders[v];
+                                          if(elem.uuid===uuid)
+                                          {
+
+                                                if(elem.options)
+                                                {
+                                                      for (var el =0; el<elem.options.length; el++) 
                                                       {
-                                                            var elm=values_list[e];
-                                                            if(valt.text.replace(/ /g,"")==elm.text.replace(/ /g,""))
+                                                            var values_list=elem.options[el].values;
+                                                            for(var e=0;e<values_list.length;e++)
                                                             {
-                                                                  selected=true;
-                                                                 break;
+                                                                  var elm=values_list[e];
+                                                                  if(valt.text.replace(/ /g,"")==elm.text.replace(/ /g,""))
+                                                                  {
+                                                                        selected=true;
+                                                                  break;
+                                                                  }
+                                                                  if(selected)
+                                                                        break;
                                                             }
                                                             if(selected)
                                                                   break;
                                                       }
-                                                      if(selected)
-                                                            break;
                                                 }
                                           }
+                                          if(selected)
+                                                break;
                                     }
-                                    if(selected)
-                                          break;
+                                    var selection="";
+                                    if(selected)selection="selected";
+
+                                    selectoption+=`
+                                          <option ${selection}="true" amount="${views.format(valt.amount,2,".",",")}" value="${valt.text}">${valt.text}</option>
+                                    `;
                               }
-                              var selection="";
-                              if(selected)
-                                    selection="selected";
-                              selectoption+=`
-                                    <option ${selection}="true" amount="${views.format(valt.amount,2,".",",")}" value="${valt.text}">${valt.text}</option>
+                              selectoption+=`</select>`;
+                              html_select+=`
+                              <div class="body-single">
+                                    <h3 class="h3-name">${itm.name}</h3>
+                                    <div class="div-single_${itm.name.replace(/ /g,"")}">
+                                          ${selectoption}
+                                    </div>
+                              </div>
                               `;
                         }
-                        selectoption+=`</select>`;
-                        html_select+=`
-                        <div class="body-single">
-                              <h3 class="h3-name">${itm.name}</h3>
-                              <div class="div-single_${itm.name.replace(/ /g,"")}">
-                                    ${selectoption}
-                              </div>
-                        </div>
-                        `;
+                        
                         
                   }
-                  
-                  
-            }
-            if(html=="")
-                  multiples.style.display="none";
+            }     
+            
+            if(html=="")multiples.style.display="none";
             else
             {
                   multiples.innerHTML=html;
                   multiples.style.display="block";
             }
-            if(html_select=="")
-                  select.style.display="none";
+
+            if(html_select=="")select.style.display="none";
             else
             {
                   select.innerHTML=html_select;

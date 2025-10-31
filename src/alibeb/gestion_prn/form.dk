@@ -101,6 +101,26 @@ module "form.dk"
                         label(class="fw-bold" "for"=""){"Puerto:"}
                         input(class="induxsoft-form-control" type="number" name="port" id="port" value="#<@@(data,'#port')>" required="true")
                     }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"TimeOut:"}
+                        input(class="induxsoft-form-control" type="number" name="timeout" id="timeout" value="#<@@(data,'#timeout')>" required="true")
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Dpi:"}
+                        input(class="induxsoft-form-control" type="number" name="dpi" id="dpi" value="#<@@(data,'#dpi')>" required="true")
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Print Width:"}
+                        input(class="induxsoft-form-control" type="number" name="printWidth" id="printWidth" value="#<@@(data,'#printWidth')>" required="true")
+                    }
+                    div(class="col-md-3")
+                    {
+                        label(class="fw-bold" "for"=""){"Chars PerLine:"}
+                        input(class="induxsoft-form-control" type="number" name="charsPerLine" id="charsPerLine" value="#<@@(data,'#charsPerLine')>" required="true")
+                    }
                 }
             }
         }

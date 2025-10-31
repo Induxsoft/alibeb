@@ -214,6 +214,7 @@ body
   height: 82%;
   background-color:#FFF;
 }
+
 .select-apparence-admin
 {
    background-color: var(--light-gray-color);
@@ -1326,8 +1327,8 @@ select
 }
 .hover-btn
 {
-  background-color: #008CBA;
-  color: white;
+  background-color: #008CBA !important;
+  color: white !important;
 }
 .lifetime{color: green;}
 #div-total-all

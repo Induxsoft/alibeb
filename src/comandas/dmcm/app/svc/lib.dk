@@ -15,7 +15,7 @@ module "lib.dk"
         data<"documento">:@DOCUMENTO_INGRESO
         ref movcaja=_insertMovcaja(db,data)
 
-        do PrintIngresoEgreso(db,movcaja,"INGRESO")
+        movcaja<"printer*">:PrintIngresoEgreso(db,movcaja,"INGRESO",@@(postData,"&_config_prn"),@true)
         
         return movcaja
     }
@@ -26,15 +26,19 @@ module "lib.dk"
         data<"efectivo">:@@(data,"#efectivo") * -1
 
         ref movcaja=_insertMovcaja(db,data)
-        do PrintIngresoEgreso(db,movcaja,"EGRESO")
+        movcaja<"printer*">:PrintIngresoEgreso(db,movcaja,"EGRESO",@@(postData,"&_config_prn"),@false)
         return movcaja
     }
-    PrintIngresoEgreso::&db,&movcaja,title
+    PrintIngresoEgreso::&db,&movcaja,title,&config,is_ingreso
     {
+        ref config=PrnParseConfig(db,config)
+        if isnull(config){return @null}
+        
         ref datacorte=GetCajaCorte(db)
         ref cajero=dbr.rec(db,"select cj.sys_pk,cj.codigo,cj.nombre from cajero cj
                     inner join corte ct on cj.sys_pk=ct.icajero
                     where ct.sys_pk=@corte",datacorte)
+
         ref caja=dbr.rec(db,"SELECT sys_pk,codigo,descripcion FROM caja WHERE sys_pk=@caja;",datacorte)
         ref categoria=dbr.rec(db,"SELECT sys_pk,codigo,descripcion FROM categoria c WHERE c.sys_pk=@icategoria;",movcaja)
         ref divisa=dbr.rec(db,"SELECT sys_pk,codigo,descripcion FROM divisa c WHERE c.sys_pk=@idivisa;",movcaja)
@@ -63,18 +67,28 @@ module "lib.dk"
         {
             @"notas":"NOTAS: "+@@(movcaja,"$notas")
         }
+
         new data
         {
+            @"database*":db
             @"title":title
             @"headers*":headers
             @"body*":body
             @"saldos*":saldos
             @"extras*":extras
-            @"http*":@http_context
+            
         }
-        data<"printer">:path.concat(@path_map,"print_arqueo.jsn")
-        do ExecutePrinter(db,"print_ticket.dkl",data)
+        
+        if @@(config,"#req_data"){return data}
+        
+        data<"movcaja*">:movcaja
+        data<"http*">:@http_context
+        data<"config*">:config
+        
+        do ExecutePrinter(db,GetFilePrn(ifstr(is_ingreso,"prn_ingreso.dkl","prn_egreso.dkl")),data)
 
+        return @null
+        
         exception{}
     }
     _insertMovcaja::&db,&data
@@ -264,7 +278,7 @@ module "lib.dk"
         
         do dbr.commit(db)
 
-        do printer_ordertable(db,@@(postData,"#venta"))
+        // do printer_ordertable(db,@@(postData,"#venta"))
 
         return response
 
@@ -394,7 +408,7 @@ module "lib.dk"
         if corte < 1{do rise_error(500,"No se econtró un corte de caja abierto")}
         
         ref arqueo=DataArqueo(db,corte)
-
+        arqueo<"_config_prn*">:@@(postData,"&_config_prn")
         do PrintArqueo(db,arqueo)
 
         return postData
@@ -1126,50 +1140,52 @@ module "lib.dk"
     
     printer_command::&db,sys_guid
     {
-        ref jsonmap=get.map()
-
         new g{@"sys_guid":sys_guid}
         ref dataorden=dbr.rec(db,@getorden_xsys_guid,g)
 
-        cprod=@@(dataorden,"$code")
-        if @@(jsonmap,cprod)==""{return}
+        ref config=PrnParseConfigCmmd(db,trim(@@(dataorden,"$code")))
+        if isnull(config){return}
 
         new order_data
         {
             @"database*":db
             @"order_guid":sys_guid
-            @"printer":path.concat(@path_map,@@(jsonmap,cprod))//"el archivo .jsn de impresora que le corresponda"
+            @"config*":config
         }
         
-        do runscript("print_order.dkl","order_data",order_data)
+        do runscript(GetFilePrn("print_order.dkl"),"printer_context",order_data)
     }
 
     
-    printer_ordertable::&db,idtable
+    printer_ordertable::&db,idtable,&postData
     {
-        ref jsonmap=get.map()
-        
-        cprod=@id_printer_tickets
-        if @@(jsonmap,cprod)==""{return}
+        ref config=PrnParseConfig(db,@@(postData,"&_config_prn"))
+        if isnull(config){return @null}
 
+        new p{@"id_table":idtable}
+        ref data=data.ticket(db,p)
+        
+        if @@(config,"#req_data"){return data}
+        
         new table_data
         {
             @"database*":db
-            @"id_table":idtable
-            @"printer":path.concat(@path_map,@@(jsonmap,cprod))//"el archivo .jsn de impresora que le corresponda"
+            @"ticket*":data
+            @"config*":config
         }
-
-        do runscript("print_ordertable.dkl","table_data",table_data)
         
-        ref response=GetResponseTicket(db,idtable,@null,table_data)
+        do runscript(GetFilePrn("prn_ticket.dkl"),"printer_context",table_data)
 
-        return response
+        return @null
     }
     
     PrintArqueo::&db,&data
     {
-        data<"printer">:path.concat(@path_map,"print_arqueo.jsn")
-        do ExecutePrinter(db,"print_arqueo.dkl",data)
+        ref config=PrnParseConfig(db,@@(data,"&_config_prn"))
+        if isnull(config) || @@(config,"#req_data"){return}
+
+        data<"config*">:config
+        do ExecutePrinter(db,GetFilePrn("prn_arqueo.dkl"),data)
     }
     
     ExecutePrinter::&db,file,&data
@@ -1353,12 +1369,15 @@ module "lib.dk"
                 @"created":@@(rsource,"$sys_timeStamp")
                 @"description":@@(rsource,"$descripcion")
                 @"quantity":@@(rsource,"#cantidad")
-                @"price":precio
+                @"price":precio //ya con impuesto
                 @"discount":round((@@(rsource,"#d1")+@@(rsource,"#d2"))/(@@(rsource,"#precio")*@@(rsource,"#cantidad")),1)
-                @"total":total
+                @"total":total //ya con impuesto
                 @"notes":@@(rsource,"$especificaciones")
                 @"time":@@(rsource,"$tiempo")
                 @"adds*":dbr.list(db,@addOrdendmns,rsource)
+
+                @"_precio":@@(rsource,"#precio") //sin impuesto
+                @"_total":(@@(rsource,"#precio")*@@(rsource,"#cantidad")) - (@@(rsource,"#d1") + @@(rsource,"#d2")) //sin impuesto
             }
 
             do list.add(data,row)
@@ -1549,27 +1568,26 @@ module "lib.dk"
     //abre la mesa señalada en id_table
     reopen.table::&db,&params,&data
     {
-        new table
-        {
-            @"StatusAdministrativo":1
-        }
+        new table{@"StatusAdministrativo":1}
+
         do dbr.update(db,"venta",table,"sys_pk=@id_table",params)
+
         return get.mesa(db,params)
     }
-
     
     //cierra la mesa señalada en id_table
     close.table::&db,params,&data
     {
-        new table
-        {
-            @"StatusAdministrativo":2
-        }
+        new table{@"StatusAdministrativo":2}
         
-        do printer_ordertable(db,@@(params,"id_table"))
+        ref printer= printer_ordertable(db,@@(params,"id_table"),data)
 
         do dbr.update(db,"venta",table,"sys_pk=@id_table",params)
-        return get.mesa(db,params)
+
+        ref mesa=get.mesa(db,params)
+        mesa<"printer*">:printer
+
+        return mesa
     }
 
     
@@ -1731,6 +1749,8 @@ module "lib.dk"
         ref list_foodbev=list.create()
 
         ref linea=dbr.rec(db,@line,params)
+        if isnull(linea){do rise_error(500,"No se encontró datos de la línea")}
+
         for i=0;i<@count(foodbev)
         {
             ref item=@item(foodbev,i)
@@ -1780,6 +1800,8 @@ module "lib.dk"
             do list.add(list_foodbev,data_foodbev)
         }
         
+
+        linea<"indicaciones*">:GetIndicaciones(@@(linea,"$indicaciones"))
         new datafood
         {
             @"line*":linea
@@ -1788,6 +1810,10 @@ module "lib.dk"
        
         return datafood
 
+    }
+    GetIndicaciones::indicaciones
+    {
+        return split(indicaciones,"\n")
     }
     get.lines::&db,&params
     {
@@ -2638,13 +2664,15 @@ module "lib.dk"
             @"code":@@(datamesa,"code")
             @"iventa":@@(params,"#id_table")
         }
-
+        
+        ticket<"fecha_actual">:date_str(now(),"yyyy-MM-dd  hh:mm:ss")
+        ticket<"empresa">:dbr.str(db,"SELECT varvalue FROM globalvar g WHERE g.VarName='FXCA112';",@null)
         ticket<"status">:@@(ticket,"$text_status_admin")
         if @@(ticket,"#imovcaja") > 0 && @@(ticket,"#statusadministrativo") != 3 {ticket<"status">:"-PAGADO-"}
 
         ref cliente=dbr.rec(db,@customer,p)
         ticket<"cliente*">:cliente
-        ticket<"cc*">:dbr.rec(db,@cc,p)
+        ticket<"cconsumo*">:dbr.rec(db,@cc,p)
         ticket<"mesero*">:dbr.rec(db,@waiter,p)
         ticket<"caja*">:dbr.rec(db,"select c.sys_pk,c.codigo,c.descripcion from caja c where c.sys_pk=@icaja;",ticket)
         ticket<"divisa*">:dbr.rec(db,"select sys_pk,codigo,descripcion,tcambio from divisa where sys_pk=@idivisa",ticket)
@@ -2652,10 +2680,23 @@ module "lib.dk"
         ticket<"lifespan*">:get.lifespan(db,@@(ticket,"sys_pk"))
         ticket<"detalle*">:get.ordenes(db,p)
 
+        ref corte=dbr.rec(db,"select c.sys_pk,
+                trim(c.fapertura)fapertura,
+                trim(c.hapertura)hapertura,
+                trim(c.hcierre)hcierre,
+                trim(c.fcierre) fcierre,
+                c.cerrado,c.icajero,c.icaja
+                from corte as c 
+                where sys_pk=@icorte",ticket)
+        ticket<"corte*">:corte
+        ticket<"cajero*">:dbr.rec(db,"select sys_pk,codigo,nombre from cajero where sys_pk=@icajero",corte)
+
         ticket<"fpagos*">:ticket.fpagos(db,@@(params,"#id_table"),@@(ticket,"#imovcaja"))
 
         ticket<"comandas*">:ticket.comandas(db,@@(params,"#id_table"))
-
+        ticket<"importe_letras">:Int2Ltr(@@(ticket,"#total"))+" "+Dec2Ltr(@@(ticket,"#total"))
+        ticket<"text_footer">:dbr.str(db,"SELECT varvalue FROM globalvar g WHERE g.VarName='FXCA113';",@null)
+        ticket<"nota_adicional">:"*NO ES UN COMPROBANTE DE PAGO*"
         return ticket
     }
     ticket.fpagos::&db,venta,_movcaja
