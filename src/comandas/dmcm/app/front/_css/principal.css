@@ -955,6 +955,7 @@ html{scroll-behavior: smooth;}
 .hidde_control
 {
     display: none !important;
+    z-index: 10;
 }
 
 .placeholder-glow .placeholder

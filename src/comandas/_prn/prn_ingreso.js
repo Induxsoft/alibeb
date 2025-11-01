@@ -30,15 +30,16 @@ var prn_ingreso=
     },
     CreateTicket(data,callbackinterval=null)
     {
+        let TextBetween=(text,textleft)=>model_prn.TextBetween(text,textleft);
+        let CreatePrinter=(data)=>model_prn.CreatePrinter(data);
+
         let headers=data.headers??{};
         let body=data.body??{};
         let saldos=data.saldos??{};
         let extras=data.extras??{};
         let divider_full="".padEnd(model_prn.character_width,"=");
         let spacing_left=TextBetween("","============");
-
-        let TextBetween=(text,textleft)=>model_prn.TextBetween(text,textleft);
-        let CreatePrinter=(data)=>model_prn.CreatePrinter(data);
+        
         let CreatePrinterSaldos=(saldos)=>
         {
             eposprn.printText(spacing_left);
@@ -49,7 +50,7 @@ var prn_ingreso=
         eposprn.printText(data.title);
         eposprn.setAlign(0) //1 -> izquierda
 
-        eposprn.printText("\n");
+        // eposprn.printText("\n");
 
         eposprn.printText(divider_full);
         CreatePrinter(headers);

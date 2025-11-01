@@ -7,15 +7,6 @@ program
 	#include "dbr.dkh"
 	#include "esc_pos.dkh"
 
-	@character_width= 45
-    TextBetween::text,tleft
-    {
-        lt=length(text)+length(tleft)
-        if lt >= @character_width {return text+tleft}
-        l=abs(@character_width - lt)
-        return text + padright("",l," ") + tleft
-    }
-
 	ref data=@printer_context
 	ref cfg=@@(data,"&config")
 	if isnull(data){do rise_error(99,"Párametros imcompletos.")}
@@ -69,50 +60,14 @@ program
 	// do escpos.printline("Subtotal: $ "+format(@@(ticket,"$subtotal"),"#,#.00"))
 	do escpos.printline("Total: $ "+format(@@(ticket,"$total"),"#,#.00"))
 	
-	//propina
-	propina=@@(ticket,"#propina")
-	total_apagar=@@(ticket,"#total")
-	if propina > 0{do escpos.printline("Propina:  "+format(propina,"#,#.00"))}
-	
-	if total_apagar > 0 && parse.bool(@@(data,"$show_a_pagar"))
-	{
-		do escpos.printline("--------------")
-		do escpos.printline("A pagar:  "+format(total_apagar,"#,#.00"))
-	}
-
 	do escpos.printline("\n")
 	do escpos.printline(@@(ticket,"$importe_letras")+ " "+ @@(divisa,"$codigo"))
 
 	do escpos.printline("\n")
 	do escpos.centeralign()
 	do escpos.printline("-Forma de pago-")
-
-	//para comprobante de pago
-	efectivo=@@(ticket,"#efectivo")
-	tarjeta=@@(ticket,"#tarjeta")
-	cambio=@@(ticket,"#cambio")
-
-	if efectivo == 0 && tarjeta == 0 && cambio == 0
-	{
-		do escpos.printline("\n")
-		do escpos.printline(@@(ticket,"$nota_adicional"))
-		do escpos.printline("\n")
-	}
-
-	do escpos.rightalign()
-	
-	if efectivo > 0{do escpos.printline("Efectivo: "+format(efectivo,"$ #,0.00"))}
-	if tarjeta > 0{do escpos.printline("Tarjeta: "+	 format(tarjeta,"$ #,0.00"))}
-	if cambio > 0{do escpos.printline("Cambio: "+	 format(cambio,"$ #,0.00"))}
-
+	do escpos.printline(@@(ticket,"$nota_adicional"))
 	do escpos.leftalign()
-	//para comprobante de pago  ******************************************
-	if trim(@@(ticket,"$folio_factura"))!=""
-	{
-		do escpos.printline("\n")
-		do escpos.printline("Folio de Facturación")
-		do escpos.printline("# "+@@(ticket,"$folio_factura"))
-	}
 
 	do escpos.printline("\n")
 	do escpos.printline(@@(ticket,"$text_footer"))

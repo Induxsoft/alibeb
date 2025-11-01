@@ -30,89 +30,139 @@ var prn_arqueo=
     },
     CreateTicket(data,callbackinterval=null)
     {
-        let divider="=========================";
-        let totales=data.totales??{};
-        let data_orden=data.data_orden??{};
-        let data_empresa=data.data_empresa??{};
-        let list_dorden=data.list_dorden??{};
-        let divisa=data.divisa??{};
-        let cajero=data.cajero??{};
+        let TextBetween=(text,textleft)=>model_prn.TextBetween(text,textleft);
 
+        let divider_full="".padEnd(model_prn.character_width,"=");
+        let spacing_left=TextBetween("","============")
+        let prefix="$ ";
         eposprn.setAlign(1) //1 -> center
-        eposprn.printText(data_empresa.varvalue);
+        eposprn.printText(data.title??"");
+        // eposprn.printText("\n");
         eposprn.setAlign(0) //1 -> izquierda
 
-        eposprn.printText(divider);
+        eposprn.printText(divider_full);
 
+        eposprn.printText(data.text_corte??"");
+        eposprn.printText(data.text_del??"");
+        eposprn.printText(data.text_al??"");
+        eposprn.printText(data.text_caja??"");
+        eposprn.printText(data.text_cajero??"");
         eposprn.printText(data.fecha??"");
-        eposprn.printText("Mesa: "+data_orden.dmnsMesa??"");
-        eposprn.printText("CP: "+data_orden.desc_cc??"");
-        eposprn.printText("Ticket: "+data_orden.referencia);
-        eposprn.printText("Mesero: "+data_orden.nombre);
-        eposprn.printText("Cliente: "+data_orden.name_cliente);
-        if(cajero.nombre)eposprn.printText("Cajero: "+cajero.nombre??"NA");
 
-        eposprn.printText(divider);
+        eposprn.printText(divider_full);
+
         eposprn.setAlign(1) //1 -> center
-        eposprn.printText("-DETALLE DE SU COMPRA-");
-        eposprn.printText(divider);
+        eposprn.printText(data.text_venta??"");
         eposprn.setAlign(0) //1 -> izquierda
-                        
-        eposprn.printText("DESC  CANT  UNID  IMPORTE");
-
-        for (let i = 0; i < list_dorden.length; i++) 
-        {
-            const row = list_dorden[i];
-            eposprn.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.price,controller.decimals,".",",")}`);
-        }
-
-        eposprn.printText(divider);
-
-        eposprn.setAlign(2) //2 -> derecha
-
-        let propina=(data.propina??0);
-        let total_apagar=(totales.total??0);
-
-        eposprn.printText(`Total:       $ ${views.format(totales.importe,controller.decimals,".",",")}`);
-        if(propina>0)eposprn.printText(`Propina:     $ ${views.format(propina,controller.decimals,".",",")}`);
         
-        if(total_apagar>0)
+        let _detalle=data.venta_detalle??{};
+        let venta_detalle=_detalle.detalle??[];
+
+        for (let i = 0; i < venta_detalle.length; i++) 
         {
-            eposprn.printText(`--------------`);
-            eposprn.printText(`A pagar:     $ ${views.format(total_apagar,controller.decimals,".",",")}`);
+            const row = venta_detalle[i];
+            eposprn.printText(TextBetween(row.referencia??"",row.text_status??""));
         }
+
+        eposprn.printText(spacing_left);
+        eposprn.printText(TextBetween(_detalle.text_total??"",_detalle.str_total??""));
+        eposprn.printText(TextBetween(_detalle.text_credito??"",_detalle.str_credito??""));
+        eposprn.printText(TextBetween(_detalle.text_contado??"",_detalle.str_contado??""));
+        
+        eposprn.printText(spacing_left);
+        eposprn.printText(TextBetween(_detalle.text_total??"",_detalle.str_total??""));
+        eposprn.printText(TextBetween(_detalle.text_propina??"",_detalle.str_propinas??""));
+        eposprn.printText(spacing_left);
+
+        eposprn.printText(TextBetween(_detalle.text_ingreso_caja??"",_detalle.str_ingreso_caja??""));
+        
+        eposprn.printText(_detalle.text_footer??"");
 
         eposprn.printText("\n");
-        eposprn.setAlign(0); //0 -> izquierda
-        eposprn.printText(`${data.total_letras??""} ${divisa.codigo??""}`);
-        
-        // eposprn.printText("\n");
 
-        eposprn.setAlign(2) //2 -> derecha
-        eposprn.printText("-Forma de pago-");
+        let divisa_movcaja=data.divisa_movcaja??[];
+        let text_ingreso=data.text_ingreso??""
+        let text_egreso=data.text_egreso??""
+        let text_saldoinicial=data.text_saldoinicial??""
+        let divisa_predet=data.divisa_predet??0;
 
-        let efectivo=(data.efectivo??0);
-        let tarjeta=(data.tarjeta??0);
-        let cambio=(data.cambio??0);
-
-        if(efectivo>0)eposprn.printText(`Efectivo: ${efectivo}`);
-        if(tarjeta>0)eposprn.printText(`Tarjeta: ${tarjeta}`);
-        if(cambio>0)eposprn.printText(`Cambio: ${cambio}`);
-
-        eposprn.setAlign(0); //0 -> izquierda
-
-        if(efectivo==0 && tarjeta==0 && cambio==0)
+        for (let i = 0; i < divisa_movcaja.length; i++) 
         {
-            eposprn.printText("\n");
-            eposprn.printText("*NO ES UN COMPROBANTE DE PAGO*");
-            eposprn.printText("\n");
-        }
-        eposprn.printText(`${data.text_footer}`);
+            const row = divisa_movcaja[i];
+            
+            let ingresos_categoria=row.ingresos_categoria??[];
+            let egresos_categoria=row.egresos_categoria??[];
+            let formas_ing_pagos=row.formas_ing_pagos??{};
+            let divisa=row.idivisa??0;
+            let saldo_inicial=row.saldo_inicial??0;
 
-        if((data.folio_factura??"")!="")
-        {
-            eposprn.printText("Folio de Facturación");
-            eposprn.printText(data.folio_factura);
+            eposprn.printText(divider_full);
+            eposprn.printText(row.descripcion??"");
+            eposprn.printText(divider_full);
+
+            eposprn.setAlign(1); //1 -> center
+            eposprn.printText(text_ingreso);
+            eposprn.setAlign(0); 
+
+            eposprn.printText("\n");
+            eposprn.printText(TextBetween(text_saldoinicial,views.format(saldo_inicial,controller.decimals,".",",",prefix)));
+
+            total_ingreso= 0
+
+            for (let a = 0; a < ingresos_categoria.length; a++) 
+            {
+                const ic = ingresos_categoria[a];
+                let total=ic.total??0;
+                
+                if(divisa != divisa_predet)
+                {
+                    total=total * (ic.tipocambio??0);
+                    eposprn.printText(TextBetween(" X TCambio",views.format(ic.tipocambio??0,controller.decimals,".",",",prefix)));
+                }
+                total_ingreso +=total;
+                eposprn.printText(TextBetween(ic.movcategoria??"",views.format(total,controller.decimals,".",",",prefix)));
+            }
+
+            eposprn.printText(spacing_left);
+            eposprn.printText(TextBetween("TOTAL",views.format(controller.RoundTo(total_ingreso + saldo_inicial,controller.decimals),controller.decimals,".",",",prefix)));
+
+            eposprn.setAlign(0);
+            eposprn.printText("\n");
+
+            eposprn.printText(TextBetween("BILLETES",views.format(formas_ing_pagos.efectivo??0,controller.decimals,".",",",prefix)));
+            eposprn.printText(TextBetween("TARJETAS",views.format(formas_ing_pagos.tarjetas??0,controller.decimals,".",",",prefix)));
+            eposprn.printText(TextBetween("CHEQUES",views.format(formas_ing_pagos.cheques??0,controller.decimals,".",",",prefix)));
+            eposprn.printText(TextBetween("DEPOSITOS",views.format(formas_ing_pagos.depositos??0,controller.decimals,".",",",prefix)));
+            eposprn.printText(TextBetween("VALES",views.format(formas_ing_pagos.vales??0,controller.decimals,".",",",prefix)));
+
+            eposprn.printText(spacing_left);
+            eposprn.printText(TextBetween("TOTAL",views.format(total_ingreso ,controller.decimals,".",",",prefix)));
+            eposprn.printText("\n");
+            //IMPRIMIR DATOS DE EGRESOS
+            eposprn.setAlign(1);
+            eposprn.printText(text_egreso);
+            eposprn.printText("\n");
+            eposprn.setAlign(0);
+            let total_egreso= 0;
+            
+            for (let a = 0; a < egresos_categoria.length; a++) 
+            {
+                const ec = egresos_categoria[a];
+                let total=ec.total;
+                total_egreso += total;
+                if(divisa != divisa_predet)
+                {
+                    total=total * (ec.tipocambio??0);
+                    eposprn.printText(TextBetween(" X TCambio",views.format(ec.tipocambio??0,controller.decimals,".",",",prefix)));
+                }
+                eposprn.printText(TextBetween(ec.movcategoria??"",views.format(total,controller.decimals,".",",",prefix)));
+            }
+
+            eposprn.printText(spacing_left);
+            eposprn.printText(TextBetween("TOTAL",views.format(controller.RoundTo(total_egreso,controller.decimals),controller.decimals,".",",",prefix)));
+            eposprn.printText("\n");
+            eposprn.printText(spacing_left);
+            eposprn.printText(TextBetween("TOTAL NETO",views.format(saldo_inicial + total_ingreso + total_egreso,controller.decimals,".",",",prefix)));
         }
 
         eposprn.printText("\n");

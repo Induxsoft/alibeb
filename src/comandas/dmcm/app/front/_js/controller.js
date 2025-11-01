@@ -570,12 +570,17 @@ var controller=
           return;
         }
 
+        views.btn_corte_caja.classList.add("disabled");
         model.invoke_service(uri,data,
         function(data)
         {
           window.location.href="/comandas/";
         }
-        ,function(error){alert(error.message);}
+        ,function(error)
+        {
+          views.btn_corte_caja.classList.remove("disabled");
+          alert(error.message);
+        }
         ,"POST",false);
       }
     },
@@ -587,6 +592,7 @@ var controller=
         (data)=>
         {
           console.log(data);
+          model_prn.print_arqueo(data);
         }
         ,(error)=>
         {

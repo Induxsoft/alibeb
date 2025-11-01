@@ -131,7 +131,10 @@ module "lista de consultas"
 		  	when 5 then '-REPARTO-'
 		  	when 99 then '-CANCELADO-'
 		  END) text_status_admin,
-          qv.icorte
+          qv.icorte,
+          trim(qv.fecha) as str_fecha,
+          qv.fecha,
+          qv.sys_dtcreated
     from
         qventasserviciomesa qv
         left join cstatusadministrativos sc on qv.statusadministrativo=sc.id

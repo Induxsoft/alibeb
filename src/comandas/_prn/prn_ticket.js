@@ -71,18 +71,51 @@ var prn_ticket=
 
         eposprn.setAlign(2) //2 -> derecha
         eposprn.printText(`Total:       $ ${views.format(data.total,controller.decimals,".",",")}`);
+        
+        //propina
+        let propina=(data.propina??0);
+        let total_apagar=(data.total??0);
+        if(propina>0)eposprn.printText(`Propina:     $ ${views.format(propina,controller.decimals,".",",")}`);
+        
+        if(total_apagar>0 && (data.show_a_pagar??false))
+        {
+          eposprn.printText(`--------------`);
+          eposprn.printText(`A pagar:     $ ${views.format(total_apagar,controller.decimals,".",",")}`);
+        }
 
         eposprn.printText("\n");
         eposprn.setAlign(0); //0 -> izquierda
         eposprn.printText(`${data.importe_letras??""} ${divisa.codigo??""}`);
-        
-        // eposprn.printText("\n");
 
         eposprn.setAlign(1) //2 -> derecha
         eposprn.printText("-Forma de pago-");
-        eposprn.printText(data.nota_adicional??"");
         
+        //para comprobante de pago
+        let efectivo=(data.efectivo??0);
+        let tarjeta=(data.tarjeta??0);
+        let cambio=(data.cambio??0);
+
+        if(efectivo==0 && tarjeta==0 && cambio==0)
+        {
+          eposprn.printText("\n");
+          eposprn.printText(data.nota_adicional??"");
+          eposprn.printText("\n");
+        }
+
+        if(efectivo>0)eposprn.printText(`Efectivo: $ ${views.format(efectivo,controller.decimals,".",",")}`);
+        if(tarjeta>0)eposprn.printText(`Tarjeta: $ ${views.format(tarjetacontroller.decimals,".",",")}`);
+        if(cambio>0)eposprn.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
+
         eposprn.printText(`${data.text_footer}`);
+
+        //para comprobante de pago  ******************************************
+        if((data.folio_factura??"")!="")
+        {
+            eposprn.printText("\n");
+            eposprn.printText("Folio de Facturación");
+            eposprn.printText("# "+data.folio_factura);
+        }
+        //******************************************
 
         eposprn.printText("\n");
         eposprn.printText("\n");

@@ -193,7 +193,7 @@ module "index.dkl"
 						case "close"{ref data=close.table(db,params,postData)}
 						case "uptorder"
 						{
-							postData<"id_table">:@@(params,"#id_table")
+							postData<"id_table">:@@(params,"$id_table")
 							ref data=update.order(db,postData)
 						}
 						case "reprint"

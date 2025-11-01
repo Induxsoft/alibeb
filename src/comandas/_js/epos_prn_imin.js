@@ -8,11 +8,9 @@ function createDriver_imin(){
             this.connection = new IminPrinter();
             this.connection.connect().then(async (isConnect) => 
             {
-                console.log(isConnect);
                 if(isConnect)
                 {
                     let status = await this.connection.getPrinterStatus();
-                    console.log(status)
                     this.isConnected = isConnect;
                     this.connection.initPrinter();
                     if(success)

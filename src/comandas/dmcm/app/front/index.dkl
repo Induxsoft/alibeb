@@ -37,6 +37,7 @@ module "index"
 	file_include=""
 	ref @__divisa=@null
 	pos_card_procesor=""
+	
 	switch view
 	{
 		case "vw_principal"
@@ -106,8 +107,11 @@ module "index"
 	{
 		script(src="#<@js_epos_prn>"){""}
 		script(src="#<@js_epos_prn_imin>"){""}
+		script(src="#<@js_epos_prn_dantsu>"){""}
 		script(src="#<@js_epos_imin_printer>"){""}
 		script(src="/_js/bootstrap.bundle.min.js"){""}
+		//para test desde android
+		script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
 
 		div(class="container-all" style="overflow:auto")
 		{
@@ -154,6 +158,8 @@ module "index"
 
 			controller.getData=#<to.json(@GET)>;
 			controller.url_redir="#<@url_redir>";
+			//para test desde android
+			// var vConsole = new VConsole();
 			'
 		}
 		#!

@@ -7,6 +7,13 @@ module "lib.dk"
     do _map_function(lib_numeros,"induxsoft_dkl_NumeroAletrasCorregido.NumerosEnLetras","ParteEntera","Int2Ltr","System.Decimal","$")
     do _map_function(lib_numeros,"induxsoft_dkl_NumeroAletrasCorregido.NumerosEnLetras","ParteDecimal","Dec2Ltr","System.Decimal","$")
 
+    ref lib_precfdi = _import_library("precfdi4lib.dll")
+
+    do _map_function(lib_precfdi, "precfdi4lib.proc", "setDatabase", "ticket.set_db", "*System.Object", "void")
+    do _map_function(lib_precfdi, "precfdi4lib.proc", "GenCodeTicket", "ticket.encode_folio", "*System.Object,*System.Object,*System.Object", "$") 
+    do _map_function(lib_precfdi, "precfdi4lib.proc", "DecodeTicket", "ticket.decode_folio", "System.String, System.Boolean", "#") 
+    do _map_function(lib_precfdi, "precfdi4lib.proc", "VentaXml", "ticket.xml", "System.Int32", "$")
+
     //#region PRCESOS
     //ingreso y egreso
     pos.ingreso::&db,&params,&postData
@@ -237,11 +244,14 @@ module "lib.dk"
             do dbr.insert(db,"dtarjeta",dtarjeta)
         }
         //cargar datos del ticket antes de actualizar el estado de la venta
-        new response
-        {
-            @"totales*":totales
-        }
-        do DataTicket(db,@@(postData,"#venta"),response)
+        params<"id_table">:@@(postData,"#venta")
+        ref response=data.ticket(db,params)
+        // new response
+        // {
+        //     @"totales*":totales
+        // }
+        // do DataTicket(db,@@(postData,"#venta"),response)
+
         //actualizar venta
         new venta
         {
@@ -257,28 +267,31 @@ module "lib.dk"
         do dbr.update(db,"venta",venta,"sys_pk=@venta",postData)
 
         //ACTULIZAR ORDEN
-        new orden
-        {
-            @"status":3
-        }
+        new orden{@"status":3}
         do dbr.update(db,"orden",orden,"iventa=@venta",postData)
+        
         //obetner datos del ticket
+        //folio de la venta
+        folio_factura=ticket.encode_folio(@@(response,"&fecha"),@@(response,"&sys_dtcreated"),@@(postData,"#venta"))
+        
         using response
         {
-            @"cajero*":dbr.rec(db,"select codigo,nombre from cajero where codigo=@idcajero",datos)
+            // @"cajero*":dbr.rec(db,"select codigo,nombre from cajero where codigo=@idcajero",datos)
             @"propina":@@(venta,"#importeadicional")
             @"efectivo":@@(movcaja,"#efectivo")
             @"tarjeta":@@(movcaja,"#tarjetas")
             @"cambio":@@(totales,"#cambio")
-            @"text_footer":"Gracias por su compra, esperamos regrese pronto!!!"
-            @"folio_factura":""
-            @"divisa*":divisa
+            // @"text_footer":"Gracias por su compra, esperamos regrese pronto!!!"
+            @"folio_factura":folio_factura
+            // @"divisa*":divisa
             @"url_redir":"/comandas/?view=vw_principal&dmtm_token="+@@(datatoken,"$token")
         }
         
         do dbr.commit(db)
 
-        // do printer_ordertable(db,@@(postData,"#venta"))
+        postData<"data_ticket*">:response
+
+        do printer_ordertable(db,@@(postData,"#venta"),postData)
 
         return response
 
@@ -383,17 +396,18 @@ module "lib.dk"
         do dbr.execute(db,sql,params)
 
         do token.logout(db,postData)
-        do dbr.commit(db)
-
         module "imprimir arqueo"
         {
             ref arqueo=DataArqueo(db,corte)
-
+            arqueo<"_config_prn*">:@@(postData,"&_config_prn")
             do PrintArqueo(db,arqueo)
-            exception{}
+            // exception{}
         }
+        do dbr.commit(db)
 
-        return postData
+        
+        do field.remove(arqueo,"http")
+        return arqueo
 
         exception
         {
@@ -409,9 +423,10 @@ module "lib.dk"
         
         ref arqueo=DataArqueo(db,corte)
         arqueo<"_config_prn*">:@@(postData,"&_config_prn")
+        
         do PrintArqueo(db,arqueo)
-
-        return postData
+        do field.remove(arqueo,"http")
+        return arqueo
     }
     //#endregion
     
@@ -816,6 +831,7 @@ module "lib.dk"
         
         new response
         {
+            @"fecha":date_str(now(),"yyyy-MM-dd HH:mm:ss")
             @"title":ifstr(cerrado,"- CORTE DE CAJA -","- ARQUEO DE CAJA -")
             @"header":dbr.vars.get(db,"FXCA112")
             @"text_corte":"CORTE #: "+str(pkcorte) + " "+estado
@@ -1163,7 +1179,8 @@ module "lib.dk"
         if isnull(config){return @null}
 
         new p{@"id_table":idtable}
-        ref data=data.ticket(db,p)
+        ref data=@@(postData,"&data_ticket")
+        if isnull(data){ref data=data.ticket(db,p)}
         
         if @@(config,"#req_data"){return data}
         
@@ -2237,9 +2254,9 @@ module "lib.dk"
     update.order::&db,&postData
     {
         quantity=@@(postData,"#quantity")
-
         new p{@"id_table":@@(postData,"id_table")}
         ref dataVenta=dbr.rec(db,@dataventa,p)
+
         new data
         {
             @"id_table":@@(dataVenta,"sys_pk")
@@ -2308,11 +2325,13 @@ module "lib.dk"
                 //actualizar los totales
                 do dbr.execute(db,@updateventa,totales)
             }
-           
-        do dbr.commit(db)
-
+        
         postData<"id_table">:@@(dataVenta,"sys_pk")
         ref data_order=get.mesa(db,postData)
+        
+        do dbr.commit(db)
+
+        
         return data_order
 
         exception

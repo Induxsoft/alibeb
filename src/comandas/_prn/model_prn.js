@@ -6,7 +6,7 @@ var model_prn=
     TextBetween(text,textleft)
     {
         let lt=text.length+textleft.length;
-        if(lt>this.character_width)return text+textleft;
+        if(lt>this.character_width)return text+" "+textleft;
 
         let l=Math.abs(this.character_width - lt);
 
@@ -50,7 +50,7 @@ var model_prn=
                 eposprn.printText(this.TextBetween(saldos[key]??"",saldos["str_"+key]));
         }
 
-        if((saldos.total??"")!="")eposprn.printText(TextBetween("TOTAL:",saldos.total));
+        if((saldos.total??"")!="")eposprn.printText(this.TextBetween("TOTAL:",saldos.total));
     },
     Drivers()
     {
@@ -85,30 +85,34 @@ var model_prn=
     print_arqueo(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server")return;
+        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
 
         prn_arqueo.Print(data,config.data,callbackinterval)
     },
     print_egreso(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server")return;
+        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
 
         prn_egreso.Print(data,config.data,callbackinterval);
     },
     print_ingreso(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server")return;
+        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
 
         prn_ingreso.Print(data,config.data,callbackinterval);
     },
     print_ticket(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server")return;
+        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
 
         prn_ticket.Print(data,config.data,callbackinterval);
+    },
+    Redirec(url_redir)
+    {
+        if(url_redir)window.location.href=url_redir;
     },
     view:
     {
@@ -219,6 +223,7 @@ var model_prn=
                 getOptionSelected(this.select_device);
             }
         },
+        fields_excluyed_enabled:"driver,type",
         ActionElement(act="clean")
         {
             if(!this.row_data_prn)return "";
@@ -228,11 +233,12 @@ var model_prn=
             {
                 const element = elements[i];
                 data[element.name]=element.value;
+                
                 switch(act)
                 {
                     case "clean":element.value="";break;
                     case "disabled":element.disabled=true;break;
-                    case "enabled":element.disabled=false;break;
+                    case "enabled":if(!this.fields_excluyed_enabled.includes(element.name))element.disabled=false;break;
                 }
             }
 
