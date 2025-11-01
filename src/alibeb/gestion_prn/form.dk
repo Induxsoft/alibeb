@@ -12,7 +12,8 @@ module "form.dk"
 
     do @context.begin(@crud_context)
     ref data=ifnull(@("&."),record.create())
-
+    
+    @isnew=@("$parameters/_entity_id")=="_new"
     n_print_buttons::
     {
         act_btn_cls = "btn btn-sm border-secondary induxsoft-corners btn-main-action"
@@ -25,7 +26,7 @@ module "form.dk"
     point n_print_buttons to n_print_buttons
     new nav_config
     {
-        @"title": "Gestión de impresoras"
+        @"title": "Gestión de impresora"
         @"urlexit": ".."
         @"buttons*":n_print_buttons
         new member "hidden"
@@ -77,7 +78,7 @@ module "form.dk"
                     div(class="col-md-3")
                     {
                         label(class="fw-bold" "for"=""){"ID:"}
-                        input(class="induxsoft-form-control" type="" name="id" value="#<@@(data,'$id')>" id="id" required="true" maxlength="32")
+                        input(class="induxsoft-form-control" type="" name="id" value="#<@@(data,'$id')>" id="id" required="true" maxlength="32" "#<ifstr(not(@isnew),'readonly','')>"="true")
                     }
                     div(class="col-md-3")
                     {
