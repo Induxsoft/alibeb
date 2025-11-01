@@ -24,3 +24,4 @@ CA60,Configuración de impresoras en centro de producción,alibeb.config_prn_cp
 CA61,Agreagar configuración prn,alibeb.config_prn_cp
 CA62,Editar configuración prn,alibeb.config_prn_cp
 CA63,Eliminar configuración prn,alibeb.config_prn_cp
+CA70,Acceder a la configuración de impresión del dispositivo,alibeb

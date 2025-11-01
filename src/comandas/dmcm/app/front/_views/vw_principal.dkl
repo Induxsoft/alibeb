@@ -62,7 +62,7 @@ module "terminal de mesero"
 						}
 
 						span(class="flex-grow-1"){""}
-						a(class="btn " id="btn-settings" href="#<preserveQSParams('./?view=config-prn')>" title="Configuración")
+						button(class="btn " id="btn-settings" title="Configuración")
 						{
 							$'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
 								<path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
@@ -88,10 +88,30 @@ module "terminal de mesero"
 
 							p{$""}
 						}
-					}
-					
+					}		
 				}
 			}
+
+			//
+			dialog(id="miDialogoLogin" class="border shadow-sm")
+			{
+				form(method="dialog" id="formLogin" onsubmit="return false")
+				{
+					h3{"Iniciar sesión"}
+					label( "for"=""){"Usuario:"}
+					input(class="input-login" type="text" id="usuario" name="usuario" required="" placeholder="...."){""}
+
+					label( "for"=""){"Contraseña:"}
+					input(class="input-login" type="password" id="clave" name="clave" placeholder="*****")
+
+					div(class="d-flex justify-content-end gap-2 mt-2")
+					{
+						button(class="btn-admin" onclick="views.CloseDialog()"){"Cerrar"}
+						button(class="btn-admin" type="submit" id="btn_login_config" "data-url"="#<preserveQSParams('./?view=config-prn')>"){$"Acceder"}
+					}
+				}
+			}
+			
 		}
 		
 		div(class="card card-info placeholder-glow d-none d-lg-block" id="card-info" style="padding:0px;pointer-events:none;opacity:.4;")

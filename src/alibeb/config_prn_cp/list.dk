@@ -17,7 +17,7 @@ module "list.dk"
         @"table_footer": "Mostrando las primeras # filas"
         member @"columns"
         {
-            member @"id" { @"caption":"ID" }
+            // member @"id" { @"caption":"ID" }
             member @"cprod" { @"caption":"Centro de producción" }
             member @"impresora" { @"caption":"Impresora" }
             member @"_actions" 

@@ -68,7 +68,7 @@ program
 		do escpos.printline("-"+@@(itm,"$descripcion") +"      "+ str(rou)+"      "+"PZA")
 		if trim(@@(itm,"$especificaciones"))!=""
 		{
-			do escpos.printline("Instrucciones adicionales:");
+			do escpos.printline("Instrucciones adicionales:")
 			do escpos.printline(" "+@@(itm,"$especificaciones"))
 		}
  	}

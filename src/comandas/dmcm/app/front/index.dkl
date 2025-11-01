@@ -45,7 +45,7 @@ module "index"
 			@module="login"
 			ref @__divisa=GetDataDivisaPred()
 			ref divisas=GetDivisas()
-			ref categorias=GetCategorias()
+			ref categorias=GetCategorias("1,2")
 			file_include= path.concat(@path_view,"vw_principal.dkl")
 			break
 		}
@@ -111,7 +111,7 @@ module "index"
 		script(src="#<@js_epos_imin_printer>"){""}
 		script(src="/_js/bootstrap.bundle.min.js"){""}
 		//para test desde android
-		script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
+		// script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
 
 		div(class="container-all" style="overflow:auto")
 		{
@@ -146,6 +146,7 @@ module "index"
 			#<ftext(file.rtext(@model_js))>
 			#<ftext(file.rtext(@driver_js))>
 
+			views.icon_mesa=\'#<@icon_mesa>\';
 			var $cc="#<@@(@waiter,"cc")>";
 			var waiter_key="#<@@(@waiter,"key")>";
 			var caption="#<@@(@waiter,"caption")>";

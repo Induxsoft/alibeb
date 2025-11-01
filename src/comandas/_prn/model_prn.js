@@ -85,28 +85,28 @@ var model_prn=
     print_arqueo(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
+        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
 
         prn_arqueo.Print(data,config.data,callbackinterval)
     },
     print_egreso(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
+        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
 
         prn_egreso.Print(data,config.data,callbackinterval);
     },
     print_ingreso(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
+        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
 
         prn_ingreso.Print(data,config.data,callbackinterval);
     },
     print_ticket(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data.url_redir);return;}
+        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
 
         prn_ticket.Print(data,config.data,callbackinterval);
     },
@@ -270,7 +270,15 @@ var model_prn=
 
             return config_prn;
         },
-        
+        ClearData()
+        {
+            localStorage.setItem(model_prn.name_storage,JSON.stringify({}));
+
+            alert("Configuración eliminada correctamente.");
+
+            let url=this.btn_save_config.getAttribute("data-url");
+            if(url)window.location.href=url;
+        },
         SaveData()
         {
             if(!this.form)return;
@@ -303,6 +311,9 @@ var model_prn=
             localStorage.setItem(model_prn.name_storage,JSON.stringify(data));
 
             alert("Configuración guardado correctamente.");
+
+            let url=this.btn_save_config.getAttribute("data-url");
+            if(url)window.location.href=url;
         },
         SetDataFromConfig()
         {

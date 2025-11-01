@@ -32,7 +32,7 @@ module ""
     }
     getDataEntity::&data
     {
-        if trim(@@(data,"$id"))==""{do rise_error(500,"No ha indicado un ID")}
+        if trim(@@(data,"$id"))==""{data<"id">:uuid()}
         if trim(@@(data,"$ref_cprod"))==""{do rise_error(500,"No ha indicado un centro de producción")}
         if trim(@@(data,"$ref_gprn"))==""{do rise_error(500,"No ha indicado una impresora")}
 
@@ -45,21 +45,35 @@ module ""
     }
     create::&db,&params,&data
     {
+        do errordet(@false)
         do dbr.apps.action.grant("CA51")
-
+        
         ref entity=getDataEntity(data)
+
+        // count_cprod=dbr.num(db,"select count(*) from ut_dm_tmm_cgprn where ref_gprn=@ref_gprn AND ref_cprod=@ref_cprod",entity)
+        // if count_cprod > 0{do rise_error(500,"Ya hay una configuración de impresión para el centro de producción indicado")}
+
+        count_cprod=dbr.num(db,"select count(*) from ut_dm_tmm_cgprn where ref_cprod=@ref_cprod",entity)
+        if count_cprod > 0{do rise_error(500,"Ya hay una configuración de impresión para el centro de producción indicado")}
 
         do dbr.insert(db,@table_name,entity)
         params<"_entity_id">:@@(data,"$id")
         return read(db,params)
+
+        exception
+        {
+            do prepareView(db,params,data)
+            do rise_error(500,last_error())
+        }
     }
 
     update::&db,&params,&data
     {
+        do errordet(@false)
         do dbr.apps.action.grant("CA52")
         
         ref entity=getDataEntity(data)
-
+        do field.remove(entity,"id")
         do dbr.update(db,@table_name,entity,"id=@_entity_id",params)
         
         return data

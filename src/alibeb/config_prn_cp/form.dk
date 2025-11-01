@@ -82,19 +82,19 @@ module "form.dk"
             {
                 div(class="row")
                 {
-                    div(class="col-md-3")
-                    {
-                        label(class="fw-bold" "for"=""){"ID:"}
-                        input(class="induxsoft-form-control" type="" name="id" value="#<@@(data,'$id')>" id="id" required="true" maxlength="32" "#<ifstr(not(@isnew),'readonly','')>"="true")
-                    }
-                    div(class="col-md-5")
+                    // div(class="col-md-3")
+                    // {
+                    //     label(class="fw-bold" "for"=""){"ID:"}
+                    //     input(class="induxsoft-form-control" type="" name="id" value="#<@@(data,'$id')>" id="id" required="true" maxlength="32" "#<ifstr(not(@isnew),'readonly','')>"="true")
+                    // }
+                    div(class="col-md-6")
                     {
                         label(class="fw-bold" "for"=""){"Centro de producción:"}
                         #!
                         do uie.dbSelect(fil_cprod)
                         #$
                     }
-                    div(class="col-md-4")
+                    div(class="col-md-6")
                     {
                         label(class="fw-bold" "for"=""){"Impresora:"}
                         #!

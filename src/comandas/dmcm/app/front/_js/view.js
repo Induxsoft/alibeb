@@ -74,7 +74,40 @@ var views=
 
             //comida rapida
             this.ipt_cliente=document.getElementById("ipt_cliente");
-            // if(this.ipt_cliente)
+            //login de configuración
+            this.btn_login_config=document.getElementById("btn_login_config");
+            this.btn_settings=document.getElementById("btn-settings");
+            this.miDialogoLogin=document.getElementById("miDialogoLogin");
+            this.txt_user=document.getElementById("usuario");
+            this.txt_pwd=document.getElementById("clave");
+            if(this.btn_login_config)this.btn_login_config.addEventListener("click",()=>this.SubmitDialog());
+            if(this.btn_settings)this.btn_settings.addEventListener("click",()=>this.ShowDialog());
+
+      },
+      ShowDialog()
+      {
+            if(!this.miDialogoLogin)return;
+            this.txt_user.value="";
+            this.txt_pwd.value="";
+            this.miDialogoLogin.showModal();
+      },
+      CloseDialog()
+      {
+            if(!this.miDialogoLogin)return;
+            this.miDialogoLogin.close();
+      },
+      SubmitDialog(e=null)
+      {
+            if(e)e.preventDefault();
+            if(!this.miDialogoLogin)return;
+
+            const usuario = this.txt_user.value;
+            if((usuario??"").trim()=="")return;
+            const clave = this.txt_pwd.value;
+
+            let callback=()=>this.miDialogoLogin.close();
+
+            controller.AccessConfig(usuario.trim(),clave.trim(),this.btn_login_config,{url_redir:this.btn_login_config.getAttribute("data-url")??"",callback})
       },
       //elimina los elementos que contengan las clase class="only-cashier"
       DeleteElementsCashier(_delete=true,_class=".only-cashier")
@@ -165,6 +198,7 @@ var views=
             // Muestra el formulario seleccionado
             document.getElementById(id).style.display = "block";
       },
+      icon_mesa:"",
       print_mesas:function(data) 
       {
             var html="";
@@ -181,7 +215,7 @@ var views=
                                     <div class="mesa_color ${this.flag_color(itm.flag)} mesa_color_${itm.sys_pk}"></div>
                               </div>
                               <div style="display:flex; align-items:center;justify-content:center; margin-top:28px;">
-                                    <svg width="30" height="30" fill="#333" viewBox="0 0 37.325 24.419" xmlns="http://www.w3.org/2000/svg"><defs><clipPath clipPathUnits="userSpaceOnUse" id="prefix__a"><path d="M19.998 154.593l-5.551 8.074 10.707 7.297 4.271-6.212c-.023-.041-.02-.108.034-.182.045-.061.081-.129.12-.193a1.7 1.7 0 00.05-.097c-.019-.04-.014-.097.031-.164l.119-.172.004-.006.019-.044c.033-.087.072-.172.11-.257a2.002 2.002 0 01.206-.377l.104-.155.098-.142c.03-.048.065-.093.094-.141l.053-.094z" fill="red" stroke-width=".265"/></clipPath></defs><path d="M37.323 0L11.517.03.005 7.842l25.805-.03zM.004 9.954h2.75v14.45H.004zM23.498 9.968h2.75v14.45h-2.75zM34.575 2.557h2.75v14.45h-2.75z"/><path d="M11.454.057h2.75v14.45h-2.75z"/><path d="M0 7.839l25.786-.035.003 2.535-25.786.035z"/><path clip-path="url(#prefix__a)" transform="matrix(.82843 -.5601 .56968 .82186 -79.693 -115.26)" d="M30.058 161.652l-.001.001h.001zm-.001.001H15.144v1.489h13.794c0-.035.01-.076.034-.12a.266.266 0 01.099-.107.34.34 0 01.082-.04l.006-.006a.576.576 0 00.039-.047l.053-.075.06-.087.062-.09.063-.093.053-.077.045-.064.045-.066.04-.06.043-.06.049-.071.05-.074c.016-.024.034-.047.052-.07l.038-.047a4.061 4.061 0 00.074-.1l.029-.042a.266.266 0 01.103-.093z"/><path d="M37.321 0l-.133.001v1.714l.066.015v-.514l.003-.084.005-.062a3.624 3.624 0 00.004-.124v-.05c0-.063.015-.11.038-.144l.002-.016.004-.017V.716.713l-.001.003a.143.143 0 01.013-.048zm-.133 1.853v.194l.02-.116a.127.127 0 01.03-.066l-.05-.012z"/><path d="M36.162.001h1.159v2.542h-1.16z"/><path d="M37.09 2.618l.193-.13.037.056-.192.13z"/><path d="M37.174 2.527h.029v.03h-.03zM25.286 7.964L36.114.749l.446.653-10.827 7.215z"/></svg>
+                                    ${views.icon_mesa}
                               </div>
                               <div class="div-mesa_name">
                                     <a>${itm.code}</a>

@@ -2488,6 +2488,31 @@ module "lib.dk"
 
         return data
     }
+    access.config::&db,&params,&postData
+    {
+        using params
+        {
+            @"uid":trim(@@(postData,"$user"))
+            @"pwdmd5":md5(trim(@@(postData,"$pwd")))
+            @"pwdmd5u":md5e(@@(postData,"$pwd"),"unicode")
+        }
+        ref user:dbr.rec(db,"select 
+			sys_pk, ifnull(locked,0) locked 
+			from tuser 
+			where lower(userid)=@uid 
+			and (lower(pwdmd5)=@pwdmd5 or lower(pwd)=@pwdmd5u)
+			and ifnull(sys_deleted,0)=0",params)
+
+        if isnull(user){do rise_error(500,"Usuario y contraseña incorrecto")}
+
+        ref _db=dbr.login(@@(@http_context,"$session/idp/qname"),@@(params,"$uid"),trim(@@(postData,"$pwd")))
+        if isnull(@@(@http_context,"&session/user")){@http_context<"session/user*">:record.create()}
+
+        @http_context<"session/idp/database*">:_db
+        @http_context<"session/user/uid*">:@@(params,"$uid")
+
+        do dbr.apps.action.grant("CA70")
+    }
     //#endregion
     
 

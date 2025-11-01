@@ -96,9 +96,11 @@ div(class="container")
         }
         div(class="card-footer")
         {
-            div(class="d-flex justify-content-end gap-2")
+            div(class="d-flex gap-2")
             {
-                button(class="btn-admin" type="button" id="btn_save_config"){$"Aceptar"}
+                button(class="btn-admin bg-danger text-white" type="button" id="btn_del_config" "data-url"="#<preserveQSParams('/?view=vw_principal')>" onclick="model_prn.view.ClearData()" title="Eliminar configuración"){$"Eliminar configuración"}
+                span(class="flex-grow-1"){""}
+                button(class="btn-admin" type="button" id="btn_save_config" "data-url"="#<preserveQSParams('/?view=vw_principal')>"){$"Aceptar"}
             }
         }
 

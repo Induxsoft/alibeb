@@ -1351,6 +1351,29 @@ var controller=
         ,function(error){alert(error.message);}
         ,"GET",false);
     },
+    AccessConfig(user,pwd,element=null,{url_redir="",callback=null})
+    {
+      var uri=url+"pos/dinner/acces-config/?access=true";
+      var data=
+      {
+        user:user,
+        pwd:pwd
+      }
+      
+      if(element)element.classList.add("disabled");
+      model.invoke_service(uri,data,
+      function(data)
+      {
+        if(callback)callback(data);
+        if(url_redir)window.location.href=url_redir;
+      }
+      ,function(error)
+      {
+        alert(error.message);
+        if(element)element.classList.remove("disabled");
+      }
+      ,"POST",false);
+    },
     login:function(e)
     {
       var data={}

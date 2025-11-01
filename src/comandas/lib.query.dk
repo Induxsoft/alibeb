@@ -26,10 +26,10 @@ module ""
 
         return dbr.list(db,"select sys_pk,concat(codigo,' - ',descripcion)descripcion,ifnull(tcambio,1)tcambio from divisa where ifnull(sys_deleted,0)=0 ",@null)
     }
-    GetCategorias::
+    GetCategorias::tipos
     {
         ref db=getDatabase("")
 
-        return dbr.list(db,"select sys_pk,concat(codigo,' - ',descripcion)descripcion from categoria where ifnull(sys_deleted,0)=0 ",@null)
+        return dbr.list(db,"select sys_pk,concat(codigo,' - ',descripcion)descripcion from categoria where ifnull(sys_deleted,0)=0 AND tipo in("+tipos+")",@null)
     }
 }
