@@ -81,14 +81,10 @@ body
 /**********************admin*********************/
 .display-in-process
 {
-  /* position: fixed; */
-  /* top: 0; */
-  /* left: 0; */
-  /* width: 100vw; */
-  /* height: 100vh; */
   background-color: rgba(224, 220, 220, 0.664); /* gris semitransparente */
   z-index: 9999;
   pointer-events: none; /* Bloquea interacción */
+  opacity: .5;
 }
 /* Texto debajo del spinner */
 .display-in-process::before 

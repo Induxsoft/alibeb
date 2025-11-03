@@ -1083,31 +1083,38 @@ module "lib.dk"
         guid_file=""
         url_root_foodbev=trim(dbr.vars.get(db,"pos_url_root_img_foot_line"))
         ref datahost=ParseHost(url_root_foodbev)
+
+        new dt_img{}
+        
         switch act
         {
             case "linea"
             {
+                dt_img<"def_img">:img_linea_def
+                dt_img<"img">:img_linea_def
                 url=trim(dbr.vars.get(db,"prodserv_path_img_lns_url"))
                 path=trim(dbr.vars.get(db,"prodserv_path_img_lns"))
 
-                if url=="" || path=="" || url_root_foodbev=="" || isnull(datahost){return img_linea_def}
+                if url=="" || path=="" || url_root_foodbev=="" || isnull(datahost){return dt_img}
                 
                 //debe venir de la base de datos
                 guid_file=trim(dbr.str(db,"SELECT img_file from linea WHERE codigo=@id",p))
-                if guid_file==""{return img_linea_def}
+                if guid_file==""{return dt_img}
                 
                 break
             }
             default
             {
+                dt_img<"def_img">:img_foodbev
+                dt_img<"img">:img_foodbev
                 url=trim(dbr.vars.get(db,"prodserv_static_content_url"))
                 path=trim(dbr.vars.get(db,"prodserv_path_static_content"))
 
-                if url=="" || path=="" || url_root_foodbev=="" || isnull(datahost) {return img_foodbev}
+                if url=="" || path=="" || url_root_foodbev=="" || isnull(datahost) {return dt_img}
 
                 //debe venir de la base de datos
                 guid_file=trim(dbr.str(db,"SELECT cp.guidimagen from carousel_producto cp WHERE cp.sku=@id",p))
-                if guid_file==""{return img_foodbev}
+                if guid_file==""{return dt_img}
 
                 break
             }
@@ -1118,16 +1125,18 @@ module "lib.dk"
         npath=ReplaceMacros(path,datahost)
         path_file=path.concat(npath,guid_file)
 
-        if not(file.exists(path_file))
-        {
-            if act=="linea"{return img_linea_def}
+        // if not(file.exists(path_file))
+        // {
+        //     if act=="linea"{return img_linea_def}
             
-            return img_foodbev
-        }
+        //     return img_foodbev
+        // }
         nurl=ReplaceMacros(url,datahost)
         url_file=path.concat(nurl,guid_file)
         
-        return url_file
+        using dt_img{@"img":url_file}
+
+        return dt_img
     }
     ReplaceMacros::urlOrPath,&datahost
     {
@@ -1144,16 +1153,7 @@ module "lib.dk"
 
     // **********************functions printer****************************
     //#region IMPRESION/PRINTER
-    get.map::
-    {
-        if not(file.exists(@path_file_map)){do rise_error(99,"No se encontro el archivo .map en: "+@path_file_map)}
-
-        textmap=file.rtext(@path_file_map)
-        ref jsonmap=from.json(textmap)
-        return jsonmap
-    }
-
-    
+ 
     printer_command::&db,sys_guid
     {
         new g{@"sys_guid":sys_guid}
@@ -1446,20 +1446,24 @@ module "lib.dk"
     
     insert.folio::db,params
     {
-        new folio
-        {
-            @"Sys_TimeStamp*":now()
-            @"Sys_GUID":toupper(cut(uuid(),30))
-            @"Sys_DTCreated*":now()
-            @"Cancelado":0
-            @"Sys_Exported":0
-            @"Sys_DTExported*":now()
-            @"Fecha*":now()
-            @"Folio":dbr.num(db,@folio_doc,@null)
-            @"Block":6
-        }
-        do dbr.insert(db,"foliosdocumentos",folio)
-        return dbr.rec(db,@block,folio)
+        // new folio
+        // {
+        //     @"Sys_TimeStamp*":now()
+        //     @"Sys_GUID":toupper(cut(uuid(),30))
+        //     @"Sys_DTCreated*":now()
+        //     @"Cancelado":0
+        //     @"Sys_Exported":0
+        //     @"Sys_DTExported*":now()
+        //     @"Fecha*":now()
+        //     @"Folio":dbr.num(db,@folio_doc,@null)
+        //     @"Block":6
+        // }
+        // do dbr.insert(db,"foliosdocumentos",folio)
+        // return dbr.rec(db,@block,folio)
+
+        folio=dbr.folios.set_new(db,6,dbr.num(db,@folio_doc,@null),3)
+
+        return dbr.folios.info(db,6,folio)
     }
     
     get.referencia::serie,numsig,formato
@@ -1530,7 +1534,7 @@ module "lib.dk"
             @"dmnsNota":@@(data,"notes")
             @"dmnsPersonas":@@(data,"num_people")
             @"documento":@documento_venta
-            @"StatusAdministrativo":1
+            @"StatusAdministrativo":@_status_admin_abierto
             @"StatusEntrega":0
             @"StatusFacturacion":1
             @"StatusFinanciero":0
@@ -1812,7 +1816,7 @@ module "lib.dk"
                 @"desc_cc":@@(item,"desc_cc")
                 @"cod_cp":@@(item,"cod_cp")
                 @"cod_cc":@@(item,"cod_cc")
-                @"img":CreateHost(db,tolower(@@(item,"$sku")),"")
+                @"data_img*":CreateHost(db,tolower(@@(item,"$sku")),"")
             }
             do list.add(list_foodbev,data_foodbev)
         }
@@ -1840,7 +1844,7 @@ module "lib.dk"
         for i = 0; i < @count(lines)
         {
             ref l=@item(lines,i)
-            l<"img">:CreateHost(db,@@(l,"$codigo"),"linea")
+            l<"data_img*">:CreateHost(db,@@(l,"$codigo"),"linea")
         }
         return lines
     }

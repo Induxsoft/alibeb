@@ -138,7 +138,7 @@ var controller=
       
       if(controller.tarjeta.tbl_tarjetas)data["data_array"]=controller.tarjeta.tbl_tarjetas.DataArray;
 
-      views.toggle(views.pay_container_main);
+      views.toggle(document.body);
 
       btn.classList.add("disabled");
       var uri=url+"pos/dinner/cobrar/?access=true";
@@ -149,7 +149,7 @@ var controller=
       }
       ,function(error)
       {
-        views.toggle(views.pay_container_main,true);
+        views.toggle(document.body,true);
         btn.classList.remove("disabled");
         alert(error.message);
       }

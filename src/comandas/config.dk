@@ -3,6 +3,7 @@
 #!
 module "config.dkl"
 {
+	//identificacoderes de servicio
 	@id_reopen="_open"
 	@idtables="tables"
 	@idlines="fblines"
@@ -14,10 +15,12 @@ module "config.dkl"
 	@idaccessmovil="accessmovil"
 	@idlogin="login"
 	@token="token"
+	//statdus del ticket
+	@_status_admin_abierto= 1
+
 	@documento_venta= 6 //ticket
 	@formapago= 1//contado
 	@divisa= 1 //peso mexicano
-	@path_map=""
 	@THOUSANDS_SEPARATOR=","
 	@DECIMAL_SEPARATOR="."
 	@DECIMAL_PRECISION= 2
@@ -25,7 +28,6 @@ module "config.dkl"
 	@DOCUMENTO_EGRESO= 34
 	
 	@SYMBOLE_DIVISA="$"
-	@folder_map="prod_printers/"
 	//imagenes default
 	@img_default_lines="/$/img/default-linea.png"
 	@img_default_foodbev="/$/img/default-foodbev.jpg"
@@ -41,14 +43,7 @@ module "config.dkl"
 		@"divisa_usd":"USD"
 	}
 	@icon_mesa='<svg width="30" height="30" fill="#333" viewBox="0 0 37.325 24.419" xmlns="http://www.w3.org/2000/svg"><defs><clipPath clipPathUnits="userSpaceOnUse" id="prefix__a"><path d="M19.998 154.593l-5.551 8.074 10.707 7.297 4.271-6.212c-.023-.041-.02-.108.034-.182.045-.061.081-.129.12-.193a1.7 1.7 0 00.05-.097c-.019-.04-.014-.097.031-.164l.119-.172.004-.006.019-.044c.033-.087.072-.172.11-.257a2.002 2.002 0 01.206-.377l.104-.155.098-.142c.03-.048.065-.093.094-.141l.053-.094z" fill="red" stroke-width=".265"/></clipPath></defs><path d="M37.323 0L11.517.03.005 7.842l25.805-.03zM.004 9.954h2.75v14.45H.004zM23.498 9.968h2.75v14.45h-2.75zM34.575 2.557h2.75v14.45h-2.75z"/><path d="M11.454.057h2.75v14.45h-2.75z"/><path d="M0 7.839l25.786-.035.003 2.535-25.786.035z"/><path clip-path="url(#prefix__a)" transform="matrix(.82843 -.5601 .56968 .82186 -79.693 -115.26)" d="M30.058 161.652l-.001.001h.001zm-.001.001H15.144v1.489h13.794c0-.035.01-.076.034-.12a.266.266 0 01.099-.107.34.34 0 01.082-.04l.006-.006a.576.576 0 00.039-.047l.053-.075.06-.087.062-.09.063-.093.053-.077.045-.064.045-.066.04-.06.043-.06.049-.071.05-.074c.016-.024.034-.047.052-.07l.038-.047a4.061 4.061 0 00.074-.1l.029-.042a.266.266 0 01.103-.093z"/><path d="M37.321 0l-.133.001v1.714l.066.015v-.514l.003-.084.005-.062a3.624 3.624 0 00.004-.124v-.05c0-.063.015-.11.038-.144l.002-.016.004-.017V.716.713l-.001.003a.143.143 0 01.013-.048zm-.133 1.853v.194l.02-.116a.127.127 0 01.03-.066l-.05-.012z"/><path d="M36.162.001h1.159v2.542h-1.16z"/><path d="M37.09 2.618l.193-.13.037.056-.192.13z"/><path d="M37.174 2.527h.029v.03h-.03zM25.286 7.964L36.114.749l.446.653-10.827 7.215z"/></svg>'
-	
-	if isset("@http_context")
-	{
-		if @@(@http_context,"request/headers/path_translated")!=""{@path_map=dir.name(@@(@http_context,"request/headers/path_translated"))+"/"}
-		else{@path_map=@@(@http_context,"request/headers/DOCUMENT_ROOT")+"/dmcm/app/svc/"}
-		@path_map=path.concat(@path_map,@folder_map)
-		@path_map=replace(@path_map,"\\","/")
-	}
+
 	//acrhivos js de impresión de ticket imin
 	@js_epos_prn="/_js/epos_prn.js"
 	@js_epos_prn_dantsu="/_js/epos_prn_dantsu.js"
@@ -56,8 +51,6 @@ module "config.dkl"
 	@js_epos_imin_printer="/_js/imin-printer.min.js"
 
 	@path_file_device_drivers="comandas/_static/json/device_drivers.json"
-	@path_file_map=@path_map+"printers.map"
-	@id_printer_tickets="tickets"
 	@path_file_prn_default="comandas/_prn/"
 	@path_files_prn="_config/@host/_prn/"
 
@@ -67,8 +60,5 @@ module "config.dkl"
 	@use_bdconfig=@true
 	@accept_qnames=@true
 
-	new @config
-	{
-		@"connection":@@(@http_context,"$session/idp/qname")
-	}
+	new @config{@"connection":@@(@http_context,"$session/idp/qname")}
 }

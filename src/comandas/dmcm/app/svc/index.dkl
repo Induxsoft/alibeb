@@ -6,6 +6,7 @@ module "index.dkl"
 	#include "serialize.dkh"
 	#include "dbr.dkh"
 	#include "dbr.vars.dkl"
+	#include "dbr.folios.dkl"
 	#include "dbr.apps.dkl"
 	#include "dbr.security.dkl"
 

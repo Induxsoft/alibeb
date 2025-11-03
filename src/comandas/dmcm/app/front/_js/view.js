@@ -113,6 +113,15 @@ var views=
       DeleteElementsCashier(_delete=true,_class=".only-cashier")
       {
             let elements=document.querySelectorAll(_class)
+            if(!_delete && _class==".only-cashier")
+            {
+                  let cardh_actions=document.getElementById("card_header_actions");
+                  if(cardh_actions)
+                  {
+                        cardh_actions.classList.add("d-md-flex");
+                        cardh_actions.classList.add("d-block");
+                  }
+            }
             for (let i = 0; i < elements.length; i++) 
             {
                   const element = elements[i];
@@ -156,7 +165,7 @@ var views=
       {
             if(!container)return;
 
-            if(quit)container.classList.remove(_class)
+            if(quit)container.classList.remove(_class);
             else container.classList.add(_class);
       },
       ValidateField(idfield,required=false,msg="")
@@ -297,13 +306,14 @@ var views=
             for (var i =0; i <data.length; i++) 
             {
                   var itm=data[i];
-                  let img=(itm.img??"")!="" ? itm.img:"";
+                  let img=(itm.data_img.img??"")!="" ? itm.data_img.img:"";
+                  let def_img=(itm.data_img.def_img??"")!="" ? itm.data_img.def_img:"";
 
                   html+=`
 				  	<div class="column-content-foodbev shadow" id="foodbev_${itm.sku}" onclick="controller.data_foodbev(${itm.sys_pk})">
 						<div class="foodbev-img-container">
 							<div class="foodbev-img">
-								<img src="${img}" style="width: inherit;" />								
+								<img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
 							</div>							
 						</div>
 						<div class="prod-center">
@@ -940,12 +950,14 @@ var views=
             for (var i =0; i<data.length; i++) 
             {
                   var itm=data[i];
-                  let img=(itm.img??"")!="" ? itm.img:"";
+                  let img=(itm.data_img.img??"")!="" ? itm.data_img.img:"";
+                  let def_img=(itm.data_img.def_img??"")!="" ? itm.data_img.def_img:"";
+
                   html+=`
 					<div class="column-content-foodbev shadow" id="linea_${itm.sys_pk}" onclick="controller.foodbev(this,'',${itm.sys_pk},'${itm.description}')">
 						<div class="foodbev-img-container">
 							<div class="foodbev-img">
-								<img src="${img}" style="width: inherit;" />								
+								<img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
 							</div>							
 						</div>
 						<div class="foodbev-btn" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500;">
