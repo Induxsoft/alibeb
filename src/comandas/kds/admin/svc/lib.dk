@@ -1,0 +1,163 @@
+#include "dkli.dkh"
+#!
+module "lib.dk"
+{
+  
+    // ****************************kds admin**********************************
+    #!
+    kds_admin.get.cprods::&db,&params
+    {
+        return dbr.list(db,@list_cprods,params)
+    }
+
+    #!
+    kds_admin.get.almacen::&db,&params
+    {
+        return dbr.list(db,@list_almacen,params)
+    }
+
+    #!
+    get.code_cprod::&db
+    {
+
+        sys_pk=dbr.num(db,"select max(sys_pk) from cproduccion",@null)
+        code="000"+str(sys_pk+1)
+
+        if length(code)>5{code=right(code,5)}
+        return str(code)
+    }
+
+    #!
+    kds_admin.insert_cprod::&db,&params,&data
+    {
+        ref now=now()
+        cod=@@(data,"$code")
+        if cod=="" || cod=="<A>"{cod=get.code_cprod(db)}
+        new cprod
+        {
+            @"Sys_TimeStamp*":now
+            @"Sys_GUID":cut(uuid(),30)
+            @"Sys_DTCreated*":now
+            @"Sys_DTExported*":now
+            @"Codigo":cod
+            @"Descripcion":@@(data,"$descripcion")
+            @"AlmacenMP":@@(data,"#almcmt")
+            @"AlmacenPT":@@(data,"#almcpt")
+        }
+
+        do dbr.begin(db)
+            do dbr.insert(db,"cproduccion",cprod)
+
+            if parse.bool(@@(data,"changepwd"))
+            {
+                new dm_kds
+                {
+                    @"cproduccion":dbr.num(db,@cpro_admin,cprod)
+                    @"pwd":md5(@@(data,"$pwd"))
+                    @"shortpool":@@(data,"#shortpool")
+                }
+                do dbr.insert(db,"dm_kds",dm_kds)
+            }
+            
+        do dbr.commit(db)
+
+        
+        return kds_admin.get.cprods(db,params)
+
+         exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(99,last_error())
+        }
+    }
+
+    #!
+    #!
+    kds_admin.update_cprod::&db,&params,&data
+    {
+        ref now=now()
+        cod=@@(data,"$code")
+        if cod=="" || cod=="<A>"{cod=get.code_cprod(db)}
+        new cprod
+        {
+            @"Codigo":cod
+            @"Descripcion":@@(data,"$descripcion")
+            @"AlmacenMP":@@(data,"#almcmt")
+            @"AlmacenPT":@@(data,"#almcpt")
+        }
+
+        do dbr.begin(db)
+            do dbr.update(db,"cproduccion",cprod,"sys_pk=@idcprod",params)
+
+            if parse.bool(@@(data,"changepwd"))
+            {
+                pwdbefore=@@(data,"$pwdbefore")
+                respwd=dbr.str(db,@res_pwd,params)
+                if pwdbefore!="" && md5(pwdbefore)!=respwd && respwd!=""{do rise_error(99,"La contraseña anterior es incorrecta.")}
+                new dm_kds
+                {
+                    // @"cproduction":dbr.num(db,"select sys_pk from cproduccion where sys_guid=@Sys_GUID",cprod)
+                    // @"pwd":md5(@@(data,"$pwd"))
+                    @"shortpool":@@(data,"#shortpool")
+                }
+                if @@(data,"$pwd")!=""{using dm_kds{@"pwd":md5(@@(data,"$pwd"))} }
+                if respwd=="" && @@(data,"$pwd")!=""
+                {
+                    using dm_kds{
+                        @"cproduccion":dbr.num(db,@cprod,params)
+                    }
+                    do dbr.insert(db,"dm_kds",dm_kds)
+                }
+                else
+                {
+                    do dbr.update(db,"dm_kds",dm_kds,"cproduccion=@idcprod",params)
+                }
+                
+            }
+            
+        do dbr.commit(db)
+        return kds_admin.get.cprods(db,params)
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(99,last_error())
+        }
+    }
+
+    #!
+    kds_admin.delete_cprod::&db,&params
+    {
+        do dbr.begin(db)
+            do dbr.delete(db,"cproduccion","sys_pk=@idcprod",params)
+            do dbr.delete(db,"dm_kds","cproduccion=@idcprod",params)
+        do dbr.commit(db)
+
+        return kds_admin.get.cprods(db,params)
+         exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(99,last_error())
+        }
+    }
+
+    #!
+    kds_admin.get.dm_cprods::&db,&params
+    {
+        return dbr.list(db,@get.dm_kds,params)
+    }
+
+    #!
+    kds_admin.cprod_login::&db,&params,&data
+    {
+        if @@(data,"$pwd")!=""{params<"pwd">:@@(data,"$pwd")}
+        ref login=dbr.rec(db,@dm_kds_login,params)
+
+        if isnull(login){do rise_error(99,"Contraseña incorrecta.")}
+
+        return login
+
+    }
+    // ************************************************************************
+
+}

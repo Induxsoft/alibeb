@@ -1,0 +1,85 @@
+#include "dkli.dkh"
+#!
+module "index.dkl"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "dbr.dkh"
+
+	@SITE_INCLUDES="config.dk,lib.dk,list_query.dk,impuesto.dk"
+	#include "website.dkl"
+	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
+	
+	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
+	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
+    @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
+
+    if @@(@http_context,"request/headers/REQUEST_METHOD")=="OPTIONS"{return}
+   	
+	go api_base_service (responseJSONdata:response) 
+	{
+		method=@@(@http_context,"request/headers/REQUEST_METHOD")
+		ref params=@@(@http_context,"&request/get")
+		ref postData=@@(@http_context,"&request/post")
+
+		if isnull(postData) && (method=="POST" || method=="PATCH")
+		{
+			ref postData=from.json(field.dstr(@http_context,"request/post_string","{}"))
+		}
+
+		admin=@@(@http_context,"request/headers/HTTP_ADMIN")
+		// qname="Connections@Induxsoft/ws"+trim(admin)+"@workspaces"
+
+		if contains(admin,"@"){qname=admin}
+		else{qname="Connections@Induxsoft/ws"+trim(admin)+"@workspaces"}
+		if not(@accept_qnames) && contains(qname,"@"){do rise_error(99,"No se aceptan nombres cualificados.")}
+			
+		ref db=open.db(qname)
+
+		switch method
+		{
+			case "GET"
+			{
+				switch @@(params,"entity")
+				{
+					case "cprods"{ref data=kds_admin.get.cprods(db,params)}
+					case "almcn"{ref data=kds_admin.get.almacen(db,params)}
+					case "dmcprods"{ref data=kds_admin.get.dm_cprods(db,params)}
+					case "dmcprod_login"{ref data=kds_admin.cprod_login(db,params,postData)}
+				}
+			}
+			case "POST"
+			{
+				if @@(params,"idcprod")!=""{ref data=kds_admin.update_cprod(db,params,postData)}
+				else{ref data=kds_admin.insert_cprod(db,params,postData)}
+			}
+			case "PATCH"
+			{
+				if @@(params,"idcprod")==""{do rise_error(99,"Se necesita el id del centro de producción")}
+
+			}
+			case "PUT"
+			{
+				if @@(params,"idcprod")==""{do rise_error(99,"Se necesita el id del centro de producción")}
+				ref data=kds_admin.delete_cprod(db,params)
+			}
+		}
+
+		if dbr.is_open(db){do dbr.close(db)}
+		using response
+		{
+			@"success":@true
+			@"data*":data
+		}
+
+		exception
+		{
+			// if dbr.is_open(db){do dbr.close(db)}
+			using response
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+		}
+	}
+}
