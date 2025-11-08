@@ -34,27 +34,12 @@ module "admin kds"
     if contains(ws,"@"){@url_origin="/login/?success="+url_encode(@url_entry_point_pathern)}
     if view=="workspace"{@url_origin=""}
     
-    // if @@(@http_context,"$session/user/ids")=="" && contains(ws,"@")
-    // {
-    //      @http_context<"response/headers/location">:@url_origin
-    //      return
-    // }
-    // if @@(@http_context,"$session/user/ids")=="" || ws==""
-    // {
-    //      @http_context<"response/headers/location">:@url_origin+ws
-    //      return
-    // }
 
     #$
     div(class="" style="height: 100%;")
     {
         #!
-        switch view
-        {
-            case "login"{}
-            case "workspace"{include path.concat(@path_view,"vw_workspace.dkl")}
-            default{include path.concat(@path_view,"vw_cprods.dkl")}
-        }
+        include path.concat(@path_view,"vw_cprods.dkl")
         #$
             style(href="#<@style_css>" rel="stylesheet"){$''}
             script

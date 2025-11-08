@@ -32,7 +32,6 @@ var controller=
 	{
 		views.datacprods(sys_pk);
 		views.tab_pointer_events();
-		
 	},
 	
 	delete_cprod:function(sys_pk,e)
@@ -54,6 +53,7 @@ var controller=
 	},
 	modify:function(sys_pk,existfield=0)
 	{
+		views.SetRotulo("edit");
 		views.hide_controls("btnmodifi");
 		views.tab_pointer_events(true);
 		views.show_controls("btnaction",function(e,sys_pk)
@@ -69,9 +69,11 @@ var controller=
 		views.hide_controls("btnaction,btncancelar");
 		views.tab_pointer_events();
 		views.show_controls("btnmodifi");
+		views.SetRotulo("cprod");
 	},
 	add_cprod:function()
 	{
+		views.SetRotulo("new");
 		views.hide_controls("btncancelar,btnmodifi");
 		views.new_cprod();
 		views.show_controls("btnaction",function(e){

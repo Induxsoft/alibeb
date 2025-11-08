@@ -30,13 +30,27 @@ var views={
 		select.innerHTML=options;
 
 	},
+	ObjRotulo:
+	{
+		new:"Agregar nuevo",
+		edit:"Modificar",
+		cprod:""
+	},
+	SetRotulo(key="new")
+	{
+		let p_rotulo=document.getElementById("p-hidden");
+		let text=this.ObjRotulo[key]??"";
+
+		if(p_rotulo)
+		{
+			p_rotulo.textContent=text;
+		}
+	},
 	datacprods:function(sys_pk)
 	{
 		var row_selected=document.querySelector("#cprod_"+sys_pk);
 		var cprods=document.querySelectorAll(".tbody-list-cprod tr");
-		cprods.forEach(function (element,index) {
-			element.classList.remove("cprod-selected");
-		})
+		cprods.forEach(function (element,index) {element.classList.remove("cprod-selected");});
 		row_selected.classList.add("cprod-selected");
 
 		var codigo=document.querySelector("#cprod_codigo");
@@ -46,7 +60,8 @@ var views={
 		var elemsys_pk=document.querySelector("#cprod_sys_pk");
 		var seg_act=document.querySelector("#seg_act");
 
-		for (var i = 0; i < list_cprods.length; i++) {
+		for (var i = 0; i < list_cprods.length; i++) 
+		{
 			var itm=list_cprods[i];
 
 			if(itm.sys_pk===sys_pk)
@@ -57,6 +72,8 @@ var views={
 				almcmt.value=itm.almacenmp;
 				almcpt.value=itm.almacenpt;
 				seg_act.value=itm.shortpool;
+				this.ObjRotulo["cprod"]=itm.descripcion??"";
+				this.SetRotulo("cprod");
 				views.hide_controls("btnaction,btncancelar");
 				views.show_controls("btnmodifi",function(e,sys_pk){
 					e.setAttribute("onclick",`controller.modify(${sys_pk},${itm.fieldexist})`);

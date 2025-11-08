@@ -50,7 +50,8 @@ body {
   grid-auto-columns: 100%;
 /*  background-color: red;*/
 }
-.list-waiters
+.list-waiters,
+.list_cprod
 {
   padding:16px;
   margin-top:8px;
@@ -69,14 +70,11 @@ body {
 {
   margin-top: 4px;
 }
-.tbody-list-waiters tr:hover
+.tbody-list-waiters tr:hover,
+.tbody-list-cprod tr:hover
 {
-/*  color: red;*/
   background: var(--light-gray-color);
   box-shadow: 3px 4px 7px 0 #ccc;
- /* -webkit-transform: scale(1.3);
-  -ms-transform: scale(1.3);
-  transform: scale(1.1);*/
   cursor: pointer;
 }
 .nav-admin
@@ -221,7 +219,8 @@ body {
 {
   height: 2rem;
 }
-.td_delete_waiter:hover
+.td_delete_waiter:hover,
+.td_delete_cprod:hover
 {
   color: red;
 }
@@ -231,10 +230,11 @@ body {
   overflow: auto;
   height: 95%;
 }
-.waiter-selected
+.waiter-selected,
+.cprod-selected
 {
-  background: #e0e0e0;
-  box-shadow: 3px 4px 7px 0 #ccc;
+  background: #e0e0e0 !important;
+  box-shadow: 3px 4px 7px 0 #ccc !important;
   cursor: pointer;
 }
 /*******************************************************/

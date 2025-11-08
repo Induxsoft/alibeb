@@ -45,9 +45,8 @@ var controller={
 		var tab=document.querySelector(".tab-content");
 		var row_selected=document.querySelector("#waiter_"+sys_pk);
 		var waiters=document.querySelectorAll(".tbody-list-waiters tr");
-		waiters.forEach(function (element,index) {
-			element.classList.remove("waiter-selected");
-		})
+		waiters.forEach(function (element,index) {element.classList.remove("waiter-selected");});
+
 		row_selected.classList.add("waiter-selected");
 		if(fromservice)
 		{
@@ -59,8 +58,11 @@ var controller={
 			}
 			,function(error){alert(error.message);}
 			,"GET",false);
-		}else{
-			for (var i = 0; i< list_waiters.length; i++) {
+		}
+		else
+		{
+			for (var i = 0; i< list_waiters.length; i++) 
+			{
 				var itm=list_waiters[i];
 				if(itm.sys_pk===sys_pk)
 				{
@@ -103,10 +105,10 @@ var controller={
 	},
 	active_modif:function(sys_pk,e)
 	{
+		views.SetRotulo("edit");
 		var btnmodif=document.querySelector("#btnaction");
 		btnmodif.classList.remove("hidden");
 		btnmodif.innerHTML="Aceptar";
-		// btnmodif.setAttribute("onclick",`controller.add_datawaiter("?waiter=${sys_pk}")`)
 		var cancel=document.querySelector("#btncancelar");
 		cancel.classList.remove("hidden");
 		 cancel.setAttribute("onclick",`controller.cancel_modif(this)`);
@@ -114,7 +116,6 @@ var controller={
 
 		 var tab=document.querySelector(".tab-content");
 		 tab.style.pointerEvents="";
-		// btnmodif.setAttribute("onclick",`controller.modif_waiter(${sys_pk})`);
 	},
 	add_datawaiter:function(params="",e,sys_pk="")
 	{
@@ -205,6 +206,8 @@ var controller={
 	},
 	cancel_modif:function(e)
 	{
+		views.SetRotulo("waiter");
+
 		var btnmodif=document.querySelector("#btnmodifi");
 		var btnaction=document.querySelector("#btnaction");
 		var btncancel=document.querySelector("#btncancelar");

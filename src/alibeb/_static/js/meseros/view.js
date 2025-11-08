@@ -1,5 +1,7 @@
-var views={
-	list_waiters:function(data) {
+var views=
+{
+	list_waiters:function(data) 
+	{
 		var waiters=document.querySelector(".tbody-list-waiters");
 		var html="";
 		for (var i = 0; i <data.length; i++) {
@@ -16,7 +18,24 @@ var views={
 		}
 		waiters.innerHTML=html;
 	},
-	data_waiter:function(data) {
+	ObjRotulo:
+	{
+		new:"Agregar nuevo",
+		edit:"Modificar",
+		waiter:""
+	},
+	SetRotulo(key="new")
+	{
+		let p_rotulo=document.getElementById("p-hidden");
+		let text=this.ObjRotulo[key]??"";
+
+		if(p_rotulo)
+		{
+			p_rotulo.textContent=text;
+		}
+	},
+	data_waiter:function(data) 
+	{
 		var codigo=document.querySelector("#waiter_codigo");
 		var nombre=document.querySelector("#waiter_nombre");
 		var telefono=document.querySelector("#waiter_telefono");
@@ -32,6 +51,8 @@ var views={
 		var selectzn=document.querySelector("#selectzn");
 		var accessmovil=document.querySelector("#accessmovil");
 
+		this.ObjRotulo["waiter"]=data.nombre??"";
+		this.SetRotulo("waiter");
 		codigo.value=data.codigo;
 		nombre.value=data.nombre;
 		telefono.value=data.telefono;
@@ -117,7 +138,7 @@ var views={
 		btnmodif.classList.add("hidden");
 		btnaction.setAttribute("onclick",`controller.add_datawaiter("",this)`);
 
-
+		views.SetRotulo();
 	}
 
 }

@@ -9,28 +9,16 @@ module "view_admin"
 		{
 			div(class="list-waiters")
 			{
-				div(class="row-waiter-headers")
+				div(class="row-waiter-headers d-block")
 				{
-					div(class="new_waiter")
-					{
-						button(class="btn-admin" id="btnnewaiter" onclick="controller.add_waiter()"){"Nuevo mesero"}
-					}
 					h3(class="text-center"){"Meseros"}
 				}
 				
 				div(class="list-waiters-element" )
 				{
-					table(class="ol-list")
+					table(class="ol-list table table-sm")
 					{
-						tbody(class="tbody-list-waiters")
-						{$""
-							// tr{td{"Mesero 1"}}
-							// tr{td{"Mesero 1"}}
-							// tr{td{"Mesero 1"}}
-							// tr{td{"Mesero 1"}}
-							// tr{td{"Mesero 1"}}
-						}
-						
+						tbody(class="tbody-list-waiters"){$""}	
 					}
 				}
 			}
@@ -43,47 +31,56 @@ module "view_admin"
 					{
 						a(class="nav-link-ad" style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);" onclick="design.select_propertie('general',this)" id="general"){"General"}
 						a(class="nav-link-ad" style="background-color: transparent; color: rgb(136, 136, 136);" onclick="design.select_propertie('access-movil',this)" id="link-access" ){"Acceso a terminal móvil"}
-						p(id="p-hidden"){}
-						div(class="btns-admin mt-admin-4")
-						{
-							button(class="btn-admin" id="btnaction" onclick="controller.add_datawaiter('',this)"){"Agregar"}
-							button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
-							button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
-						}
+						p(id="p-hidden" class="text-center fw-bold"){"Agregar nuevo"}
 						
+						div(class="")
+						{
+							button(class="btn-admin" id="btnnewaiter" onclick="controller.add_waiter()"){"Nuevo"}
+						}
 					}
 					
 				}
 				div(class="container-body" style="")
 				{
 				
-					div(class="tab-content " id="nav-tabContent")
+					div(class="tab-content w-100" id="nav-tabContent")
 					{
 						div(class="item_prop" id="general" role="tabpanel" "aria-labelledby"="nav-general-tab")
 						{
-							$""
-							h4{"Código: "}
-							input(class="input-admin" id="waiter_codigo" value="<A>" placeholder="Código..." maxlength="10"){""}br{}
-							
-							h4{"Nombre: "}
-							input(class="input-admin" id="waiter_nombre" placeholder="Nombre..." maxlength="50"){""}br{}
-							
-							h4{"Teléfono: "}
-							input(class="input-admin" id="waiter_telefono" placeholder="telefono..." maxlength="150"){""}br{}
-							
-							h4{"Email: "}
-							input(type="" class="input-admin" id="waiter_email" placeholder="correo..." maxlength="50"){""}br{}
-
-							h4{"Notas: "}
-							textarea(class="input-admin textarea-default" id="waiter_notas" placeholder="notas..." maxlength="2048"){""}br{}
-							
 							input(type="hidden" value="" id="waiter_sys_pk")
+							div(class="row")
+							{
+								div(class="col-md-3")
+								{
+									h4{"Código: "}
+									input(class="input-admin" id="waiter_codigo" value="<A>" placeholder="Código..." maxlength="10"){""}
+								}
+								div(class="col-md-9")
+								{
+									h4{"Nombre: "}
+									input(class="input-admin" id="waiter_nombre" placeholder="Nombre..." maxlength="50"){""}
+								}
+								div(class="col-md-6")
+								{
+									h4{"Teléfono: "}
+									input(class="input-admin" id="waiter_telefono" placeholder="telefono..." maxlength="150"){""}
+								}
+								div(class="col-md-6")
+								{
+									h4{"Email: "}
+									input(type="" class="input-admin" id="waiter_email" placeholder="correo..." maxlength="50"){""}
+								}
+								div(class="col-md-12")
+								{
+									h4{"Notas: "}
+									textarea(class="input-admin" id="waiter_notas" rows="3" placeholder="notas..." maxlength="2048"){""}
+								}
+							}
 						}
 						div(class="item_prop nav-access-movil" id="access-movil" style="display:none;")
 						{
-							label("for"="accessmovil"){input(type="checkbox" id="accessmovil")"Permitir acceso a terminal móvil"}br{}
+							label("for"="accessmovil" class="d-flex gap-2"){input(type="checkbox" id="accessmovil" class="form-check-input")"Permitir acceso a terminal móvil"}
 							
-
 							label("for"="selectcc"){"Centro de consumo:"}br{}
 							select(class="select-apparence-admin" id="selectcc")
 							{option{""}}br{}
@@ -111,7 +108,13 @@ module "view_admin"
 						}
 						
 					}
-					$""
+					
+					div(class="d-flex gap-2")//btns-admin mt-admin-4
+					{
+						button(class="btn-admin" id="btnaction" onclick="controller.add_datawaiter('',this)"){"Agregar"}
+						button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
+						button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
+					}
 				}
 
 				
