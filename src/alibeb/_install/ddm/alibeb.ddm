@@ -15,7 +15,12 @@ model "alibeb"
         @"sys_deleted" bool
         @"sys_lock" int
     }
-
+    wide compatibility
+    entity "ccantidades" : "EnumModel" {}
+    entity "cstatusordenproduccion" : "EnumModel" {}
+    entity "divisa" : "TableModel" {}
+    entity "producto" : "TableModel" {}
+    entity "agente" : "TableModel" {}
 	entity "cclaseproducto" : "EnumModel" {}
     entity "cformacomisionproducto" : "EnumModel" {}
     entity "ctipoproducto" : "EnumModel" {}
@@ -23,11 +28,36 @@ model "alibeb"
     entity "ctiposcomisionesproducto" : "EnumModel" {}
     entity "ctasasiva" : "EnumModel" {}
     entity "cimpadicionales" : "EnumModel" {}
+    entity "cconsumo" : "TableModel" {}
+    entity "venta" : "TableModel" {}
     entity "clase_almacen" : "EnumModel"
     {
         // 0-"Almacén de propósito general"
         // 1-"Almacén vinculado a otro elemento de datos"
         // 2-"Almacén virtual o imaginario"
+    }
+    /* uod.dmnsasignbarra */
+    entity "dmnsasignbarra"
+    {
+        @"sys_pk" int key required autoincrement
+        @"tipo" int
+        @"fk" int
+        @"fkbarra" int
+        @"auto" int
+    }
+    /* uod.dmnsbarra */
+    entity "dmnsbarra"
+    {
+        @"sys_pk" int key required autoincrement
+        @"nombre" string(50)
+        @"tipo" int
+        @"opciones" memo
+    }
+    /* uod.cconsumo_cproduccion_ */
+    entity "cconsumo_cproduccion_" : "NmModel"
+    {
+        @"icproduccion" ref:"cproduccion" required
+        @"iconsumo" ref:"cconsumo" required
     }
     //configuración de la terminal de meseros
     entity "ut_dm_tmm_gprn"
@@ -94,6 +124,79 @@ model "alibeb"
         @"x" int
         @"y" int
         @"izona" int required
+    }
+    // Registro de las ordenes de producción y ensamble.
+    entity "orden" : "TableModel"
+    {
+        @"sys_info" string(50)
+
+        @"cdirecto" decimal(18,8) //Costo de los materiales o componentes
+        @"cindirecto" decimal(18,8) //Costos indirectos
+        @"cmanoobra" decimal(18,8) //Costo de la mano de obra
+        @"cmaquinaria" decimal(18,8) //Costo de las maquinarias
+        @"d1" decimal(18,8) //Descuento 1
+        @"d2" decimal(18,8) //Descuento 2
+        @"fecha" date //Fecha del documento
+        @"fprevista" date //Fecha en que esta prevista la ejecución
+        @"fproduccion" date //Fecha en que se ejecuto la orden
+        @"hora" datetime //Hora de la fecha
+        @"hprevista" datetime //Hora de 'fprevista'
+        @"hproduccion" datetime //Hora de 'fproducción'
+        @"importe" decimal(18,8) //Importe total de la orden
+        @"notas" string(4096)
+        @"auditada" bool
+        @"contabilizada" bool
+        @"partida" string(32) //Referencia a una partida presupuestal o contable
+        @"poliza" string(32) //Referencia a una poliza contable
+        @"referencia" string(50) unique
+        @"status" ref:"cstatusordenproduccion" required
+        @"tiempoproduccion" int //Indica el orden en que debe ejecutarse un grupo de ordenes de producción
+        @"tiemposervicio" int //Indica el orden en que debe servirse o entregarse una orden ejecutada
+        @"tipocambio" decimal(18,8)
+        @"iagente" ref:"agente"
+        @"icconsumo" ref:"cconsumo" required
+        @"icproduccion" ref:"cproduccion" required //Indica el centro de producción en que se ejecuta
+        @"idivisa" ref:"divisa"
+        @"iventa" ref:"venta"
+    }
+    // Detalle de las ordenes de producción y ensamble.
+    entity "dorden" : "TableModel"
+    {
+        @"cantidad" decimal(18,8)
+        @"cdirecto" decimal(18,8)
+        @"cindirecto" decimal(18,8)
+        @"cmanoobra" decimal(18,8)
+        @"cmaquinaria" decimal(18,8)
+        @"d1" decimal(18,8)
+        @"d2" decimal(18,8)
+        @"especificaciones" string(4096)
+        @"precio" decimal(18,8)
+        @"tiempoproduccion" int
+        @"tiemposervicio" int
+        @"tipocambio" decimal(18,8)
+        @"idivisa" ref:"divisa" required
+        @"iproducto" ref:"producto" required
+        @"fk_orden_detalle" ref:"orden" required
+    }
+
+    entity "dcantidades" : "TableModel"
+    {
+        @"cantidad" ref:"ccantidades" required
+        @"iproducto" ref:"producto" required
+        @"fk_dorden_cantidadesvariadas" ref:"dorden" required
+    }
+
+    entity "dadicionales" : "TableModel"
+    {
+        @"cantidad" decimal(18,8)
+        @"cdirecto" decimal(18,8)
+        @"cindirecto" decimal(18,8)
+        @"cmanoobra" decimal(18,8)
+        @"cmaquinaria" decimal(18,8)
+        @"notas" string(255)
+        @"precio" decimal(18,8)
+        @"iproducto" ref:"producto" required
+        @"fk_dorden_adicionales" ref:"dorden" required
     }
     //#region Domicilio
     entity "pais" : "TableModel"

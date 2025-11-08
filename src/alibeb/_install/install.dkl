@@ -19,7 +19,9 @@ program "instalador"
         "cproduccion.csv",
         "linea.csv",
         "divisa.csv",
-        "dmnszona.csv"
+        "dmnszona.csv",
+        "cstatusordenproduccion.csv",
+        "ccantidades.csv"
     ]')
 
     // Lista de privilegios iniciales (arreglo de id de privilegios)
@@ -38,4 +40,20 @@ program "instalador"
     
     /*************************************************************************************/
     #include "v12.install.lib.dk"
+    if not(isset("database"))
+    {
+        do print("No se encontró la variable 'database'")
+        return
+    }
+    if not(dbr.is_open(database)){ref database=dbr.open(qname)}
+    do reconnect(database,qname)
+
+    file_views="alibeb/_install/initial_data/views.sql"
+    if file.exists(file_views)
+    {
+        do print("Creando vistas de la base de datos")
+        do dbr.execute(database,file.rtext(file_views),@null)
+    }
+
+    do dbr.close(database)
 }

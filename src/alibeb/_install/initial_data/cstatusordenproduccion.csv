@@ -1,0 +1,6 @@
+id,const
+0,cEn_espera
+1,cEn_proceso
+2,cParcialmente_terminada
+3,cTerminada
+4,cCancelada
