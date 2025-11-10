@@ -92,6 +92,7 @@ model "alibeb"
         @"revocado" int
         @"datos" memo
     }
+
     
     //Gestion de kds
     entity "dm_kds" 

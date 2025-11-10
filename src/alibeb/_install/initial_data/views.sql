@@ -6,6 +6,7 @@ DROP VIEW IF EXISTS `qlineasxcprod`;
 DROP VIEW IF EXISTS `qproddmns`;
 DROP VIEW IF EXISTS `qpartidasvariables`;
 DROP VIEW IF EXISTS `qbarrasdmns`;
+DROP VIEW IF EXISTS `qrydetallecorte`;
 
 
 CREATE TABLE IF NOT EXISTS  `qventasserviciomesa` (
@@ -153,7 +154,24 @@ CREATE TABLE IF NOT EXISTS  `qbarrasdmns` (
 	`AsignadoA` INT(11) NULL,
 	`PKAsignadoA` INT(11) NULL
 );
-
+CREATE TABLE IF NOT EXISTS  `qrydetallecorte` (
+	`Folio` INT(11) NOT NULL,
+	`Fecha` DATE NOT NULL,
+	`Hora` DATETIME NOT NULL,
+	`Referencia` VARCHAR(1) NOT NULL COLLATE 'latin1_swedish_ci',
+	`Categoria` VARCHAR(1) NOT NULL COLLATE 'latin1_swedish_ci',
+	`Documento` VARCHAR(1) NULL COLLATE 'latin1_swedish_ci',
+	`Efectivo` DECIMAL(18,8) NULL,
+	`Cheques` DECIMAL(18,8) NULL,
+	`Tarjetas` DECIMAL(18,8) NULL,
+	`Vales` DECIMAL(18,8) NULL,
+	`Depositos` DECIMAL(18,8) NULL,
+	`Divisa` VARCHAR(1) NOT NULL COLLATE 'latin1_swedish_ci',
+	`Total` DECIMAL(22,8) NULL,
+	`Notas` VARCHAR(1) NULL COLLATE 'latin1_swedish_ci',
+	`ICorte` INT(11) NOT NULL,
+	`ICaja` INT(11) NOT NULL
+);
 DROP TABLE IF EXISTS `qbarrasdmns`;
 CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `qbarrasdmns` AS select `dmnsbarra`.`Sys_PK` AS `Sys_PK`,`dmnsbarra`.`Nombre` AS `Nombre`,`dmnsbarra`.`Tipo` AS `Tipo`,`dmnsbarra`.`Opciones` AS `Opciones`,`dmnsasignbarra`.`Tipo` AS `AsignadoA`,`dmnsasignbarra`.`FK` AS `PKAsignadoA` from (`dmnsasignbarra` join `dmnsbarra` on((`dmnsasignbarra`.`FKBarra` = `dmnsbarra`.`Sys_PK`))) 
 ;
@@ -176,5 +194,9 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `qventasserviciomesa` AS se
 
 DROP TABLE IF EXISTS `qlineasxcprod`;
 CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `qlineasxcprod` AS select distinct `linea`.`Sys_PK` AS `Sys_PK`,`linea`.`Codigo` AS `Codigo`,`linea`.`Descripcion` AS `Descripcion`,`linea`.`Color` AS `Color`,`cproduccion_producto_`.`ICentrosProduccion` AS `ICProduccion`,`linea`.`Visible` AS `Visible` from ((`linea` join `producto` on((`linea`.`Sys_PK` = `producto`.`ILinea`))) join `cproduccion_producto_` on((`producto`.`Sys_PK` = `cproduccion_producto_`.`IProductos`))) where (`linea`.`Clase` = 2) order by `linea`.`Codigo` 
+;
+
+DROP TABLE IF EXISTS `qrydetallecorte`;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `qrydetallecorte` AS select `movcaja`.`Sys_PK` AS `Folio`,`movcaja`.`Fecha` AS `Fecha`,`movcaja`.`Hora` AS `Hora`,`movcaja`.`Referencia` AS `Referencia`,`categoria`.`Descripcion` AS `Categoria`,`cdocumentos`.`Const` AS `Documento`,`movcaja`.`Efectivo` AS `Efectivo`,`movcaja`.`Cheques` AS `Cheques`,`movcaja`.`Tarjetas` AS `Tarjetas`,`movcaja`.`Vales` AS `Vales`,`movcaja`.`Depositos` AS `Depositos`,`divisa`.`Descripcion` AS `Divisa`,((((`movcaja`.`Efectivo` + `movcaja`.`Cheques`) + `movcaja`.`Tarjetas`) + `movcaja`.`Vales`) + `movcaja`.`Depositos`) AS `Total`,`movcaja`.`Notas` AS `Notas`,`movcaja`.`ICorte` AS `ICorte`,`corte`.`ICaja` AS `ICaja` from (`divisa` join (`corte` join (`categoria` join (`cdocumentos` join `movcaja` on((`cdocumentos`.`ID` = `movcaja`.`Documento`))) on((`categoria`.`Sys_PK` = `movcaja`.`ICategoria`))) on((`corte`.`Sys_PK` = `movcaja`.`ICorte`))) on((`divisa`.`Sys_PK` = `movcaja`.`IDivisa`))) order by `movcaja`.`Fecha`,`movcaja`.`Hora` 
 ;
 
