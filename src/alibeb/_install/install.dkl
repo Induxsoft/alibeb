@@ -6,6 +6,12 @@ program "instalador"
     #include "serialize.dkh"
     #include "dbr.dkh"
 
+    TableExist::&db,table
+    {
+        table >> p
+        name_table=dbr.str(db,"SHOW TABLES LIKE '"+table+"';",p)
+        return trim(name_table)!=""
+    }
     // Archivos de datos iniciales (Orden de importación)
     // deben estar en la carpeta _install/initial_data
     ref @files_to_import = from.json('[
@@ -48,11 +54,57 @@ program "instalador"
     if not(dbr.is_open(database)){ref database=dbr.open(qname)}
     do reconnect(database,qname)
 
-    file_views="alibeb/_install/initial_data/views.sql"
+    path_initial_data="alibeb/_install/initial_data/"
+    file_views=path.concat(path_initial_data,"views.sql")
+
     if file.exists(file_views)
     {
         do print("Creando vistas de la base de datos")
         do dbr.execute(database,file.rtext(file_views),@null)
+    }
+
+    if not(TableExist(database,"cconsumo_cproduccion_")){do print("No se insertó datos en la tabla 'cconsumo_cproduccion_' se requiere el paquete 'catfab' ")}
+    else
+    {
+        //cconsumo prdeterminada
+        cconsumo=dbr.num(database,"select sys_pk from cconsumo where sys_guid='0DB65C0695344B38B89524D528009020'",@null)
+        if cconsumo > 0
+        {
+            cprod_cocina=dbr.num(database,"select sys_pk from cproduccion where sys_guid='D23F782846974D11B36BB98B847C3856'",@null)
+            cprod_barra=dbr.num(database,"select sys_pk from cproduccion where sys_guid='16301B7CB6D64BB086B0C3663B14985B'",@null)
+            
+            cconsumo,cprod_cocina,cprod_barra >> p
+            if cprod_cocina > 0 && dbr.num(database,"select count(*) from cconsumo_cproduccion_ where icproduccion=@cprod_cocina and iconsumo=@cconsumo",p) < 1
+            {
+                do print("Insertando centro de consumo y centro de produción 'COCINA' ")
+                new _cccp
+                {
+                    @"sys_timestamp*":now()
+                    @"icproduccion":cprod_cocina
+                    @"iconsumo":cconsumo
+                }
+                do dbr.vars.save(database,"cconsumo_cproduccion_",_cccp)
+            }
+            
+            if cprod_barra > 0 && dbr.num(database,"select count(*) from cconsumo_cproduccion_ where icproduccion=@cprod_barra and iconsumo=@cconsumo",p) < 1
+            {
+                do print("Insertando centro de consumo y centro de produción 'BARRA' ")
+                new _cccp
+                {
+                    @"sys_timestamp*":now()
+                    @"icproduccion":cprod_barra
+                    @"iconsumo":cconsumo
+                }
+                do dbr.vars.save(database,"cconsumo_cproduccion_",_cccp)
+            }
+
+        }
+    }
+    
+
+    exception
+    {
+        do print("Error: "+last_error())
     }
 
     do dbr.close(database)
