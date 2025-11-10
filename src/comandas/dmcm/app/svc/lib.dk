@@ -394,7 +394,7 @@ module "lib.dk"
 
         sql="update corte set cerrado=1, fcierre=now(), hcierre=now() where sys_pk=@corte"
         do dbr.execute(db,sql,params)
-
+        
         do token.logout(db,postData)
         module "imprimir arqueo"
         {
@@ -404,9 +404,9 @@ module "lib.dk"
             // exception{}
         }
         do dbr.commit(db)
-
         
         do field.remove(arqueo,"http")
+
         return arqueo
 
         exception
@@ -528,6 +528,8 @@ module "lib.dk"
     }
     GetDataTarjetaByVenta::&db,venta,divisa
     {
+        if not(TableExist(db,"globalpay")){return record.create()}
+
         new p{@"idt":venta}
         ref dtglobaypay=dbr.list(db,@sql_transaciones_realizadas,p)
         

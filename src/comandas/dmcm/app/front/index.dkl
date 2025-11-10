@@ -68,11 +68,6 @@ module "index"
 			file_include=path.concat(@path_view,"vw_workspace.dkl")
 			break
 		}
-		// case "page-cobro"
-		// {
-		// 	file_include=path.concat(@path_view,"payments.dkl")
-		// 	break
-		// }
 		case "cobrar"
 		{
 			ref @__divisa=GetDataDivisaPred()

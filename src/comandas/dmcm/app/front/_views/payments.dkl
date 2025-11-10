@@ -32,15 +32,33 @@ module ""
         else if @@(_data,"$key")!=""{caller=dbr.str(db,"select pcardcaller from agente where codigo=@key",_data)}
     }
 
-    ref transactions=dbr.list(db,@sql_transaciones_realizadas,getData)
     ref ltransactions=list.create()
-
-    for i = 0; i < @count(transactions)
+    exit_table_card_procesor=@false
+    message_card_procesor=""
+    
+    switch pos_card_procesor
     {
-        ref trans=@item(transactions,i)
-        ref response=from.json(@@(trans,"$response"))
-        if @@(response,"$AuthResultCode") == "00"{do list.add(ltransactions,response)}
+        case "globalpay"
+        {
+            exit_table_card_procesor=TableExist(db,"globalpay")
+
+            if exit_table_card_procesor
+            {
+                ref transactions=dbr.list(db,@sql_transaciones_realizadas,getData)
+                for i = 0; i < @count(transactions)
+                {
+                    ref trans=@item(transactions,i)
+                    ref response=from.json(@@(trans,"$response"))
+                    if @@(response,"$AuthResultCode") == "00"{do list.add(ltransactions,response)}
+                }
+            }
+            else{message_card_procesor="No existe la tabla 'globalpay' para el procesador de tarjetas indicado ("+pos_card_procesor+"). <br><br> <b>SOLUCION:</b>  <br> 1- Instale el paquete 'globalpay_dc' o desactive la variable de configuración 'pos_card_procesor' desde el BackOffice v12 (Variables globales -> Punto de venta)."}
+
+            break
+        }
     }
+    
+    
 
     pos_porcentaje_propina=parse.num(dbr.vars.get(db,"pos_porcentaje_propina"))
 

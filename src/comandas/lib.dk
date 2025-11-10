@@ -72,6 +72,12 @@ module "lib.dk"
         @http_context<"response/text">: to.json(responseJSONdata)
     }
 
+	TableExist::&db,table
+    {
+        table >> p
+        name_table=dbr.str(db,"SHOW TABLES LIKE '"+table+"';",p)
+        return trim(name_table)!=""
+    }
     #!
 	ref @database=@null
     open.db::qname

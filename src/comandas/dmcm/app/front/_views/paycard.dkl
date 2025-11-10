@@ -216,7 +216,19 @@ module ""
         div(class="card-body")
         {
             #!
-            if pos_card_procesor != ""{do CreateModuleCardProcesor()}
+            if pos_card_procesor != ""
+            {
+                if message_card_procesor != ""
+                {
+                    #$
+                    div(class="alert alert-danger"){$"#<message_card_procesor>"}
+                    #!
+                }
+                else
+                {
+                    do CreateModuleCardProcesor()    
+                }
+            }
             else
             {
                 do CreateCardEditTable()
