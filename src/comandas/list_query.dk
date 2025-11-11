@@ -19,6 +19,7 @@ module "lista de consultas"
                 AND a.codigo=@waiter;"
 
 	@lifespan="select hour(v.sys_dtcreated)as hours,minute(v.sys_dtcreated)as minutes,second(v.sys_dtcreated) as seconds from venta v where v.sys_pk=@sys_pk"
+
 	@foodbev="select cc.codigo cod_cc,cp.codigo cod_cp,cc.descripcion desc_cc,cp.descripcion desc_cp, p.codigo as sku,p.sys_pk as pkprod,q.sys_pk as sys_pk,q.descripcion as 'description',q.precio1,q.precio2,q.precio3,q.precio4,
 				q.precio5,q.i1venta,q.i2venta,q.i3venta,q.i4venta,q.unidad as unit,q.ilinea as line 
 				from qproddmnsxcprod q inner join producto p on q.sys_pk=p.sys_pk inner join cconsumo_cproduccion_ cccp on cccp.icproduccion=q.icentrosproduccion 
@@ -36,7 +37,7 @@ module "lista de consultas"
 
     @deletedventa="delete dventa from dventa inner join producto on dventa.iproducto=producto.sys_pk where producto.iclase=2 and dventa.fk_venta_detalle=@sys_pk"
 
-    @dataadds="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad from producto p where p.codigo=@sku"
+    @dataadds="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos from producto p where p.codigo=@sku"
 
     @getordennew="select sys_pk from orden where sys_guid=@sys_guid" 
 
@@ -54,10 +55,16 @@ module "lista de consultas"
     @totaldventa="select ifnull(sum(dv.precio*dv.cantidad),0) subtotal, ifnull(sum(dv.descuento1),0)d1,ifnull(sum(dv.descuento2),0)d2,ifnull(sum(dv.impuesto1),0)i1,ifnull(sum(dv.impuesto2),0)i2,
                 ifnull(sum(dv.impuesto3),0)i3,ifnull(sum(dv.impuesto4),0)i4 from dventa dv inner join producto p on dv.iproducto=p.sys_pk where dv.fk_venta_detalle=@sys_pk" // and p.iclase=2;
 
-	@updateventa="update venta v set v.sys_timestamp=now(),v.subtotal=@subtotal,v.descuento1=@d1,v.descuento2=@d2,v.impuesto1=@i1,v.impuesto2=@i2,v.impuesto3=@i3,v.impuesto4=@i4 where v.sys_pk=@sys_pk"
+	@updateventa="update venta v set v.sys_timestamp=now(),v.subtotal=@subtotal,v.descuento1=@d1,
+    v.descuento2=@d2,v.impuesto1=@i1,v.impuesto2=@i2,v.impuesto3=@i3,v.impuesto4=@i4 where v.sys_pk=@sys_pk"
 
     @updatedvt="update dventa dv INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
-                set dv.cantidad=@cantidad,dv.#<@campo_iva>=@i3 where dv.iproducto=@producto AND v.sys_pk=@id_table" //
+                set dv.cantidad=@cantidad,
+                dv.impuesto1=@i1, 
+                dv.impuesto2=@i2, 
+                dv.impuesto3=@i3, 
+                dv.impuesto4=@i4 
+                where dv.iproducto=@producto AND v.sys_pk=@id_table" //
 
     @updatedorden="update dorden d INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk 
                     set d.cantidad=@cantidad where d.iproducto=@producto AND o.iventa=@id_table AND d.sys_pk=@pkdorden;"
@@ -74,8 +81,11 @@ module "lista de consultas"
     @delete_orden="delete o from orden o where o.iventa=@id_table AND o.sys_pk=@pkorden"
     @deleteadds="delete da FROM dadicionales da WHERE da.fk_dorden_adicionales=@pkdorden"
 
-    @getquantitydv="SELECT dv.cantidad,dv.precio FROM dventa dv INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
-                        WHERE v.sys_pk=@id_table AND dv.IProducto=@producto"
+    @getquantitydv="SELECT dv.cantidad,dv.precio,dv.descuento1,dv.descuento2,p.impuestos
+    FROM dventa dv 
+    INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+    INNER JOIN producto p ON dv.iproducto=p.sys_pk
+    WHERE v.sys_pk=@id_table AND dv.IProducto=@producto"
 
     @list_mesas_zona="select 0 as 'sys_pk',0 as 'occupied_seats','' as 'sys_guid',d.id as 'code',coalesce(d.mesero,'') as 'waiter' ,d.personas as 'available_seats' 
                         from dmnsmesa d 

@@ -34,7 +34,11 @@ var model_prn=
                     if(!ws || (ws && ws.readyState>=3))
                     {
                         if(interval)clearInterval(interval);
-                        if(url_redir)window.location.href=url_redir;
+                        if(url_redir)
+                        {
+                            window.location.href=url_redir;
+                            return;
+                        }
                         if(callbackinterval)callbackinterval(data);
                     }
                 }

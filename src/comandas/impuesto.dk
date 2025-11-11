@@ -4,6 +4,7 @@ module "impuestos"
 {
 	@DecimalesEnImportes=2 //Pendiente: Tomar este valor de la configuración 
 	@zonaImpuesto=0 //0-Interior y 1-frontera
+	@zonaImpuesto_sub_index=1 //1-Interior y 2-frontera
 	@PrecioVenta=1 //Precio 1 a 5
 	@PrecioAdcs=1 //precio de los productos adicionales 1 a 5
 	@PrioridadBarras=0 //0-Prioridad a barras de Déminus (producto, linea), 1-Prioridad a barras de plaza mundial(producto, line) y 2-Ambas (producto, plazamundial y linea)
@@ -65,4 +66,59 @@ module "impuestos"
 	{
 		return "padic"+str(np)
 	}
+
+	GetDataImpuestos::&db,precio,cantidad,d1,d2,pkimpuesto
+    {
+		descuentos=d1 + d2
+        subtotal=precio *  cantidad
+        sub_desc=subtotal - descuentos
+
+        ref imp=TasaImpuesto(db,pkimpuesto)
+		
+        i1_tasa = @@(imp,"#i1_tasa")
+        i2_tasa = @@(imp,"#i2_tasa")
+        i3_tasa = @@(imp,"#i3_tasa")
+        i4_tasa = @@(imp,"#i4_tasa")
+
+        impuesto1 = (sub_desc * i1_tasa)
+        impuesto2 = (sub_desc * i2_tasa)
+
+        i1_i2 = (impuesto1 + impuesto2)
+        sub_desc_i1_i2 = (sub_desc + i1_i2)
+        impuesto3 = (sub_desc_i1_i2 * i3_tasa)
+        impuesto4 = (sub_desc_i1_i2 * i4_tasa)
+
+        i3_i4 = (impuesto3 + impuesto4)
+        impuestos = (i1_i2 + i3_i4)
+        total = (sub_desc + impuestos)
+
+        new precioInfo
+        {
+			@"d1":d1
+			@"d2":d2
+            @"descuentos": descuentos
+            @"impuestos": impuestos
+            @"total": total
+            @"impuesto1": impuesto1
+            @"impuesto2": impuesto2
+            @"impuesto3": impuesto3
+            @"impuesto4": impuesto4
+        }
+        return precioInfo
+    }
+    TasaImpuesto::&db,impuesto
+    {
+        impuesto >> p
+
+        ref imp=dbr.rec(db,ftext("select sys_pk,i1compra,i2compra,i3compra,i4compra,
+         (CONVERT(REPLACE(SUBSTRING_INDEX(i.i1venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i1_tasa,
+         (CONVERT(REPLACE(SUBSTRING_INDEX(i.i2venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i2_tasa,
+         (CONVERT(REPLACE(SUBSTRING_INDEX(i.i3venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i3_tasa,
+         (CONVERT(REPLACE(SUBSTRING_INDEX(i.i4venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i4_tasa
+         from cfgimpuesto as i where sys_pk=@impuesto"),p)
+
+        if isnull(imp){do rise_error(500,"No se encontró datos del impuesto indicado")}
+
+        return imp
+    }
 }

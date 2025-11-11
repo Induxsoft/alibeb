@@ -341,6 +341,7 @@ var views=
             for (let i = 0; i < linea.indicaciones.length; i++) 
             {
                   const indicacion = linea.indicaciones[i];
+                  if(indicacion.trim()=="")continue;
                   html+=`<button class="btn-admin" onclick="views.setIndicacion('${indicacion.trim()}')">${indicacion.trim()}</button>`;
             }
             element.innerHTML=html;

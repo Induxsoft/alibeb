@@ -330,15 +330,7 @@ module "lib.dk"
 
         if efectivo_caja < 0.1{do rise_error(500,"No ha indicado el efectivo en caja")}
         if importe_sig_turno < 0{do rise_error(500,"No ha indicado el fondo del siguiente turno")}
-        //realizar retiro al corte de caja
-        if retiro_corte > 0
-        {
-            if pos_cat_retiro_al_corte==""{do rise_error(500,"No ha configurado una categoría para realizar el retiro al corte 'pos_cat_retiro_al_corte' ")}
 
-            ref movcaja=PrepareMovCaja(db,GetCategoriaByCodigo(db,pos_cat_retiro_al_corte),retiro_corte,"RETIRO AL CORTE")
-            corte >> movcaja
-            ref egreso=pos.egreso(db,params,movcaja)
-        }
         //======================================================================================================
         //ingreso o egreso segun la diferencia entre efectivo en caja contra lo que se tiene en la base de datos
         saldocorte=SaldoEfectivo(db,corte)
@@ -362,6 +354,16 @@ module "lib.dk"
                 ref _ingreso=pos.egreso(db,params,movcaja_ingreso)
             }
         }
+        //realizar retiro al corte de caja
+        if retiro_corte > 0
+        {
+            if pos_cat_retiro_al_corte==""{do rise_error(500,"No ha configurado una categoría para realizar el retiro al corte 'pos_cat_retiro_al_corte' ")}
+
+            ref movcaja=PrepareMovCaja(db,GetCategoriaByCodigo(db,pos_cat_retiro_al_corte),retiro_corte,"RETIRO AL CORTE")
+            corte >> movcaja
+            ref egreso=pos.egreso(db,params,movcaja)
+        }
+        
         
         //=============================================================================================================================================
         //Retiro por el importe de todas las demás formas de pago (depósitos, cheques, vales y tarjetas) 
@@ -407,6 +409,8 @@ module "lib.dk"
         
         do field.remove(arqueo,"http")
 
+        arqueo<"url_redir">:"/comandas/?view=login"
+        
         return arqueo
 
         exception
@@ -1373,8 +1377,7 @@ module "lib.dk"
         {
             ref rsource=@item(ordenes,i)
             ref row=record.create()
-            // precio=get.subtotalImpuesto(@@(rsource,"#precio"),@true)
-            // total=get.subtotalImpuesto(@@(rsource,"#precio"),@true) * @@(rsource,"#cantidad") - (@@(rsource,"#d1")+@@(rsource,"#d2"))
+
             total=aplImpuestos((@@(rsource,"#precio")*@@(rsource,"#cantidad"))-@@(rsource,"#d1")-@@(rsource,"#d2"),parseImpuesto(@@(rsource,"i1venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i2venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i3venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i4venta"),@zonaImpuesto))
             precio=aplImpuestos(@@(rsource,"#precio"),parseImpuesto(@@(rsource,"i1venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i2venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i3venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i4venta"),@zonaImpuesto))
             using row
@@ -1947,13 +1950,17 @@ module "lib.dk"
         ref sku=@@(itm_details,"&sku")
         ref order=record.create()
         ref list_dorden=list.create()
-        
+
         ref dorden=table.dorden(db,itm_details,postData)
+        campo=campoPrecioR5(@PrecioVenta)
+        dorden<"precio">:dbr.num(db,ftext("select #<campo> from producto where sys_pk=@sys_pk"),sku)
         if not(isnull(@@(dic_orders,"&"+clave)))
         {
             ref data=@@(dic_orders,"&"+clave)
             ref details=@@(data,"&dorden")
-            key=@@(sku,"$sys_pk")+"|"+str(get.subtotalImpuesto(@@(itm_details,"#price"),@false))+md5(trim(@@(itm_details,"$notes")))
+
+            key=@@(sku,"$sys_pk")+"|"+@@(dorden,"$precio")+md5(trim(@@(itm_details,"$notes")))
+            // key=@@(sku,"$sys_pk")+"|"+@@(dt_imp,"$total")+md5(trim(@@(itm_details,"$notes")))
             flag=@false
             for i=0;i<@count(details)
             {
@@ -1961,7 +1968,7 @@ module "lib.dk"
                 
                 keyn=@@(or,"$iproducto")+"|"+@@(or,"$precio")+md5(trim(@@(or,"$especificaciones")))
                 
-                if(key==keyn)
+                if key==keyn
                 {
                     flag=@true
                     or<"cantidad">:@@(or,"#cantidad")+@@(itm_details,"#quantity")
@@ -1995,7 +2002,8 @@ module "lib.dk"
         ref dataprodc=dbr.rec(db,@prodc,prodc)
 
         ref sku=@@(itm_details,"&sku")
-        using p{
+        using p
+        {
             @"sys_pk":@@(sku,"#sys_pk")
             @"cc":@@(sku,"cod_cc")
         }
@@ -2023,13 +2031,13 @@ module "lib.dk"
             @"Hora*":now
             @"HPrevista*":now
             @"HProduccion*":now
-            @"Importe":get.subtotalImpuesto(@@(itm_details,"#price"),@false)
+            @"Importe": 0
             @"notas":@@(itm_details,"$notes")
             @"Referencia":toupper(uuid())
             @"Status":0
             @"TiempoProduccion":0
             @"TiempoServicio":@@(itm_details,"#time")
-            @"TipoCambio":1
+            @"TipoCambio":dbr.num(db,"select tcambio from divisa where sys_pk=@idivisa",product)
             @"IAgente":@@(waiter,"sys_pk")
             @"ICConsumo":@@(cc,"#sys_pk")
             @"ICProduccion":@@(dataprodc,"#sys_pk")
@@ -2049,6 +2057,7 @@ module "lib.dk"
         ref product=dbr.rec(db,@prod,p)
 
         ref now=now()
+        
         new dorden
         {
             @"Sys_TimeStamp*":now
@@ -2064,16 +2073,15 @@ module "lib.dk"
             @"D2":0
             @"TiempoProduccion":0
             @"especificaciones":@@(itm_details,"$notes")
-            @"Precio":get.subtotalImpuesto(@@(itm_details,"#price"),@false)
             @"TiempoServicio":@@(itm_details,"#time")
-            @"TipoCambio":1
+            @"TipoCambio":dbr.num(db,"select tcambio from divisa where sys_pk=@idivisa",product)
             @"IDivisa":@@(product,"#idivisa")
             @"IProducto":@@(product,"#sys_pk")
-            //@"FK_Orden_Detalle":1
         }
         dorden<"adds*">:get.adds(db,@@(itm_details,"&options"))
         return dorden
     }
+    
 
     //subtotal con impuesto //ismp define si retorna el impuesto
     get.subtotalImpuesto::subtotal,isImp
@@ -2100,18 +2108,21 @@ module "lib.dk"
                 {
                     ref prod=dbr.rec(db,@dataadds,val)
                     ref now=now()
+
+                    ref dt_imp=GetDataImpuestos(db,@@(val,"#amount"),1,0,0,@@(prod,"#impuestos"))
+
                     new adds
                     {
                         @"Sys_TimeStamp*":now
                         @"Sys_GUID":toupper(cut(uuid(),30))
                         @"Sys_DTCreated*":now
                         @"Sys_DTExported*":now
-                        @"Cantidad":1
-                        @"CDirecto":0
-                        @"CIndirecto":0
-                        @"CManoObra":0
-                        @"CMaquinaria":0
-                        @"Precio":get.subtotalImpuesto(@@(val,"#amount"),@false)
+                        @"Cantidad": 1
+                        @"CDirecto": 0
+                        @"CIndirecto": 0
+                        @"CManoObra": 0
+                        @"CMaquinaria": 0
+                        @"Precio":@@(dt_imp,"#total")
                         @"IProducto":@@(prod,"#sys_pk")
                     }
                 }
@@ -2130,10 +2141,8 @@ module "lib.dk"
     }
     updateinsert.ventaDventa::&db,&postData
     {
-        // do dbr.begin(db)
-            do update.totales(db,postData)
-        // do dbr.commit(db)
-
+        do update.totales(db,postData)
+        
         exception
         {
             // if dbr.in_transaction(db){do dbr.rollback(db)}
@@ -2234,6 +2243,7 @@ module "lib.dk"
         for i=0;i<list.count(dtventa)
         {
             ref dv=@item(dtventa,i)
+        
             using dventa
             {
                 @"Sys_GUID":toupper(cut(uuid(),30))
@@ -2246,7 +2256,15 @@ module "lib.dk"
                 @"Descuento1":@@(dv,"#d1")
                 @"Descuento2":@@(dv,"#d2")
             }
-            dventa<@campo_iva>:get.subtotalImpuesto(@@(dv,"#precio"),@true) * @@(dv,"#cantidad")//@@(dv,"#precio") * @tasa_iva
+            _impuesto=dbr.num(db,"select impuestos from producto where sys_pk=@iproducto",dventa)
+            // dventa<@campo_iva>:get.subtotalImpuesto(@@(dv,"#precio"),@true) * @@(dv,"#cantidad")
+            ref dt_imp= GetDataImpuestos(db,@@(dv,"#precio"),@@(dv,"#cantidad"),@@(dv,"#d1"),@@(dv,"#d2"),_impuesto)
+
+            dventa<"impuesto1">:@@(dt_imp,"#impuesto1")
+            dventa<"impuesto2">:@@(dt_imp,"#impuesto2")
+            dventa<"impuesto3">:@@(dt_imp,"#impuesto3")
+            dventa<"impuesto4">:@@(dt_imp,"#impuesto4")
+
             do dbr.insert(db,"dventa",dventa)
         }
 
@@ -2275,26 +2293,33 @@ module "lib.dk"
         using data{@"pkorden":@@(dorden,"pkorden")}
         quantitycurrent=@@(dorden,"#cantidad")
         using data{@"cantidad":quantitycurrent - quantity}
-        using data{@"i3":get.subtotalImpuesto(@@(dorden,"#precio"),@true) * @@(data,"#cantidad")}
         
         update=@false
         do dbr.begin(db)
-            if(quantitycurrent>quantity)
+            if quantitycurrent > quantity
             {
-                // do rise_error(99,"if")
                 //update
                 do dbr.execute(db,@updatedorden,data)
-                // do dbr.execute(db,ftext(@updatedvt),data)
                 ref dv=dbr.rec(db,@getquantitydv,data)
                 cantidadv=@@(dv,"#cantidad")
 
                 if cantidadv > 1
                 {
                     using data{@"cantidad":cantidadv - 1}
-                    using data{@"i3":get.subtotalImpuesto(@@(dv,"#precio"),@true) * @@(data,"#cantidad")}
 
-                    do dbr.execute(db,ftext(@updatedvt),data)//
-                }else{
+                    ref dt_imp=GetDataImpuestos(db,@@(dv,"#precio"),@@(data,"#cantidad"),@@(dv,"#descuento1"),@@(dv,"#descuento2"),@@(dv,"#impuestos"))
+                    using data
+                    {
+                        @"i1": @@(dt_imp,"#impuesto1")
+                        @"i2": @@(dt_imp,"#impuesto2")
+                        @"i3": @@(dt_imp,"#impuesto3")
+                        @"i4": @@(dt_imp,"#impuesto4")
+                    }
+
+                    do dbr.execute(db,ftext(@updatedvt),data)
+                }
+                else
+                {
                     do dbr.execute(db,@deletedvt,data)
                 }
 
@@ -2302,26 +2327,11 @@ module "lib.dk"
             }
             else
             {
-                // do rise_error(99,"else")
-                // delete ordden where pkorden=@pkorden
                 do dbr.execute(db,@deleteadds,data)
                 do dbr.execute(db,@deletedorden,data)
                 if dbr.num(db,@countdorden,data)==0{do dbr.execute(db,@delete_orden,data)} 
 
-                do updateinsert.ventaDventa(db,p)
-
-                // ref dv=dbr.rec(db,@getquantitydv,data)
-                // cantidadv=@@(dv,"#cantidad")
-
-                // if cantidadv > 1
-                // {
-                //     using data{@"cantidad":cantidadv - 1}
-                //     using data{@"i3":get.subtotalImpuesto(@@(dv,"#precio"),@true) * @@(data,"#cantidad")}
-
-                //     do dbr.execute(db,ftext(@updatedvt),data)//
-                // }else{
-                //     do dbr.execute(db,@deletedvt,data)
-                // }        
+                do updateinsert.ventaDventa(db,p)      
                 
             }
             if update
