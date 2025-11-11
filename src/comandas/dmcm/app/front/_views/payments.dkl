@@ -52,7 +52,7 @@ module ""
                     if @@(response,"$AuthResultCode") == "00"{do list.add(ltransactions,response)}
                 }
             }
-            else{message_card_procesor="No existe la tabla 'globalpay' para el procesador de tarjetas indicado ("+pos_card_procesor+"). <br><br> <b>SOLUCION:</b>  <br> 1- Instale el paquete 'globalpay_dc' o desactive la variable de configuración 'pos_card_procesor' desde el BackOffice v12 (Variables globales -> Punto de venta)."}
+            else{message_card_procesor="Requiere intalación o desactive la variable de configuración 'pos_card_procesor' desde el BackOffice v12 (Variables globales -> Punto de venta)."}
 
             break
         }
