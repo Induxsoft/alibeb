@@ -79,7 +79,14 @@ program ""
     text_egreso=@@(data,"$text_egreso")
     text_saldoinicial=@@(data,"$text_saldoinicial")
     divisa_predet=@@(data,"#divisa_predet")
-    
+
+    if @count(divisa_movcaja) < 1
+    {
+        saldo_inicial=@@(data,"#saldo_inicial")
+        
+        do escpos.printline(TextBetween(text_saldoinicial , number_format(saldo_inicial)))
+    }
+
     for i = 0; i < @count(divisa_movcaja)
     {
         ref dm=@item(divisa_movcaja,i)

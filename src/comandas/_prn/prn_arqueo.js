@@ -85,6 +85,12 @@ var prn_arqueo=
         let text_egreso=data.text_egreso??""
         let text_saldoinicial=data.text_saldoinicial??""
         let divisa_predet=data.divisa_predet??0;
+        
+        if(divisa_movcaja.length < 1)
+        {
+            saldo_inicial=data.saldo_inicial??0;
+            eposprn.printText(TextBetween(text_saldoinicial,views.format(saldo_inicial,controller.decimals,".",",",prefix)));
+        }
 
         for (let i = 0; i < divisa_movcaja.length; i++) 
         {

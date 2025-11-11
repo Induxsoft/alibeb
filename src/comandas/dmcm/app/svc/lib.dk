@@ -333,7 +333,10 @@ module "lib.dk"
 
         //======================================================================================================
         //ingreso o egreso segun la diferencia entre efectivo en caja contra lo que se tiene en la base de datos
-        saldocorte=SaldoEfectivo(db,corte)
+        saldo_inicial=GetSaldoInicial(db,corte,caja,0)//0 divisa predeterminada
+        if saldo_inicial < 0{saldo_inicial= 0}
+
+        saldocorte=SaldoEfectivo(db,corte) + saldo_inicial
         diferencia=saldocorte - efectivo_caja
         
         if diferencia != 0
@@ -342,16 +345,16 @@ module "lib.dk"
             //egreso
             if diferencia > 0
             {
-                ref movcaja_egreso=PrepareMovCaja(db,GetCategoriaByCodigo(db,pos_cat_diferencia_al_corte),(diferencia * -1),"EGRESO POR DIFERENCIA AL CORTE")
+                ref movcaja_egreso=PrepareMovCaja(db,GetCategoriaByCodigo(db,pos_cat_diferencia_al_corte),diferencia,"EGRESO POR DIFERENCIA AL CORTE")
                 corte >> movcaja_egreso
-                ref _egreso=pos.ingreso(db,params,movcaja_egreso)
+                ref _egreso=pos.egreso(db,params,movcaja_egreso)
             }
             //ingreso
             else
             {
                 ref movcaja_ingreso=PrepareMovCaja(db,GetCategoriaByCodigo(db,pos_cat_diferencia_al_corte),(diferencia * -1),"INGRESO POR DIFERENCIA AL CORTE")
                 corte >> movcaja_ingreso
-                ref _ingreso=pos.egreso(db,params,movcaja_ingreso)
+                ref _ingreso=pos.ingreso(db,params,movcaja_ingreso)
             }
         }
         //realizar retiro al corte de caja
@@ -756,7 +759,11 @@ module "lib.dk"
         
         ref data=dbr.rec(db,sql,p)
 
-        return @@(data,"#saldo")
+        saldo=@@(data,"#saldo")
+        //se agregó que el saldo inicial no sea negativo
+        // if saldo < 0{saldo = 0}
+
+        return saldo
     }
     IngresoEgresoXCategoria::&db,sql,&p
     {
@@ -846,6 +853,7 @@ module "lib.dk"
             @"text_caja":"CAJA: "+@@(corte,"$codcaja")+" "+ @@(corte,"$desccaja")
             @"text_cajero":"CAJERO: "+@@(corte,"$codcajero") +" "+@@(corte,"$nombrecajero")
             @"venta_detalle*":GetDetalleVentaTicket(db,detalle)
+            @"saldo_inicial":GetSaldoInicial(db,pkcorte,@@(corte,"#pkcaja"),0)//divisa predeterminado
             @"text_saldoinicial":"SALDO INICIAL"
             @"text_venta":"- VENTAS -"
             @"text_ingreso":"- INGRESOS -"
