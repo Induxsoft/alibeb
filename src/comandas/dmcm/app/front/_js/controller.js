@@ -574,7 +574,7 @@ var controller=
         model.invoke_service(uri,data,
         function(data)
         {
-          model_prn.print_arqueo(data,(_data)=>{window.location.href="/login/";}); 
+          model_prn.print_arqueo(data,(_data)=>{window.location.href="/comandas/?view=login";}); 
         }
         ,function(error)
         {
