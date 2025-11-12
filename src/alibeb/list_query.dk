@@ -206,7 +206,9 @@ module "lista de consultas"
 
     // ******************************************************kds admin***********************************************
     @list_cprods="select cp.sys_pk,cp.sys_timestamp,cp.sys_guid,cp.codigo,cp.descripcion,cp.almacenmp,cp.almacenpt,cp.sys_recver,ifnull(dm.pwd,'')pwd,
-                ifnull(dm.shortpool,0)shortpool,ifnull(dm.cproduccion=cp.sys_pk,0) AS fieldexist from cproduccion cp
+                ifnull(dm.shortpool,0)shortpool,ifnull(dm.cproduccion=cp.sys_pk,0) AS fieldexist,
+                ifnull(dm.access_movil,ifnull(dm.pwd,'')<>'')access_movil
+                from cproduccion cp
                 LEFT JOIN dm_kds dm ON cp.sys_pk=dm.cproduccion"
 
     @list_almacen="select a.sys_pk,a.codigo,a.descripcion from almacen a"
@@ -215,7 +217,7 @@ module "lista de consultas"
     @dm_kds_login="SELECT cp.sys_pk,cp.codigo,cp.descripcion,d.shortpool from dm_kds d inner join cproduccion cp on d.cproduccion=cp.sys_pk WHERE d.cproduccion=@idcprod AND d.pwd=MD5(@pwd)"
 
     @cpro_admin="select sys_pk from cproduccion where sys_guid=@Sys_GUID"
-    @res_pwd="select pwd from dm_kds where cproduccion=@idcprod"
+    @res_pwd="select pwd,cproduccion from dm_kds where cproduccion=@idcprod"
     @cprod="select sys_pk from cproduccion where sys_pk=@idcprod"
     // ************************************************************************************************************
 

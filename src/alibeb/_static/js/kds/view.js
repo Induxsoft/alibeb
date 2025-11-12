@@ -46,6 +46,15 @@ var views={
 			p_rotulo.textContent=text;
 		}
 	},
+	VisibleElement(idOrElement,visible=true)
+	{
+		let element=typeof idOrElement === "string" ? document.getElementById(idOrElement):idOrElement;
+		if(!element)return;
+
+		if(visible)element.classList.remove("d-none");
+		else element.classList.add("d-none");
+
+	},
 	datacprods:function(sys_pk)
 	{
 		var row_selected=document.querySelector("#cprod_"+sys_pk);
@@ -59,6 +68,7 @@ var views={
 		var almcpt=document.querySelector("#cprod_amacenpt");
 		var elemsys_pk=document.querySelector("#cprod_sys_pk");
 		var seg_act=document.querySelector("#seg_act");
+		let access_movil=document.getElementById("access_movil");
 
 		for (var i = 0; i < list_cprods.length; i++) 
 		{
@@ -66,12 +76,19 @@ var views={
 
 			if(itm.sys_pk===sys_pk)
 			{
+				this.VisibleElement("btnnewcprod");
+
 				elemsys_pk.value=itm.sys_pk;
 				codigo.value=itm.codigo;
 				descripcion.value=itm.descripcion;
 				almcmt.value=itm.almacenmp;
 				almcpt.value=itm.almacenpt;
 				seg_act.value=itm.shortpool;
+
+				if(access_movil){access_movil.checked=itm.access_movil??false;}
+
+				views.change_pwd(!(itm.access_movil??false));
+
 				this.ObjRotulo["cprod"]=itm.descripcion??"";
 				this.SetRotulo("cprod");
 				views.hide_controls("btnaction,btncancelar");
@@ -124,6 +141,7 @@ var views={
 		var pwdconfirm=document.querySelector("#pwdconfirm");
 		var seg_act=document.querySelector("#seg_act");
 		var tab=document.querySelector("#nav-tabContent");
+		let access_movil=document.getElementById("access_movil");
 		tab.style.pointerEvents="";
 
 		seg_act.value="0";
@@ -137,23 +155,26 @@ var views={
 		pwd.value="";
 		pwdconfirm.value="";
 		codigo.focus();
+		access_movil.checked=false;
 	},
+	is_dirti:0,
 	change_pwd:function(iscancel=false)
 	{
-		var change_pwd=document.querySelector("#btnchangepwd");
 		var field=document.querySelector(".fieldchangepwd");
-
+		
 		if(iscancel)
 		{
-			change_pwd.innerHTML="Editar";
 			field.classList.add("disabled");
-			change_pwd.setAttribute("onclick","views.change_pwd()");
 			pwd_iswritted=false;
-		}else{
-			change_pwd.innerHTML="Cancelar";
+
+			let elements=field.querySelectorAll("input,select,textarea");
+			elements.forEach(e=>{e.value=(e.type!="number" ?"":"0")});
+		}
+		else
+		{
 			field.classList.remove("disabled");
-			change_pwd.setAttribute("onclick","views.change_pwd(true)");
 			pwd_iswritted=true;
 		}
+		this.is_dirti++;
 	}
 }

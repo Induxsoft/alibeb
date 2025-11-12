@@ -30,9 +30,13 @@ module "view_admin"
 					{
 						a(class="nav-link-ad" style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);" id="general"){"General"}
 						p(id="p-hidden" class="text-center fw-bold"){"Agregar nuevo"}
-						div(class="new_cprod")
+
+						div(class="d-flex gap-2")//btns-admin mt-admin-4
 						{
-							button(class="btn-admin" id="btnnewcprod" onclick="controller.add_cprod()"){"Nuevo"}
+							button(class="btn-admin d-none" id="btnnewcprod" onclick="controller.add_cprod()"){"Nuevo"}
+							button(class="btn-admin" id="btnaction" onclick="controller.add_datacprod('',this)"){"Guardar"}
+							button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
+							button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
 						}
 					}
 				}
@@ -68,8 +72,12 @@ module "view_admin"
 							}
 							
 							hr{""}
-							label{"Acceso a terminal móvil"}
-							button(class="btn-admin mt-admin-4" id="btnchangepwd" onclick="views.change_pwd()"){"Editar"}
+							label
+							{
+								input(class="form-check-input" type="checkbox" name="access_movil" id="access_movil" onchange="views.change_pwd(!this.checked)")
+								"Acceso a terminal móvil (KDS)"
+							}
+							// button(class="btn-admin mt-admin-4" id="btnchangepwd" onclick="views.change_pwd()"){"Editar"}
 							fieldset(class="fieldchangepwd disabled mt-admin-4")
 							{
 								// legend{"Cambiar contraseña."}
@@ -93,12 +101,7 @@ module "view_admin"
 							}
 						}
 					}
-					div(class="d-flex gap-2")//btns-admin mt-admin-4
-					{
-						button(class="btn-admin" id="btnaction" onclick="controller.add_datacprod('',this)"){"Agregar"}
-						button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
-						button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
-					}
+					
 				}
 				 
 

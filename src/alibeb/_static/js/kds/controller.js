@@ -30,6 +30,7 @@ var controller=
 	},
 	get_datacprod:function(sys_pk)
 	{
+		views.is_dirti=0;
 		views.datacprods(sys_pk);
 		views.tab_pointer_events();
 	},
@@ -73,6 +74,8 @@ var controller=
 	},
 	add_cprod:function()
 	{
+		views.is_dirti=1;
+		views.VisibleElement("btnnewcprod",false);
 		views.SetRotulo("new");
 		views.hide_controls("btncancelar,btnmodifi");
 		views.new_cprod();
@@ -99,6 +102,7 @@ var controller=
 
 		var btn=document.querySelector("#"+e.id);
 		var seg_act=document.querySelector("#seg_act");
+		let access_movil=document.getElementById("access_movil");
 
 		if(codigo.value=="")
 		{
@@ -111,18 +115,26 @@ var controller=
 			return ;
 		}
 
-		if(pwd.value!=pwdconfirm.value)
+		if(access_movil.checked)
 		{
-			alert("La contraseña no coinciden.");
-			return;
+			if(!access_movil.dafaultChecked && (pwd.value.trim()=="" || pwdconfirm.value.trim()==""))
+			{
+				alert("La contraseña es requerido.");
+				return;
+			}
+			
+			if(pwd.value!=pwdconfirm.value)
+			{
+				alert("La contraseña no coinciden.");
+				return;
+			}
+			
+			if((pwd.value.trim()=="" || pwdconfirm.value.trim()==""))
+			{
+				alert("La contraseña es requerido.");
+				return;
+			}
 		}
-		if(pwd_iswritted && !existfield && pwd.value=="" && pwdconfirm.value=="")
-		{
-			alert("La contraseña es requerido.");
-			return;
-		}
-		var changepwd=false;
-		if(existfield || (pwd.value!="" && pwdconfirm.value!="")){changepwd=true;}
 
 		if(params!="" && sys_pk)
 			params+="&idcprod="+sys_pk;
@@ -139,8 +151,9 @@ var controller=
 			descripcion:descripcion.value,
 			pwdbefore:pwdbefore.value,
 			pwd:pwd.value,
-			changepwd:changepwd,
-			shortpool:seg_act.value
+			shortpool:seg_act.value,
+			access_movil:access_movil.checked??false,
+			dirti:views.is_dirti
 		}
 
 		model.invoke_service(uri,data,

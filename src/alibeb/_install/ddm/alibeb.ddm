@@ -97,6 +97,7 @@ model "alibeb"
     //Gestion de kds
     entity "dm_kds" 
     {
+        @"access_movil" bool
         @"cproduccion" int 
         @"pwd" string(32)
         @"shortpool" int

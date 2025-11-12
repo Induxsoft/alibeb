@@ -287,7 +287,9 @@ module "lista de consultas"
 
     @list_almacen="select a.sys_pk,a.codigo,a.descripcion from almacen a"
 
-    @get.dm_kds="select cp.sys_pk,cp.codigo,cp.descripcion from dm_kds d inner join cproduccion cp on d.cproduccion=cp.sys_pk"
+    @get.dm_kds="select cp.sys_pk,cp.codigo,cp.descripcion from dm_kds d 
+    inner join cproduccion cp on d.cproduccion=cp.sys_pk where ifnull(d.access_movil,ifnull(d.pwd,'')<>'')"
+    
     @dm_kds_login="SELECT cp.sys_pk,cp.codigo,cp.descripcion,d.shortpool from dm_kds d inner join cproduccion cp on d.cproduccion=cp.sys_pk WHERE d.cproduccion=@idcprod AND d.pwd=MD5(@pwd)"
 
     @cpro_admin="select sys_pk from cproduccion where sys_guid=@Sys_GUID"

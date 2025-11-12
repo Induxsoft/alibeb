@@ -48,10 +48,12 @@ module "lib.dk"
         do dbr.begin(db)
             do dbr.insert(db,"cproduccion",cprod)
 
-            if parse.bool(@@(data,"changepwd"))
+            access_movil=if(parse.bool(@@(data,"$access_movil")),1,0)
+            if access_movil
             {
                 new dm_kds
                 {
+                    @"access_movil":access_movil
                     @"cproduccion":dbr.num(db,@cpro_admin,cprod)
                     @"pwd":md5(@@(data,"$pwd"))
                     @"shortpool":@@(data,"#shortpool")
@@ -89,30 +91,37 @@ module "lib.dk"
         do dbr.begin(db)
             do dbr.update(db,"cproduccion",cprod,"sys_pk=@idcprod",params)
 
-            if parse.bool(@@(data,"changepwd"))
+            access_movil=if(parse.bool(@@(data,"$access_movil")),1,0)
+
+            pwdbefore=@@(data,"$pwdbefore")
+            ref cprod=dbr.rec(db,@res_pwd,params)
+
+            respwd=@@(cprod,"$pwd")
+            if trim(pwdbefore)!="" && not(isnull(cprod))
             {
-                pwdbefore=@@(data,"$pwdbefore")
-                respwd=dbr.str(db,@res_pwd,params)
-                if pwdbefore!="" && md5(pwdbefore)!=respwd && respwd!=""{do rise_error(99,"La contraseña anterior es incorrecta.")}
-                new dm_kds
-                {
-                    // @"cproduction":dbr.num(db,"select sys_pk from cproduccion where sys_guid=@Sys_GUID",cprod)
-                    // @"pwd":md5(@@(data,"$pwd"))
-                    @"shortpool":@@(data,"#shortpool")
-                }
-                if @@(data,"$pwd")!=""{using dm_kds{@"pwd":md5(@@(data,"$pwd"))} }
-                if respwd=="" && @@(data,"$pwd")!=""
-                {
-                    using dm_kds{
-                        @"cproduccion":dbr.num(db,@cprod,params)
-                    }
-                    do dbr.insert(db,"dm_kds",dm_kds)
-                }
-                else
-                {
-                    do dbr.update(db,"dm_kds",dm_kds,"cproduccion=@idcprod",params)
-                }
-                
+                if access_movil && md5(pwdbefore)!=respwd && respwd!=""{do rise_error(99,"La contraseña anterior es incorrecta.")}
+            }
+           
+            new dm_kds
+            {
+                @"access_movil":access_movil
+                @"shortpool":@@(data,"#shortpool")
+            }
+            if not(access_movil)
+            {
+                do field.remove(data,"pwd")
+                dm_kds<"pwd*">:@null
+            }
+            else{dm_kds<"pwd">:md5(@@(data,"$pwd"))}
+
+            if respwd=="" && isnull(cprod)
+            {
+                dm_kds<"cproduccion">:dbr.num(db,@cprod,params)
+                do dbr.insert(db,"dm_kds",dm_kds)
+            }
+            else
+            {
+                do dbr.update(db,"dm_kds",dm_kds,"cproduccion=@idcprod",params)
             }
             
         do dbr.commit(db)
