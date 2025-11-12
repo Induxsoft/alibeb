@@ -820,7 +820,7 @@ var controller=
 
         return bsModal;
     },
-    close_view:function(idview,params="",_confirm=false,text="¿Esta seguro de salir de la aplicación?")
+    close_view:function(idview,params="",_confirm=false,text="¿Esta seguro de querer salir de la aplicación?")
     {
       if(_confirm && !confirm(text))return;
 
