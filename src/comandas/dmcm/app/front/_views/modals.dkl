@@ -155,7 +155,7 @@
                                             for i = 0; i < @count(categorias)
                                             {
                                                 ref cat=@item(categorias,i)
-                                                #$ option(value="#<@@(cat,'$sys_pk')>"){"#<@@(cat,'$descripcion')>"}
+                                                #$ option(value="#<@@(cat,'$sys_pk')>" tipo="#<@@(cat,'#tipo')>"){"#<@@(cat,'$descripcion')>"}
                                             }
                                         }
                                         #$

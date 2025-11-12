@@ -609,20 +609,37 @@ var controller=
 
         return false
     },
+    OptionsShow(select,_tipo=0)
+    {
+      for (const option of select.options) 
+      {
+        let tipo=option.getAttribute("tipo");
+        if(!tipo)tipo=option.value;
+
+        if (tipo!=_tipo) option.style.display = 'none';
+        else option.style.display = '';
+      }
+    },
     _movimiento:0,
     Movimiento(mov=1)
     {
+      let categoria=document.getElementById("categoria");
       let modal_ingreso_egreso_title=document.getElementById("modal_ingreso_egreso_title");
       let frm_ingreso_egreso=document.getElementById("frm_ingreso_egreso");
+      frm_ingreso_egreso.reset();
+
       if(frm_ingreso_egreso.elements["referencia"])frm_ingreso_egreso.elements["referencia"].value=this.Cut(this.guid(),16).toLocaleUpperCase();
 
       modal_ingreso_egreso_title.textContent="INGRESO";
       if(frm_ingreso_egreso.elements["descripcion"])frm_ingreso_egreso.elements["descripcion"].value="INGRESO DE CAJA";
       if(mov==2)//egreso
       {
+        this.OptionsShow(categoria,2);
         modal_ingreso_egreso_title.textContent="EGRESO";
         if(frm_ingreso_egreso.elements["descripcion"])frm_ingreso_egreso.elements["descripcion"].value="EGRESO DE CAJA";
       }
+      else{this.OptionsShow(categoria,1);}
+      
       this._movimiento=mov;
       this.showModal("modal_ingreso_egreso");
     },
