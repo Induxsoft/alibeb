@@ -101,6 +101,15 @@ var views=
 		}
 		select.innerHTML=options;
 	},
+	VisibleElement(idOrElement,visible=true)
+	{
+		let element=typeof idOrElement === "string" ? document.getElementById(idOrElement):idOrElement;
+		if(!element)return;
+
+		if(visible)element.classList.remove("d-none");
+		else element.classList.add("d-none");
+
+	},
 	add_waiter:function()
 	{
 		var codigo=document.querySelector("#waiter_codigo");
@@ -133,7 +142,7 @@ var views=
 		selectzn.selectedIndex=0;
 		selectcc.selectedIndex=0;
 		btncancel.click();
-		btnaction.innerHTML="Agregar";
+		btnaction.innerHTML="Guardar";
 		btnaction.classList.remove("hidden");
 		btnmodif.classList.add("hidden");
 		btnaction.setAttribute("onclick",`controller.add_datawaiter("",this)`);

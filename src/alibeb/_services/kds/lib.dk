@@ -97,33 +97,28 @@ module "lib.dk"
             ref cprod=dbr.rec(db,@res_pwd,params)
 
             respwd=@@(cprod,"$pwd")
-            if trim(pwdbefore)!="" && not(isnull(cprod))
+            pwds=pwdbefore+@@(data,"$pwd")
+            if access_movil && pwds!=""
             {
-                if access_movil && md5(pwdbefore)!=respwd && respwd!=""{do rise_error(99,"La contraseña anterior es incorrecta.")}
-            }
-           
-            new dm_kds
-            {
-                @"access_movil":access_movil
-                @"shortpool":@@(data,"#shortpool")
-            }
-            if not(access_movil)
-            {
-                do field.remove(data,"pwd")
-                dm_kds<"pwd*">:@null
-            }
-            else{dm_kds<"pwd">:md5(@@(data,"$pwd"))}
+                if not(isnull(cprod)) 
+                {
+                    if pwdbefore==""{do rise_error(500,"Debe indicar una contraseña anterior")}
+                    if md5(pwdbefore)!=respwd{do rise_error(99,"La contraseña anterior es incorrecta.")}
+                }
+                if trim(@@(data,"$pwd"))==""{do rise_error(500,"Debe indicar una contraseña")}
+                
+                new dm_kds
+                {
+                    @"access_movil":access_movil
+                    @"shortpool":@@(data,"#shortpool")
+                }
 
-            if respwd=="" && isnull(cprod)
-            {
+                do dbr.execute(db,"delete from dm_kds where cproduccion=@idcprod",params)
+                dm_kds<"pwd">:md5(@@(data,"$pwd"))
                 dm_kds<"cproduccion">:dbr.num(db,@cprod,params)
                 do dbr.insert(db,"dm_kds",dm_kds)
             }
-            else
-            {
-                do dbr.update(db,"dm_kds",dm_kds,"cproduccion=@idcprod",params)
-            }
-            
+           
         do dbr.commit(db)
         return kds_admin.get.cprods(db,params)
 

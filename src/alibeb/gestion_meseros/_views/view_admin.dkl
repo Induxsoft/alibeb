@@ -33,9 +33,13 @@ module "view_admin"
 						a(class="nav-link-ad" style="background-color: transparent; color: rgb(136, 136, 136);" onclick="design.select_propertie('access-movil',this)" id="link-access" ){"Acceso a terminal móvil"}
 						p(id="p-hidden" class="text-center fw-bold"){"Agregar nuevo"}
 						
-						div(class="")
+
+						div(class="d-flex gap-2")//btns-admin mt-admin-4
 						{
-							button(class="btn-admin" id="btnnewaiter" onclick="controller.add_waiter()"){"Nuevo"}
+							button(class="btn-admin d-none" id="btnnewaiter" onclick="controller.add_waiter()"){"Nuevo"}
+							button(class="btn-admin" id="btnaction" onclick="controller.add_datawaiter('',this)"){"Guardar"}
+							button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
+							button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
 						}
 					}
 					
@@ -109,12 +113,6 @@ module "view_admin"
 						
 					}
 					
-					div(class="d-flex gap-2")//btns-admin mt-admin-4
-					{
-						button(class="btn-admin" id="btnaction" onclick="controller.add_datawaiter('',this)"){"Agregar"}
-						button(class="btn-admin hidden" id="btnmodifi"){"Modificar"}
-						button(class="btn-admin hidden" id="btncancelar" onclick="controller.cancel_modif(this)" style="margin-left:5px"){"Cancelar"}
-					}
 				}
 
 				

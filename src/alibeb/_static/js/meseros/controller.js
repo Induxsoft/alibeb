@@ -42,6 +42,7 @@ var controller={
 	},
 	getdata_waiter:function(sys_pk)
 	{
+		views.VisibleElement("btnnewaiter");
 		var tab=document.querySelector(".tab-content");
 		var row_selected=document.querySelector("#waiter_"+sys_pk);
 		var waiters=document.querySelectorAll(".tbody-list-waiters tr");
@@ -97,6 +98,7 @@ var controller={
 		 tab.style.pointerEvents="";
 		 var btncancelpwd=document.querySelector("#btnchangepwd");
 		 btncancelpwd.click();
+		 views.VisibleElement("btnnewaiter",false);
 	},
 	modif_waiter:function(sys_pk,e)
 	{
@@ -105,10 +107,11 @@ var controller={
 	},
 	active_modif:function(sys_pk,e)
 	{
+		views.VisibleElement("btnnewaiter",false);
 		views.SetRotulo("edit");
 		var btnmodif=document.querySelector("#btnaction");
 		btnmodif.classList.remove("hidden");
-		btnmodif.innerHTML="Aceptar";
+		btnmodif.innerHTML="Guardar";
 		var cancel=document.querySelector("#btncancelar");
 		cancel.classList.remove("hidden");
 		 cancel.setAttribute("onclick",`controller.cancel_modif(this)`);
@@ -206,6 +209,7 @@ var controller={
 	},
 	cancel_modif:function(e)
 	{
+		views.VisibleElement("btnnewaiter");
 		views.SetRotulo("waiter");
 
 		var btnmodif=document.querySelector("#btnmodifi");

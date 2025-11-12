@@ -85,7 +85,11 @@ var views={
 				almcpt.value=itm.almacenpt;
 				seg_act.value=itm.shortpool;
 
-				if(access_movil){access_movil.checked=itm.access_movil??false;}
+				if(access_movil)
+				{
+					access_movil.checked=itm.access_movil??false;
+					access_movil.defaultChecked=access_movil.checked;
+				}
 
 				views.change_pwd(!(itm.access_movil??false));
 

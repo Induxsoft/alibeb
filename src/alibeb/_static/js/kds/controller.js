@@ -54,6 +54,7 @@ var controller=
 	},
 	modify:function(sys_pk,existfield=0)
 	{
+		views.VisibleElement("btnnewcprod",false);
 		views.SetRotulo("edit");
 		views.hide_controls("btnmodifi");
 		views.tab_pointer_events(true);
@@ -67,6 +68,7 @@ var controller=
 	},
 	cancel_modif:function(e)
 	{
+		views.VisibleElement("btnnewcprod");
 		views.hide_controls("btnaction,btncancelar");
 		views.tab_pointer_events();
 		views.show_controls("btnmodifi");
@@ -117,22 +119,19 @@ var controller=
 
 		if(access_movil.checked)
 		{
-			if(!access_movil.dafaultChecked && (pwd.value.trim()=="" || pwdconfirm.value.trim()==""))
+			let pwds=pwdbefore.value.trim()+pwd.value.trim()+pwdconfirm.value.trim();
+			if(!access_movil.defaultChecked || pwds!="")
 			{
-				alert("La contraseña es requerido.");
-				return;
-			}
-			
-			if(pwd.value!=pwdconfirm.value)
-			{
-				alert("La contraseña no coinciden.");
-				return;
-			}
-			
-			if((pwd.value.trim()=="" || pwdconfirm.value.trim()==""))
-			{
-				alert("La contraseña es requerido.");
-				return;
+				if((pwd.value.trim()=="" || pwdconfirm.value.trim()==""))
+				{
+					alert("2 La contraseña es requerido.");
+					return;
+				}
+				if(pwd.value!=pwdconfirm.value)
+				{
+					alert("La contraseña no coinciden.");
+					return;
+				}
 			}
 		}
 
