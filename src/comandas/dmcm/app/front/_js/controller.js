@@ -639,7 +639,7 @@ var controller=
         if(frm_ingreso_egreso.elements["descripcion"])frm_ingreso_egreso.elements["descripcion"].value="EGRESO DE CAJA";
       }
       else{this.OptionsShow(categoria,1);}
-      
+
       this._movimiento=mov;
       this.showModal("modal_ingreso_egreso");
     },
@@ -820,12 +820,15 @@ var controller=
 
         return bsModal;
     },
-    close_view:function(idview,params="")
+    close_view:function(idview,params="",_confirm=false,text="¿Esta seguro de salir de la aplicación?")
     {
+      if(_confirm && !confirm(text))return;
+
       if(idview=="login")
       {
         var uri=`${url}pos/dinner/token/?token=${token}`;
-        model.invoke_service(uri,null,function(data) {
+        model.invoke_service(uri,null,function(data) 
+        {
           token="";
         },
         function(error) {
@@ -836,6 +839,7 @@ var controller=
         params+="&dmtm_token="+token;
       if(ws!="" && idview!="vw_workspace")
         params+="&dm_scr="+ws;
+
       window.location.href="./?view="+idview+params;
     },
     root_path:"/comandas",

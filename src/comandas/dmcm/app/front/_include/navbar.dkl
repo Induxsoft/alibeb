@@ -25,11 +25,11 @@ div(class="nabvar" style="z-index:100;margin-bottom: 4.5rem;")
 				}
 				span{"#<@as_company> "}
 				#!
-				if isset("@waiter"){
+				if isset("@waiter")
+				{
 					#$
 					span(id="caption-waiter"){"#<ifstr(@token=='','Inicio de sesión',@@(@waiter,'caption'))>"}
 				}
-				
 				#$
 			}
 			div(class="#<ifstr(totalcurrent=='','hidde_control','')>" id="nav_info" style="display:flex;gap:4px;flex-wrap:wrap;flex-grow:1;")
@@ -69,8 +69,10 @@ div(class="nabvar" style="z-index:100;margin-bottom: 4.5rem;")
 				else if @module!=""
 				{
 					vw=@module
+					confirm=if(vw=="login",@true,@false)
+					
 					#$
-					button(class="btn img " style="border:none" onclick="controller.close_view('#<vw>','&idt=#<idt>');")
+					button(class="btn img " style="border:none" onclick="controller.close_view('#<vw>','&idt=#<idt>',#<confirm>);")
 					{
 						svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#FFF" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
 						{
