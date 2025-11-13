@@ -103,7 +103,7 @@ var prn_ticket=
         }
 
         if(efectivo>0)eposprn.printText(`Efectivo: $ ${views.format(efectivo,controller.decimals,".",",")}`);
-        if(tarjeta>0)eposprn.printText(`Tarjeta: $ ${views.format(tarjetacontroller.decimals,".",",")}`);
+        if(tarjeta>0)eposprn.printText(`Tarjeta: $ ${views.format(tarjeta.decimals,".",",")}`);
         if(cambio>0)eposprn.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
 
         eposprn.printText(`${data.text_footer}`);

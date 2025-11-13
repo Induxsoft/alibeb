@@ -60,13 +60,13 @@ module ""
         #$
         form(action="" method="" id="frmtarjeta" onsubmit="return false")
         {
-            div(class="mb-2 d-flex gap-2")
+            div(class="mb-2 d-flex flex-wrap gap-2")
             {
-                button(class="btn-admin" type="button" onclick="controller.showModal('modal_tarjeta')"){$"Agregar"}
-                button(class="btn-admin" type="button" onclick="controller.tarjeta.EditTarjeta()"){$"Editar"}
-                button(class="btn-admin" type="button" onclick="controller.tarjeta.DeleteTarjeta()"){$"Eliminar"}
-                span(class="flex-grow-1"){""}
-                div(class="d-flex")
+                button(class="btn-admin flex-fill flex-sm-grow-0" type="button" onclick="controller.showModal('modal_tarjeta')"){$"Agregar"}
+                button(class="btn-admin flex-fill flex-sm-grow-0" type="button" onclick="controller.tarjeta.EditTarjeta()"){$"Editar"}
+                button(class="btn-admin flex-fill flex-sm-grow-0" type="button" onclick="controller.tarjeta.DeleteTarjeta()"){$"Eliminar"}
+
+                div(class="d-flex justify-content-end flex-grow-1")
                 {
                     h6(class="fw-bold"){"Tarjeta: "}
                     h5(class="ms-2" id="cobro_lblimporte_tarjeta"){" $ 0.00"}
