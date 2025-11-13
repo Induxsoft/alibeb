@@ -45,12 +45,28 @@ var views=
             this.tajeta_logs=document.getElementById("tajeta_logs");
             this.tarjeta_btncancelar=document.getElementById("tarjeta_btncancelar");
             this.cobro_lblimporte_tarjeta=document.getElementById("cobro_lblimporte_tarjeta");
+            this.modal_tarjeta=document.getElementById("modal_tarjeta");
+            
+            if(this.modal_tarjeta)
+            {
+                  this.modal_tarjeta.addEventListener("shown.bs.modal", (e) => {
+                        const importe = e.target.querySelector("#importe");
+                        if (Number(importe.value) == 0)
+                        {
+                              importe.value = this.efectivo_importe.value;
+                              e.target.querySelector('#numero')?.focus();
+                        }
+                  });
+                  this.modal_tarjeta.addEventListener("hidden.bs.modal", (e) => {
+                        const form = e.target.querySelector("form");
+                        form?.reset();
+                  });
+            }
             if(this.tarjeta_importe)this.tarjeta_importe.addEventListener("keydown",(event)=>{if(event.key=="Enter")this.tarjeta_btncobrar.focus();});
             if(this.propina)this.propina.addEventListener("keyup",()=>{controller.SetTotal();});
             if(this.tarjeta_btncancelar)this.tarjeta_btncancelar.addEventListener("click",()=>{controller.tarjeta.Cancelar();})
             if(this.efectivo_importe)this.efectivo_importe.addEventListener("keyup",()=>{controller.SetTotal(false,true);})
             if(this.tarjeta_btncobrar)this.tarjeta_btncobrar.addEventListener("click",()=>{controller.tarjeta.cobrar()});
-            
             if(this.txttable)this.txttable.addEventListener("change",()=>{views.lista.classList.add("d-none");});
             //modals abrir mesa
             this.input = document.querySelector('.combo-input');

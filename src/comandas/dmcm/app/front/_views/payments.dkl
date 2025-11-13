@@ -121,7 +121,7 @@ module ""
                     }
                 }
                 
-                div(class="d-flex gap-2 flex-wrap mt-2")
+                div(class="d-flex gap-2 flex-wrap my-2")
                 {
                     div(class="d-flex gap-2 align-items-center")
                     {
@@ -139,16 +139,15 @@ module ""
                     
                 }
 
-                div(class="card mt-2" id="")
+                div(class="card p-0 border-0" id="")
                 {
                     // div(class="card-header")
                     // {
                     //     b{"Métodos de pago"}
                     // }
-                    div(class="card-body pt-0 pb-0")
+                    div(class="card-body p-0 p-sm-2 p-md-3")
                     {
-
-                        div(class="card mt-2")
+                        div(class="card mb-3")
                         {
                             div(class="card-header")
                             {

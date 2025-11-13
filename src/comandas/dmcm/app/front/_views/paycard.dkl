@@ -77,8 +77,9 @@ module ""
             "auto-confirm"="true"
             "row-height"="1.2rem"
             "control-styles"="
-                tr th { font-size:.9rem; font-weight:500 !important; outline:none !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
+                tr th { font-size:.9rem; font-weight:500 !important; outline:none !important; }
                 tr td { font-size:.8rem; }
+                th,td { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
                 #__table_input { font-size:unset !important; }
             ")
             {
@@ -202,7 +203,7 @@ module ""
         #!
     }
     #$
-    div(class="card w-100 mt-4")
+    div(class="card")
     {
         script(src="/_js/induxsoft.controls.editable.js"){""}
     

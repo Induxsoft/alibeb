@@ -501,7 +501,7 @@ var controller=
         let row=this.tbl_tarjetas.DataArray[index];
         for(let key in row)
         {
-          let element=document.getElementsByName(key);
+          let element=document.getElementsByName(key)?.[0];
           if(!element)continue;
 
           element.value=row[key];
