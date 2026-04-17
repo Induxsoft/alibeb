@@ -103,6 +103,27 @@ model "alibeb"
         @"shortpool" int
     }
     
+    entity "dmns_destino":"TableModel"
+    {
+        @"nombre" string(80) required
+        @"telefono" string(15) unique required
+        @"direccion" memo
+        @"longitud" decimal(8,3)
+        @"latitud" decimal(8,3)
+        @"Notas" memo
+    }
+
+    entity "dmns_entrega":"TableModel"
+    {
+        @"destino" ref:"dmns_destino" required
+        @"venta" ref:"venta" required
+        
+        index "u_entrega" unique
+        {
+            field "destino"
+            field "venta"
+        }
+    }
     /* uod.dmnszona */
     entity "dmnszona" : "TableModel"
     {
