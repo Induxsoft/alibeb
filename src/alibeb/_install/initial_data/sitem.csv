@@ -25,3 +25,5 @@ CA61,Agreagar configuración prn,alibeb.config_prn_cp
 CA62,Editar configuración prn,alibeb.config_prn_cp
 CA63,Eliminar configuración prn,alibeb.config_prn_cp
 CA70,Acceder a la configuración de impresión del dispositivo,alibeb
+CA71,Cancelar cuenta,alibeb
+CA72,Descuento por cortesía,alibeb
