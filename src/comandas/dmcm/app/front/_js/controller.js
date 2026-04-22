@@ -723,7 +723,8 @@ var controller=
     },
     get_tables:function() 
     {
-      var uri=`${url}pos/dinner/tables/?waiter=${waiter_key}&cc=${$cc}&zone=${zone}`;
+      let cuentas=document.getElementById("cuentas");
+      var uri=`${url}pos/dinner/tables/?waiter=${waiter_key}&cc=${$cc}&zone=${zone}&cuentas=${cuentas?.value??""}`;
       model.invoke_service(uri,null,function(data) 
       {
         views.print_mesas(data);
@@ -778,6 +779,7 @@ var controller=
       model.invoke_service(uri,null,function(data) 
       {
         views.print_ordenes(data);
+        views.PaindItem(data);
       },
       function(error) {
         alert(error.message);
@@ -933,13 +935,18 @@ var controller=
       },"PATCH",false);
 
     },
-    close_table:function(id_table)
+    close_table:function(id_table,url_redir="")
     {
       var uri=`${url}pos/dinner/tables/${id_table}`;
       var data={action:"close"}
 
       model.invoke_service(uri,data,function(data) 
       {
+        if(url_redir)
+        {
+          window.location.href=url_redir;
+          return;
+        }
         views.print_ordenes(data);
         views.PaindItem(data);
         controller.PrinTicket(data.printer);
@@ -1005,6 +1012,11 @@ var controller=
       {
         var view=view_first;
         var id_table=data.sys_pk;
+
+        if(data.servicio)
+        {
+          if(data.servicio=="FF" || data.servicio=="DS")view="cobrar";
+        }
         //se comento para que despues de comandar se redirija a la vista de las mesas cuando sea en movil
         // if(controller.ismobile())
         // {
@@ -1016,7 +1028,7 @@ var controller=
         //   controller.open_view(view,params);
         //   return;
         // }
-        controller.open_view(view,"&idt="+data.sys_pk);//
+        controller.open_view(view,"&idt="+data.sys_pk);
       },
       function(error) {
         alert(error.message);
@@ -1371,19 +1383,21 @@ var controller=
         ,function(error){alert(error.message);}
         ,"GET",false);
     },
-    AccessConfig(user,pwd,element=null,{url_redir="",callback=null})
+    AccessConfig(user,pwd,element=null,{url_redir="",callback=null,action=""})
     {
       var uri=url+"pos/dinner/acces-config/?access=true";
       var data=
       {
         user:user,
-        pwd:pwd
+        pwd:pwd,
+        sitem:action
       }
       
       if(element)element.classList.add("disabled");
       model.invoke_service(uri,data,
       function(data)
       {
+        if(element)element.classList.remove("disabled");
         if(callback)callback(data);
         if(url_redir)window.location.href=url_redir;
       }
@@ -1457,5 +1471,141 @@ var controller=
     {
       if (text.length < length) return text;
       return text. substring(0,length);
+    },
+    showDialogDS()
+    {
+      views.showDialogDS();
+    },
+    fastFoot()
+    {
+      var uri=`${url}pos/dinner/tables/?fastfoot=1`;
+      var data=
+      {
+        table:"",
+        notes:"",
+        num_people:1,
+        waiter:waiter_key,//"#<@@(@waiter,'key')>",
+        cliente:"#<@code_publico_general>",
+        cc:$cc,//"#<@@(@waiter,'cc')>",
+        format:"#<@cadenaformato>"
+      }
+      model.invoke_service(uri,data,function(data) 
+      {
+        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,2,".",","));
+      },
+      function(error) {
+        alert(error.message);
+      },"POST",false);
+    },
+    homeDelivery()
+    {
+      var uri=`${url}pos/dinner/tables/?homedelivery=1`;
+      var data=views.getDataForm();
+
+      if(!data)return;
+      
+      data["num_people"]=1;
+      data["waiter"]=waiter_key;
+      data["cliente"]="#<@code_publico_general>";
+      data["cc"]=$cc;
+      data["format"]="#<@cadenaformato>";
+
+      model.invoke_service(uri,data,function(data) 
+      {
+        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,2,".",","));
+      },
+      function(error) 
+      {
+        alert(error.message);
+      },"POST",false);
+    },
+    cancelAccount(id_table)
+    {
+      if(!confirm("¿Está de realizar el proceso?"))return;
+
+      var uri=`${url}pos/dinner/tables/${id_table}/`;
+      var data={action:"cancel"}
+
+      model.invoke_service(uri,data,function(data) 
+      {
+        views.clear_detalle();
+        controller.resfresh_tables();
+      },
+      function(error) 
+      {
+        alert(error.message);
+      },"PATCH",false);
+    },
+    cortesia(id_table)
+    {
+      var uri=`${url}pos/dinner/tables/${id_table}/`;
+
+      let percentaje_cortesia=document.getElementById("percentaje_cortesia");
+
+      var data=
+      {
+        action:"cortesia",
+        percentaje_cortesia:Number(percentaje_cortesia.value??0)
+      }
+
+      views.ActiveAnimation(true);
+
+      model.invoke_service(uri,data,function(data) 
+      {
+        percentaje_cortesia.value=0;
+        controller.hide_modal("#modal-cortesia");
+
+        if(data.reference) //si existe fue cubierta en su totalidd
+        {
+          controller.PrinTicket(data);
+          views.clear_detalle();
+          controller.resfresh_tables();
+        }
+        else
+        {
+          controller.get_table(id_table);
+        }
+        
+        views.ActiveAnimation(false);
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.ActiveAnimation(false);
+      },"PATCH",false);
+    },
+    actionAccount(id_table,action,id_form="")
+    {
+      var uri=`${url}pos/dinner/tables/${id_table}/`;
+
+      if(id_form)
+      {
+        var data=views.getDataForm(id_form);
+        if(!data)return;
+
+        data["action"]=action;
+      }
+      else
+      {
+        var data={action:action}
+      }
+      if(!confirm("¿Está seguro de realizar el proceso?"))return;
+
+      views.ActiveAnimation(true);
+
+      model.invoke_service(uri,data,function(data) 
+      {
+        views.clear_detalle();
+        controller.get_table(id_table);
+        
+        if(action=="enviar" || action=="change-dealer")controller.hide_modal("#modal-select-repartidor");
+        
+        views.ActiveAnimation(false);
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.ActiveAnimation(false);
+      },"PATCH",false);
     }
 }

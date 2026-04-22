@@ -19,14 +19,83 @@ module "terminal de mesero"
 							svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"){path("fill-rule"="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z")}
 							span(class="vb m-width"){"Abrir mesa"}
 						}
-						button(class="btn img mr-2 " onclick="controller.resfresh_tables();")
+						button(class="btn btn-admin img mr-2 " onclick="controller.fastFoot();")
 						{
-							svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"){
-								path("fill-rule"="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z")
-								path(d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z")
-							}
-							span(class="vb m-width"){"Actualizar"}
+							// img(src="/$/img/comida-rapida.png" width="20" height="20" style="display: inline !important;")
+							$'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+								<!-- Pan -->
+								<rect x="80" y="300" width="320" height="120" rx="40"/>
+								
+								<!-- Carne -->
+								<path d="M100 260 Q160 200 220 260 Q280 200 340 260 L340 300 L100 300 Z"/>
+
+								<!-- Pan superior -->
+								<rect x="80" y="180" width="320" height="120" rx="60"/>
+
+								<!-- Semillas -->
+								<circle cx="140" cy="220" r="6"/>
+								<circle cx="180" cy="240" r="6"/>
+								<circle cx="220" cy="220" r="6"/>
+
+								<!-- Cronómetro -->
+								<circle cx="320" cy="180" r="120"/>
+								<circle cx="320" cy="180" r="90"/>
+
+								<!-- Botón arriba -->
+								<rect x="290" y="40" width="60" height="40" rx="10"/>
+
+								<!-- Patas -->
+								<line x1="240" y1="80" x2="220" y2="60"/>
+								<line x1="400" y1="80" x2="420" y2="60"/>
+
+								<!-- Aguja -->
+								<line x1="320" y1="180" x2="320" y2="110"/>
+								<line x1="320" y1="180" x2="380" y2="180"/>
+
+								<!-- Marca curva -->
+								<path d="M260 240 A80 80 0 0 0 380 260"/>
+								</svg>'
+							span(class="vb m-width"){"Comida rápida"}
 						}
+						button(class="btn img mr-2 " onclick="controller.showDialogDS();")
+						{
+							// img(src="/$/img/servicio-a-domicilio.png" width="20" height="20" style="display: inline !important;")
+							$'<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+										<!-- Casa -->
+										<path d="M150 110 L200 70 L250 110"/>
+										<rect x="170" y="110" width="60" height="60" rx="8"/>
+
+										<!-- Puerta -->
+										<rect x="195" y="135" width="15" height="35"/>
+
+										<!-- Moto -->
+										<!-- Ruedas -->
+										<circle cx="60" cy="180" r="25"/>
+										<circle cx="130" cy="180" r="25"/>
+
+										<!-- Base -->
+										<line x1="35" y1="180" x2="105" y2="180"/>
+										<line x1="85" y1="140" x2="105" y2="180"/>
+
+										<!-- Asiento -->
+										<rect x="70" y="120" width="50" height="25" rx="6"/>
+
+										<!-- Caja delivery -->
+										<rect x="40" y="110" width="35" height="30" rx="5"/>
+
+										<!-- Manubrio -->
+										<line x1="120" y1="130" x2="140" y2="115"/>
+										<line x1="140" y1="115" x2="155" y2="115"/>
+
+										</svg>'
+							// svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"){
+							// 	path("fill-rule"="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z")
+							// 	path(d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z")
+							// }
+							span(class="vb m-width"){"Servicio a domicilio"}
+						}
+						
 						a(href="#<preserveQSParams('./?view=corte-caja')>" class="btn img mr-2 only-cashier d-none")
 						{
 							$'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
@@ -60,8 +129,35 @@ module "terminal de mesero"
 							</svg>'
 							span(class="vb m-width"){"Arqueo"}
 						}
-
+						button(class="btn img mr-2 " onclick="controller.resfresh_tables();")
+						{
+							svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"){
+								path("fill-rule"="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z")
+								path(d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z")
+							}
+							span(class="vb m-width"){"Actualizar"}
+						}
 						span(class="flex-grow-1"){""}
+
+						div(class="input-group w-auto")
+						{
+							select(class="form-select form-select-sm" name="cuentas" id="cuentas" onchange="controller.resfresh_tables()")
+							{
+								option(value="*"){"Todas las cuentas"}
+								option(value="sm"){"Servicio a la mesa"}
+								option(value="ff"){"Comida rápida"}
+								option(value="ds"){"A domicilio — todas"}
+								option(value="ds-enviar"){"A domicilio — por enviar"}
+								option(value="ds-reparto"){"A domicilio — en reparto"}
+								option(value="ds-entregada"){"A domicilio — entregadas"}
+							}
+							button(class="input-group-text p-2 border" onclick="controller.resfresh_tables()")
+							{
+								$'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel" viewBox="0 0 16 16">
+								<path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z"/>
+								</svg>'
+							}
+						}
 						button(class="btn " id="btn-settings" title="Configuración")
 						{
 							$'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
@@ -126,6 +222,7 @@ module "terminal de mesero"
 		
 
 	}
+	script(src="/_js/induxsoft.controls.js"){""}
 	script
 	{
 		$'

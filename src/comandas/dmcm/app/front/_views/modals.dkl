@@ -201,3 +201,221 @@
                 }
             }
         }
+
+//servicio a domicilio
+div(class="modal fade " id="modal-home-delivery" tabindex="-1" "data-bs-backdrop"="false" "data-bs-keyboard"="false") //"aria-hidden"="true"
+{
+    div(class="modal-dialog modal-lg modal-dialog-centered mx-auto") // modal-dialog-scrollable modal-dialog-centered
+    {
+        div(class="modal-content rounded-0 p-0 border shadow")
+        {
+            div(class="modal-header p-3")
+            {
+                h3(class="modal-title fw-bold"){$"Servicio a domicilio"}
+                button(type="button" class="btn-close btn-sm" "data-bs-dismiss"="modal" "aria-label"="Close"){$""}
+            }
+            div(class="modal-body py-0 px-2 pt-2" )
+            {
+                h5{"Buscar cliente:"}
+                "input-key"(
+                    name="cliente_ds" 
+                    id="cliente_ds" 
+                    "data-key"="sys_pk" 
+                    "data-search"="codigo" 
+                    "data-text"="nombre" 
+                    "data-source"="/dmcm/pos/dinner/clientes/?admin=1&s=@search" 
+                    "data-value"="{}" 
+                    columns="codigo,nombre,telefonos,direccion" 
+                    colcaptions="Código,Nombre,Telefonos,Dirección"){$""}
+                hr{}
+                form(action="." method="POST" id="form_home_delivery")
+                {
+                    div(class="row")
+                    {
+                        div(class="col-md-6")
+                        {
+                            label(class="fw-bold" "for"=""){"Nombre completo:"}
+                            input(class="input-login" type="" name="nombre" required="")
+                        }
+                        div(class="col-md-6")
+                        {
+                            label(class="fw-bold" "for"=""){"Teléfono:"}
+                            input(class="input-login" type="tel" name="telefono" required="")
+                        }
+
+                        div(class="col-md-12")
+                        {
+                            label(class="fw-bold" "for"=""){"Dirección:"}
+                            textarea(class="input-login" name="direccion" id="direccion" rows="3"){""}
+                        }
+                        div(class="col-md-12")
+                        {
+                            label(class="fw-bold" "for"=""){"Notas:"}
+                            textarea(class="input-login" name="notas" id="notas" rows="3"){""}
+                        }
+                    }
+                }
+            }
+            div(class="modal-footer")
+            {
+                button(class="btn-admin" type="button" onclick="controller.homeDelivery()"){$"Aceptar"}
+            }
+        }
+    }
+}
+
+ //*******************modal indicaciones****************************************
+div(id="modal-recetas-variables" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+{
+    div(class="d-flex" id="btn_close_mdl_prods_vars" )//onclick="controller.hide_modal(\'#modal-recetas-variables\');"
+    {
+        div(class="just-cont-center d-flex flex-grow-1" )
+        {
+            h4(id=""){$"Variables"}br{}br{}
+        }
+        svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        {
+            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        }
+    }
+    
+    div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
+    {
+        div(class="card")
+        {
+            div(class="card-body")
+            {
+                $'<div class="header" id="grupos"></div>
+
+                <div class="content">
+
+                    <div class="productos" id="productos"></div>
+
+                    <div class="tabla">
+                        <table class="table-var" id="tabla">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+
+                        
+                    </div>
+                </div>'
+            }
+        }
+    }
+    div(class="footer text-end")
+    {
+        button(class="blue_button" id="btn_acept_prods_vars" onclick=""){"Aceptar"}
+        // button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-recetas-variables\')"){"Cancelar"}
+    }
+}
+
+ //*******************modal cortesía****************************************
+div(id="modal-cortesia" class="show_modal_center open-table hidde_control modal-responsive modal-sm" style="top:15% !important")
+{
+    div(class="d-flex" onclick="controller.hide_modal(\'#modal-cortesia\');")
+    {
+        div(class="just-cont-center d-flex flex-grow-1" )
+        {
+            h4(id=""){$"Cortesía"}br{}br{}
+        }
+        svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        {
+            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        }
+    }
+    
+    div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
+    {
+        div(class="card")
+        {
+            div(class="card-body")
+            {
+                form(action="." method="POST" id="frm_cortesia")
+                {
+                    label(class="" "for"=""){"Porcentaje de cortesía:"}
+
+                    div(class="d-flex gap-2 align-items-center")
+                    {
+                        input(class="form-control" type="number" name="percentaje_cortesia" value="0" id="percentaje_cortesia" placeholder="0%")
+                        label(class="fw-bold" "for"=""){"%"}
+                    }
+                    
+
+                    br{}
+
+                    div(class="d-flex flex-wrap")
+                    {
+                        button(class="btn border" type="button" onclick="views.setPercentaje(100)"){$"100%"}
+                        button(class="btn border" type="button" onclick="views.setPercentaje(50)"){$"50%"}
+                        button(class="btn border" type="button" onclick="views.setPercentaje(30)"){$"30%"}
+                        button(class="btn border" type="button" onclick="views.setPercentaje(20)"){$"20%"}
+                        button(class="btn border" type="button" onclick="views.setPercentaje(10)"){$"10%"}
+                        button(class="btn border" type="button" onclick="views.setPercentaje(0)"){$"0%"}
+                        button(class="btn border" type="button" onclick="views.setPercentaje(100)"){$"Toda la cuenta"}
+                    }
+                    br{}
+                    small(style="color:dimgray;"){"Nota: el importe no incluye impuestos"}
+                }
+            }
+        }
+    }
+    div(class="footer text-end")
+    {
+        button(class="blue_button" id="btn-cortesia" onclick=""){"Aceptar"}
+        button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-cortesia\')"){"Cancelar"}
+    }
+}
+
+ //*******************modal seleccionar repartidor****************************************
+div(id="modal-select-repartidor" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+{
+    div(class="d-flex" onclick="controller.hide_modal(\'#modal-select-repartidor\');")
+    {
+        div(class="just-cont-center d-flex flex-grow-1" )
+        {
+            h4(id=""){$"Asignar repartidor"}br{}br{}
+        }
+        svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        {
+            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        }
+    }
+    
+    div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
+    {
+        div(class="card")
+        {
+            div(class="card-body")
+            {
+                form(action="." method="POST" id="frm_repartidor")
+                {
+                    label(class="" "for"=""){"Reapartidor:"}
+
+                    "input-key"(
+                    name="repartidor" 
+                    id="repartidor" 
+                    "data-key"="sys_pk" 
+                    "data-search"="codigo" 
+                    "data-text"="nombre" 
+                    "data-source"="/dmcm/pos/dinner/repartidores/?admin=1&s=@search" 
+                    "data-value"="{}" 
+                    required="true"
+                    columns="codigo,nombre" 
+                    colcaptions="Código,Nombre"){$""}
+                }
+            }
+        }
+    }
+    div(class="footer text-end")
+    {
+        button(class="blue_button" id="btn-repartidor" onclick=""){"Aceptar"}
+        button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
+    }
+}
+

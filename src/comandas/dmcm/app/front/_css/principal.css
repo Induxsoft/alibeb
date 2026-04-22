@@ -248,6 +248,11 @@ body
   background-color: var(--purple) !important; /* Green */
   color: white !important;
 }
+
+.svg-white:hover
+{
+  fill: white !important;
+}
 .module-change-pwd
 {
   padding: 10px;
@@ -1567,4 +1572,77 @@ select
     max-width: 85%;
     padding: 3rem 1.5rem;
   }
+}
+
+
+/* variables */
+.container {
+    width: 800px;
+    border: 1px solid #999;
+}
+
+.header {
+    background: orange;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px;
+    border: 1px solid #333;
+    cursor: pointer;
+    background: #ddd;
+}
+
+.content {
+    display: flex;
+}
+
+.productos {
+    width: 50%;
+    padding: 10px;
+    background: #e8ddb5;
+}
+
+.tabla {
+    width: 50%;
+    padding: 10px;
+    background: #eee;
+}
+
+.table-var table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-var table td, th {
+    border: 1px solid #aaa;
+    padding: 5px;
+    text-align: center;
+}
+
+.controls {
+    margin-top: 10px;
+}
+
+
+/* btn grupos */
+.btn-grupo {
+    padding: 10px;
+    border: 1px solid #333;
+    background: #ddd;
+    cursor: pointer;
+}
+
+/* efecto hover */
+.btn-grupo:hover {
+      background-color: var(--purple) !important;
+      color: white !important;
+}
+
+/* estado seleccionado */
+.btn-grupo.activo {
+    background-color: var(--purple) !important;
+    color: white !important;
 }

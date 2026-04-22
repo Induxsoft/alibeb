@@ -30,7 +30,9 @@ module "lista de consultas"
     
     @prodc="select cp.sys_pk,cp.codigo from cproduccion cp where cp.codigo=@code"
 
-    @dataventa="select v.sys_pk,v.dmnsmesa,v.referencia from venta v where v.sys_guid=@id_table"
+    @dataventa="select v.sys_pk,v.dmnsmesa,v.referencia,
+    if(ifnull(sys_info,'')='','SM',sys_info)servicio 
+    from venta v where v.sys_guid=@id_table"
 
     @dataorden="select importe from orden where iventa=@sys_pk"
     @datadorden="select sys_pk from dorden where sys_guid=@sys_guid"
@@ -93,9 +95,58 @@ module "lista de consultas"
                       where (ifnull(@zone,'')='' or z.id=@zone) ;"
 
     @countdorden="SELECT COUNT(d.fk_orden_detalle) FROM dorden d WHERE d.fk_orden_detalle=@pkorden"
-    @list_mesa_waiter_cc="select qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
-                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'icc',qv.iagente as 'ag'
-                            from qventasserviciomesa qv "
+    @list_mesa_waiter_cc="select ifnull(qv.sys_info,'SM') as service,qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.statusentrega as statusentrega,qv.dmnspersonas as 'occupied_seats',
+                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'icc',qv.iagente as 'ag',
+                            concat_ws(' - ',r.codigo,r.nombre)repartidor
+                            from (
+                                    SELECT `venta`.`sys_pk` AS `Sys_PK`,`venta`.`sys_timestamp` AS `Sys_TimeStamp`,`venta`.`sys_guid` AS `Sys_GUID`,
+                                    `venta`.`sys_dtcreated` AS `Sys_DTCreated`,`venta`.`sys_user` AS `Sys_User`,`venta`.`sys_lastuser` AS `Sys_LastUser`,
+                                    `venta`.`sys_exported` AS `Sys_Exported`,`venta`.`sys_dtexported` AS `Sys_DTExported`,`venta`.`sys_info` AS `Sys_Info`,`venta`.`auditado` AS `Auditado`,`venta`.`contabilizado` AS `Contabilizado`,`venta`.`descuento1` AS `Descuento1`,`venta`.`descuento2` AS `Descuento2`,`venta`.`dmnsmesa` AS `dmnsMesa`,`venta`.`dmnsnota` AS `dmnsNota`,`venta`.`dmnspersonas` AS `dmnsPersonas`,`venta`.`documento` AS `Documento`,`venta`.`domicilioentrega` AS `DomicilioEntrega`,`venta`.`fecha` AS `Fecha`,`venta`.`fembarque` AS `FEmbarque`,`venta`.`fentrega` AS `FEntrega`,`venta`.`fliquidacion` AS `FLiquidacion`,`venta`.`formapago` AS `FormaPago`,`venta`.`fultimocobro` AS `FUltimoCobro`,`venta`.`importeadicional` AS `ImporteAdicional`,`venta`.`impuesto1` AS `Impuesto1`,`venta`.`impuesto2` AS `Impuesto2`,`venta`.`impuesto3` AS `Impuesto3`,`venta`.`impuesto4` AS `Impuesto4`,`venta`.`notas` AS `Notas`,`venta`.`partida` AS `Partida`,`venta`.`pcomision` AS `PComision`,`venta`.`poliza` AS `Poliza`,`venta`.`referencia` AS `Referencia`,`venta`.`statusadministrativo` AS `StatusAdministrativo`,`venta`.`statusentrega` AS `StatusEntrega`,`venta`.`statusfacturacion` AS `StatusFacturacion`,`venta`.`statusfinanciero` AS `StatusFinanciero`,`venta`.`subtotal` AS `Subtotal`,`venta`.`tipocambio` AS `TipoCambio`,`venta`.`tipodomicilio` AS `TipoDomicilio`,`venta`.`txtguia` AS `txtGuia`,`venta`.`vencimiento` AS `Vencimiento`,`venta`.`aplicadoa` AS `AplicadoA`,`venta`.`iagente` AS `IAgente`,`venta`.`icaja` AS `ICaja`,`venta`.`icconsumo` AS `ICConsumo`,`venta`.`icliente` AS `ICliente`,`venta`.`icorte` AS `ICorte`,`venta`.`idivisa` AS `IDivisa`,`venta`.`ifolio` AS `IFolio`,`venta`.`iguia` AS `IGuia`,`venta`.`imovcaja` AS `IMovCaja`,`venta`.`iporteador` AS `IPorteador`,`venta`.`irepartidor` AS `IRepartidor`,`venta`.`uf_color` AS `uf_Color`,`venta`.`sys_recver` AS `sys_recver`,`venta`.`sys_deleted` AS `sys_deleted`,`venta`.`sys_lock` AS `sys_lock`,((((((`venta`.`subtotal` - `venta`.`descuento1`) - `venta`.`descuento2`) + `venta`.`impuesto1`) + `venta`.`impuesto2`) + `venta`.`impuesto3`) + `venta`.`impuesto4`) AS `Total`
+                                    FROM `venta`
+                                    
+                                    WHERE 
+                                        (
+                                            --  CUANDO ES DS → aplicar lógica de estados
+                                            venta.sys_info = 'DS'
+                                            AND (
+                                                -- ABIERTA
+                                                (venta.statusadministrativo = 1 AND venta.statusentrega = 0)
+
+                                                OR
+
+                                                -- CERRADA
+                                                (venta.statusadministrativo = 2 AND venta.statusentrega = 0)
+
+                                                OR
+
+                                                -- ENVIADA NO COBRADA
+                                                (venta.statusadministrativo = 2 AND venta.statusentrega = 1)
+
+                                                OR
+
+                                                -- COBRADA SIN ENVIAR
+                                                (venta.statusadministrativo = 3 AND (venta.statusentrega = 1 OR venta.statusentrega = 0))
+
+                                                OR
+
+                                                -- ENTREGADA SIN COBRAR
+                                                (venta.statusadministrativo = 2 AND venta.statusentrega = 3)
+                                            )
+                                        )
+
+                                        OR
+
+                                        (
+                                            --  CUANDO NO ES DS → lógica original
+                                            ifnull(venta.sys_info,'') <> 'DS'
+                                            AND venta.statusadministrativo not in(3,99)
+                                            AND venta.imovcaja IS NULL
+                                        )
+
+                                        AND venta.dmnsmesa <> ''
+                                        AND venta.dmnsmesa IS NOT NULL
+                            ) qv 
+                            LEFT JOIN repartidor r ON qv.irepartidor=r.sys_pk"
 
     @data_mesa="select
         qv.dmnsmesa as 'code',
@@ -144,15 +195,95 @@ module "lista de consultas"
           qv.icorte,
           trim(qv.fecha) as str_fecha,
           qv.fecha,
-          qv.sys_dtcreated
+          qv.sys_dtcreated,
+        ifnull(qv.sys_info,'') as service,
+        concat_ws(' - ',r.codigo,r.nombre)repartidor
     from
-        qventasserviciomesa qv
+        (
+            select
+                `venta`.`sys_pk` AS `Sys_PK`,
+                `venta`.`sys_timestamp` AS `Sys_TimeStamp`,
+                `venta`.`sys_guid` AS `Sys_GUID`,
+                `venta`.`sys_dtcreated` AS `Sys_DTCreated`,
+                `venta`.`sys_user` AS `Sys_User`,
+                `venta`.`sys_lastuser` AS `Sys_LastUser`,
+                `venta`.`sys_exported` AS `Sys_Exported`,
+                `venta`.`sys_dtexported` AS `Sys_DTExported`,
+                `venta`.`sys_info` AS `Sys_Info`,
+                `venta`.`auditado` AS `Auditado`,
+                `venta`.`contabilizado` AS `Contabilizado`,
+                `venta`.`descuento1` AS `Descuento1`,
+                `venta`.`descuento2` AS `Descuento2`,
+                `venta`.`dmnsmesa` AS `dmnsMesa`,
+                `venta`.`dmnsnota` AS `dmnsNota`,
+                `venta`.`dmnspersonas` AS `dmnsPersonas`,
+                `venta`.`documento` AS `Documento`,
+                `venta`.`domicilioentrega` AS `DomicilioEntrega`,
+                `venta`.`fecha` AS `Fecha`,
+                `venta`.`fembarque` AS `FEmbarque`,
+                `venta`.`fentrega` AS `FEntrega`,
+                `venta`.`fliquidacion` AS `FLiquidacion`,
+                `venta`.`formapago` AS `FormaPago`,
+                `venta`.`fultimocobro` AS `FUltimoCobro`,
+                `venta`.`importeadicional` AS `ImporteAdicional`,
+                `venta`.`impuesto1` AS `Impuesto1`,
+                `venta`.`impuesto2` AS `Impuesto2`,
+                `venta`.`impuesto3` AS `Impuesto3`,
+                `venta`.`impuesto4` AS `Impuesto4`,
+                `venta`.`notas` AS `Notas`,
+                `venta`.`partida` AS `Partida`,
+                `venta`.`pcomision` AS `PComision`,
+                `venta`.`poliza` AS `Poliza`,
+                `venta`.`referencia` AS `Referencia`,
+                `venta`.`statusadministrativo` AS `StatusAdministrativo`,
+                `venta`.`statusentrega` AS `StatusEntrega`,
+                `venta`.`statusfacturacion` AS `StatusFacturacion`,
+                `venta`.`statusfinanciero` AS `StatusFinanciero`,
+                `venta`.`subtotal` AS `Subtotal`,
+                `venta`.`tipocambio` AS `TipoCambio`,
+                `venta`.`tipodomicilio` AS `TipoDomicilio`,
+                `venta`.`txtguia` AS `txtGuia`,
+                `venta`.`vencimiento` AS `Vencimiento`,
+                `venta`.`aplicadoa` AS `AplicadoA`,
+                `venta`.`iagente` AS `IAgente`,
+                `venta`.`icaja` AS `ICaja`,
+                `venta`.`icconsumo` AS `ICConsumo`,
+                `venta`.`icliente` AS `ICliente`,
+                `venta`.`icorte` AS `ICorte`,
+                `venta`.`idivisa` AS `IDivisa`,
+                `venta`.`ifolio` AS `IFolio`,
+                `venta`.`iguia` AS `IGuia`,
+                `venta`.`imovcaja` AS `IMovCaja`,
+                `venta`.`iporteador` AS `IPorteador`,
+                `venta`.`irepartidor` AS `IRepartidor`,
+                `venta`.`uf_color` AS `uf_Color`,
+                `venta`.`sys_recver` AS `sys_recver`,
+                `venta`.`sys_deleted` AS `sys_deleted`,
+                `venta`.`sys_lock` AS `sys_lock`,
+            (
+                    (
+                        (
+                            (
+                                (
+                                    (`venta`.`subtotal` - `venta`.`descuento1`) - `venta`.`descuento2`
+                                ) + `venta`.`impuesto1`
+                            ) + `venta`.`impuesto2`
+                        ) + `venta`.`impuesto3`
+                    ) + `venta`.`impuesto4`
+                ) AS `Total`
+            from
+                `venta`
+            where
+                `venta`.`dmnsmesa` <> ''
+                and (`venta`.`dmnsmesa` is not null)
+        ) qv
         left join cstatusadministrativos sc on qv.statusadministrativo=sc.id
         left join cstatusfacturacion sf on qv.statusfacturacion=sf.id
         left join cstatusentrega se on qv.statusentrega=se.id
         left join cstatusfinancieros csf on qv.statusfinanciero=csf.id
+        LEFT JOIN repartidor r ON qv.irepartidor=r.sys_pk
         where
-            qv.sys_pk = @id_table;"
+            qv.sys_pk = @id_table;" // qventasserviciomesa
 
 
     @_list_dorden="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 

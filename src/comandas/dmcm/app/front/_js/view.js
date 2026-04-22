@@ -4,6 +4,7 @@ var list_orders=[];
 var list_requireds=[];
 var list_adds_dmns={};
 
+
 var views=
 {
       table_selected:0,
@@ -96,23 +97,62 @@ var views=
             this.miDialogoLogin=document.getElementById("miDialogoLogin");
             this.txt_user=document.getElementById("usuario");
             this.txt_pwd=document.getElementById("clave");
-            if(this.btn_login_config)this.btn_login_config.addEventListener("click",()=>this.SubmitDialog());
-            if(this.btn_settings)this.btn_settings.addEventListener("click",()=>this.ShowDialog());
 
+            this.login_action="";
+            if(this.btn_login_config)this.btn_login_config.addEventListener("click",()=>this.SubmitDialog(null,this.login_action));
+            if(this.btn_settings)this.btn_settings.addEventListener("click",()=>
+            {
+                  this.login_action="";
+                  this.ShowDialog();
+            });
+
+            //servicio a domicilio
+            this.cliente_ds=document.getElementById("cliente_ds");
+            if(this.cliente_ds)this.cliente_ds.addEventListener("change",()=>{this.setDataDS(this.cliente_ds.getValue())});
+
+            this.btn_show_cortesia=document.getElementById("btn-show-cortesia");
+            if(this.btn_show_cortesia)this.btn_show_cortesia.addEventListener("click",()=>
+            {
+                  this.login_action="cortesia";
+                  this.ShowDialog();
+            });
+
+            this.btn_cancelar=document.getElementById("btn-cancelar");
+            if(this.btn_cancelar)this.btn_cancelar.addEventListener("click",()=>
+            {
+                  this.login_action="cancelar";
+                  this.ShowDialog();
+            });
       },
-      ShowDialog()
+      ShowDialog(iddialog="")
       {
-            if(!this.miDialogoLogin)return;
-            this.txt_user.value="";
-            this.txt_pwd.value="";
-            this.miDialogoLogin.showModal();
+            if(!iddialog)
+            {
+                  if(!this.miDialogoLogin)return;
+                  this.txt_user.value="";
+                  this.txt_pwd.value="";
+                  this.miDialogoLogin.showModal();
+            }
+            else
+            {
+                  const dialog=document.getElementById(iddialog);
+                  dialog.showModal();
+            }
       },
-      CloseDialog()
+      CloseDialog(iddialog="")
       {
-            if(!this.miDialogoLogin)return;
-            this.miDialogoLogin.close();
+            if(!iddialog)
+            {
+                  if(!this.miDialogoLogin)return;
+                  this.miDialogoLogin.close();
+            }
+            else
+            {
+                  const dialog=document.getElementById(iddialog);
+                  dialog.close();
+            }
       },
-      SubmitDialog(e=null)
+      SubmitDialog(e=null,action="")
       {
             if(e)e.preventDefault();
             if(!this.miDialogoLogin)return;
@@ -121,9 +161,28 @@ var views=
             if((usuario??"").trim()=="")return;
             const clave = this.txt_pwd.value;
 
-            let callback=()=>this.miDialogoLogin.close();
+            let url_redir=(action == "" ? this.btn_login_config.getAttribute("data-url")??"":"")
+            let callback=()=>
+            {
+                  this.miDialogoLogin.close();
+                  switch (action) 
+                  {
+                        case "cortesia":
+                              controller.show_modal("#modal-cortesia");
+                              break;
+                        case "cancelar":
+                              controller.cancelAccount(this.account_selected?.sys_pk??0);
+                        break;
+                  }
+            };
 
-            controller.AccessConfig(usuario.trim(),clave.trim(),this.btn_login_config,{url_redir:this.btn_login_config.getAttribute("data-url")??"",callback})
+            controller.AccessConfig(usuario.trim(),clave.trim(),this.btn_login_config,{url_redir:url_redir,callback,action:action})
+      },
+      showDialogDS()
+      {
+            let form=document.getElementById("form_home_delivery");
+            form.reset();
+            controller.showModal("modal-home-delivery");
       },
       //elimina los elementos que contengan las clase class="only-cashier"
       DeleteElementsCashier(_delete=true,_class=".only-cashier")
@@ -227,11 +286,12 @@ var views=
       print_mesas:function(data) 
       {
             var html="";
+            
             for (var i =0; i<data.length; i++) 
             {
                   var itm=data[i];
                   html+=`<div class="${css_class_mesa} mesa_${itm.sys_pk}" onclick="controller.verify_size_window(\'${itm.sys_pk}\',\'${itm.code}\',${itm.available_seats},this)">
-                              <div class="${this.color(itm.status)} mesa_color_estatus"></div>            
+                              <div class="${this.color(itm.status,itm)} mesa_color_estatus"></div>            
                               <div class="div-mesa_person">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
                                           <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
@@ -240,7 +300,7 @@ var views=
                                     <div class="mesa_color ${this.flag_color(itm.flag)} mesa_color_${itm.sys_pk}"></div>
                               </div>
                               <div style="display:flex; align-items:center;justify-content:center; margin-top:28px;">
-                                    ${views.icon_mesa}
+                                    ${itm.img??views.icon_mesa}
                               </div>
                               <div class="div-mesa_name">
                                     <a>${itm.code}</a>
@@ -271,7 +331,8 @@ var views=
             element_status.classList.remove("table_available");
             element_status.classList.remove("table_opened");
             element_status.classList.remove("table_closed");
-            let cstts=views.color(data.status);
+            let cstts=views.color(data.status,data);
+            
             if(cstts!="")element_status.classList.add(cstts);
         }
         // mesa_color
@@ -322,31 +383,37 @@ var views=
             for (var i =0; i <data.length; i++) 
             {
                   var itm=data[i];
-                  let img=(itm.data_img.img??"")!="" ? itm.data_img.img:"";
-                  let def_img=(itm.data_img.def_img??"")!="" ? itm.data_img.def_img:"";
-
-                  html+=`
-				  	<div class="column-content-foodbev shadow" id="foodbev_${itm.sku}" onclick="controller.data_foodbev(${itm.sys_pk})">
-						<div class="foodbev-img-container">
-							<div class="foodbev-img">
-								<img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
-							</div>							
-						</div>
-						<div class="prod-center">
-							<small>${itm.desc_cp}</small>
-						</div>
-						<div class="foodbev-btn foodbev-line" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500; flex-wrap:wrap;">
-							${itm.description}
-							<div class="foodbev-price foodbev-price-line">
-								<small >$ ${views.format(itm.price,2,".",",")}</small>
-							</div>
-						</div>
-                	</div>`;
+                  itm["fmt_price"]="$ "+views.format(itm.price,2,".",",");
+                  html+=this.htmlfoodbev(itm);
             }
             content.innerHTML=html;
             
             event.hide_loading();
 
+      },
+      htmlfoodbev(itm,id="foodbev_",onclick="controller.data_foodbev")
+      {
+            let img=(itm.data_img?.img??"")!="" ? itm.data_img?.img:"";
+            let def_img=(itm.data_img?.def_img??"")!="" ? itm.data_img?.def_img:"";
+            let precio=itm.fmt_price??"";
+
+            return `
+                  <div class="column-content-foodbev shadow" id="${id}${itm.sku}" onclick="${onclick}(${itm.sys_pk})">
+                        <div class="foodbev-img-container">
+                              <div class="foodbev-img">
+                                    <img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
+                              </div>							
+                        </div>
+                        <div class="prod-center">
+                              <small>${itm.desc_cp??""}</small>
+                        </div>
+                        <div class="foodbev-btn foodbev-line" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500; flex-wrap:wrap;">
+                              ${itm.description}
+                              <div class="foodbev-price foodbev-price-line">
+                                    <small >${precio}</small>
+                              </div>
+                        </div>
+                	</div>`;
       },
       Print_Indicaciones(linea)
       {
@@ -381,7 +448,37 @@ var views=
             }
             return false;
       },
-      add_foodbev:function(sys_pk,other=false)
+      createGrupos(grupos)
+      {
+            seleccion = {};
+            return new Promise((resolve)=>
+            {
+                  printGrupo(grupos);
+                  renderTabla();
+                  controller.show_modal('#modal-recetas-variables');
+
+                  let btn_acept_prods_vars=document.getElementById("btn_acept_prods_vars");
+                  let btn_close_mdl_prods_vars=document.getElementById("btn_close_mdl_prods_vars");
+
+                  btn_acept_prods_vars.addEventListener("click",()=>
+                  {
+                        if( totalCantidad(seleccion) < max)
+                        {
+                              alert("Debe seleccionar al menos un elemento");
+                              return;
+                        }
+                        controller.hide_modal("#modal-recetas-variables");
+                        resolve(true);
+                  });
+                  btn_close_mdl_prods_vars.addEventListener("click",()=>
+                  {
+                        controller.hide_modal("#modal-recetas-variables");
+                        resolve(false);
+                  });
+            });
+            
+      },
+      async add_foodbev(sys_pk,other=false)
       {
             var lista_foodbev=document.querySelector(".list-products-li");
             var html=lista_foodbev.innerHTML;
@@ -396,6 +493,7 @@ var views=
                         
                 if(sys_pk===itm.sys_pk)
                 {
+                  
                   var uuid=controller.guid();
                   var options=itm.options;
                   var required=false;
@@ -420,7 +518,22 @@ var views=
                          controller.other_equals(uuid,sys_pk);
                   }
                   else
+                  {
+                        if(itm.grupos.length >0)
+                        {
+                              let h=await this.createGrupos(itm.grupos??[]);
+                              if(!h)return;
+                              
+                              const filtrado = Object.fromEntries(
+                                    Object.entries(seleccion).filter(([key, value]) => 
+                                    Object.keys(value).length > 0
+                                    )
+                              );
+
+                              if(Object.keys(filtrado).length > 0)sku["variables"]=filtrado;
+                        }
                         list_orders.push(sku);
+                  }
 
                   if(controller.isrequired(options))
                   {
@@ -438,6 +551,7 @@ var views=
                                           <h3>$ ${views.format(itm.price * 1,2,".",",")}</h3>
                                     </div>
                                     <div class="" id="detail-indications_${uuid}"></div>
+                                    <small>${sku.variables ? Object.keys(sku.variables).length +"+ Producto variable":""} </small>
                               </div>
                         <small class="list-btns">
 							<button onclick="controller.data_foodbev(${itm.sys_pk},true)" title="Otro igual a este">
@@ -469,7 +583,7 @@ var views=
             views.showTotal();
             if(other)
             {
-                   var btnacept=document.querySelector("#btn_addcs");
+                  var btnacept=document.querySelector("#btn_addcs");
                   btnacept.click();
             }
             var btnexecute=document.querySelector("#btnExecute");
@@ -525,23 +639,6 @@ var views=
             var price=0;
             list_orders.forEach(function(e,i){
                   price+=Number(e.price);
-                  // if(e.adds)
-                  //       price+=Number(e.adds);
-                  // if(e.options)
-                  // {
-                  //       var options=e.options;
-                  //       for(var i=0;i<options.length;i++)
-                  //       {
-                  //             var values=options[i].values;
-                  //             for(var j=0;j<values.length;j++)
-                  //             {
-                  //                   var val=values[j];
-                  //                   if(val.amount)
-                  //                         price+=Number(val.amount);
-                                    
-                  //             }
-                  //       }
-                  // }
                         
             });
             var eprice=document.querySelector("#div-total-all");
@@ -779,15 +876,30 @@ var views=
               i.substr(j).replace(/(\decSep{3})(?=\decSep)/g, "$1" + thouSep) +
               (decPlaces ? decSep + Math.abs(number - i).toFixed(decPlaces).slice(2) : "");
       },
-      color:function(status)
+      color:function(status,_itm=null)
       {
             //el valor de retorno es una clase css
+            let itm=this.keysToLower(_itm);
+            if(itm && itm.service == "DS")
+            {
+                  if(itm.status == STATUS_ADMIN.CERRADO && itm.statusentrega==STATUS_ENTREGA.POR_ENTREGAR)return "flag_yellow";
+                  if(itm.status == STATUS_ADMIN.PROCESADO && (itm.statusentrega==STATUS_ENTREGA.POR_ENTREGAR || itm.statusentrega==STATUS_ENTREGA.NO_APLICA))return "flag_orange";
+                  if(itm.status == STATUS_ADMIN.CERRADO && itm.statusentrega==STATUS_ENTREGA.ENTREGADO)return "bg-success";
+            }
             switch(status)
             {
                   case 0:return "table_available";//disponible
                   case 1:return "table_opened"; //abierta
                   case 2:return "table_closed"; //cerrada
             }
+      },
+      keysToLower(obj) 
+      {
+            const newObj = {};
+            for (let key in obj) {
+                  newObj[key.toLowerCase()] = obj[key];
+            }
+            return newObj;
       },
       flag_color:function(flag)
       {
@@ -802,13 +914,16 @@ var views=
                   default:return "flag_white";
             }
       },
+      account_selected:null,
       print_ordenes:function(data)
       {
+            this.account_selected=data;
             var table_ordenes=document.querySelector(".ordenes");
             var lbltotal=document.querySelector("#lbltotal");
             var lblticket=document.querySelector("#lblticket");
             var card_info=document.querySelector(".card-info");
             var name_table=document.querySelector("#name_table");
+            let account_dealer=document.getElementById("account_dealer");
 
             var new_command=document.querySelector("#new_command")
             var message=document.querySelector("#message")
@@ -834,10 +949,11 @@ var views=
             // mesa_color.classList.add(this.flag_color(data.flag))
             if(card_info)
             {
-                  card_info.style.opacity="";
-                  card_info.style.pointerEvents="";
+                  card_info.style.opacity=data.opacity??"";
+                  card_info.style.pointerEvents=data.pointerEvents??"";
             }
-            
+            if(account_dealer)account_dealer.textContent=data.repartidor??"";
+
             var html="";
             var total=0;
             var data_orders=
@@ -883,24 +999,29 @@ var views=
                         <td class="text-end" style="padding-bottom: 16px; color:var(--purple);">$ ${views.format(itm.total,2,".",",")}</td>
                   </tr>`;
           }
-          if(lblticket)
-            lblticket.innerHTML=data.reference;
-          if(lbltotal)
-            lbltotal.innerHTML="$ "+views.format(data.balance,2,".",",");
-         if(table_ordenes)
-          table_ordenes.innerHTML=html;
-         if(name_table)
-          name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div><br>`;
+            if(lblticket)
+                  lblticket.innerHTML=data.reference;
+            if(lbltotal)
+                  lbltotal.innerHTML="$ "+views.format(data.balance,2,".",",");
+            if(table_ordenes)
+            table_ordenes.innerHTML=html;
+            if(name_table)
+            name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div><br>`;
       
+            var btncancel=document.getElementById("btn-cancelar");
+            var btncortesia=document.getElementById("btn-cortesia");
 
-         //btn cobrar
+            //btn cobrar
             var btncobrar=document.getElementById("btn-cobrar");
             if(btncobrar)btncobrar.classList.add("disabled");
 
             re_print.setAttribute("onclick",`controller.reprint("${data.sys_pk}")`);
+            // btncancel.setAttribute("onclick",`controller.cancelAccount("${data.sys_pk}")`);
+            btncortesia.setAttribute("onclick",`controller.cortesia("${data.sys_pk}")`);
+
             if(re_print)re_print.classList.remove("disabled");
-          if(data.status==2)
-          {
+            if(data.status==2)
+            {
             if(new_command)
             {
                   new_command.setAttribute("onclick",``);
@@ -914,33 +1035,87 @@ var views=
                   imp_close.setAttribute("onclick",`controller.reopen_table("${data.sys_pk}")`);
             }
             
+            
+            }
+            else if (data.status==1)
+            {
+                  if(new_command)
+                  {
+                        new_command.classList.remove("disabled");
+                        new_command.setAttribute("onclick",`controller.new_command("${data.sys_guid}",${data.sys_pk},"${data.code}","${data.reference}","${views.format(data.balance,2,".",",")}");`); //newcommand
+                  }
+                  if(message)
+                        message.classList.remove("disabled");
+                  // if(re_print)re_print.classList.add("disabled");
+                  if(imp_close)
+                  {
+                        imp_close.innerHTML =`<div class="div-img"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" /></svg></div>Imp/Cerrar`;
+                        imp_close.setAttribute("onclick",`controller.close_table("${data.sys_pk}")`);
+                  }
+            }
+            
             if(btncobrar)
             {
                   let data_href=(btncobrar.getAttribute("data-href")??"");
-                  btncobrar.href=data_href + `&idt=${data.sys_pk}`;
-
+                  let url=data_href + `&idt=${data.sys_pk}`;
+                  btncobrar.setAttribute("onclick",`controller.close_table("${data.sys_pk}","${url}")`);
                   btncobrar.classList.remove("disabled");
             }
-          }
-          else if (data.status==1)
-          {
-            if(new_command)
+            this.actionsDS(data);
+            views.ActiveAnimation(false);
+      },
+      actionsDS(data)
+      {
+            // 1. Ocultar todos los botones
+            Object.values(ACTION_BUTTONS).forEach(id => 
             {
-                  new_command.classList.remove("disabled");
-                  new_command.setAttribute("onclick",`controller.new_command("${data.sys_guid}",${data.sys_pk},"${data.code}","${data.reference}","${views.format(data.balance,2,".",",")}");`); //newcommand
-            }
-            if(message)
-                  message.classList.remove("disabled");
-            // if(re_print)re_print.classList.add("disabled");
-            if(imp_close)
+                  const btn = document.getElementById(id);
+                  if (btn) btn.style.display = '';
+            });
+            Object.values(ACTION_BUTTONS_DS).forEach(id => 
             {
-                  imp_close.innerHTML =`<div class="div-img"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" /></svg></div>Imp/Cerrar`;
-                  imp_close.setAttribute("onclick",`controller.close_table("${data.sys_pk}")`);
+                  const btn = document.getElementById(id);
+                  if(id==ACTION_BUTTONS_DS.ENVIAR || id==ACTION_BUTTONS_DS.CAMBIAR_REPARTIDOR)
+                  {
+                        let btn_repartidor=document.getElementById("btn-repartidor");
+                        btn_repartidor.setAttribute("onclick",`controller.actionAccount(${data.sys_pk},"${id.replace("btn-","")}","frm_repartidor")`);
+                        btn.setAttribute("onclick",`controller.show_modal("#modal-select-repartidor")`);
+                  }
+                  else btn.setAttribute("onclick",`controller.actionAccount(${data.sys_pk},"${id.replace("btn-","")}")`);
+
+                  if (btn && (data.service??"").toUpperCase() !="DS") btn.style.display = 'none';
+                  else if(btn) btn.style.display = '';
+            });
+
+            if(data.StatusAdministrativo == STATUS_ADMIN.PROCESADO)
+            {
+                  Object.values(ACTION_BUTTONS_PROCESADO).forEach(id=>
+                  {
+                        const btn = document.getElementById(id);
+                        btn.classList.add("disabled");
+                  });
             }
             
-          }
-
-          views.ActiveAnimation(false);
+            if((data.service??"").toUpperCase() !="DS")return;
+            
+            console.log(data)
+            let acciones=aplicarVisibilidadBotones(data);
+      },
+      clear_detalle()
+      {
+            var data=
+            {
+                  sys_pk:0,
+                  sys_guid:"",
+                  reference:"---",
+                  code:"---",
+                  notetable:"---",
+                  balance:0,
+                  orders:[],
+                  opacity:.4,
+                  pointerEvents:"none"
+            }
+            this.print_ordenes(data);
       },
       print_prodc:function(data)
       {
@@ -1032,5 +1207,443 @@ var views=
                   if(mol_cmmd_account)mol_cmmd_account.classList.add("placeholder");
                   if(table_orders_details)table_orders_details.classList.add("placeholder");
             }
+      },
+      setDataDS(data)
+      {
+            if(!data)return;
+            
+            const form=document.getElementById("form_home_delivery");
+            if(!form)return;
+
+            for(let k in data)
+            {
+                  let element=form.querySelector("input[name='"+k+"']");
+                  if(!element)continue;
+
+                  element.value=data[k] ?? "";
+                  element.focus();
+            }
+      },
+      getDataForm(idform="form_home_delivery")
+      {
+            const form=document.getElementById(idform);
+            if(!form)return null;
+            
+            if(!form.reportValidity())return null;
+            
+            let data={};
+            let formdata=new FormData(form);
+            for (const [name, value] of formdata.entries()) {
+                  data[name]=value;
+            }
+            return data;
+      },
+      setPercentaje(percentaje)
+      {
+            let percentaje_cortesia=document.getElementById("percentaje_cortesia");
+            if(!percentaje_cortesia)return;
+
+            percentaje_cortesia.value=percentaje;
       }
-    };
+};
+
+const ACTION_BUTTONS_PROCESADO=
+{
+      CORTESIA:"btn-show-cortesia",
+      NEW_COMMAND:"new_command"
+}
+
+const ACTION_BUTTONS_DS = 
+{
+      ENVIAR:"btn-enviar",
+      ENTREGADA:          'btn-entregada',
+      CAMBIAR_REPARTIDOR: 'btn-change-dealer',
+      ENVIADA:            'btn-enviada',
+};
+// IDs de los botones de acción disponibles
+const ACTION_BUTTONS = {
+  CERRAR:             'imp_close',
+  ENVIAR:             'btn-enviar',
+  COBRAR:             'btn-cobrar',
+  CANCELAR:           'btn-cancelar',
+  ENTREGADA:          'btn-entregada',
+  CAMBIAR_REPARTIDOR: 'btn-change-dealer',
+  ENVIADA:            'btn-enviada',
+};
+
+// Constantes de status
+const STATUS_ADMIN = {
+  NO_APLICA:  0,
+  ABIERTO:    1,
+  CERRADO:    2,
+  PROCESADO:  3,
+  CANCELADO:  99,
+};
+
+const STATUS_ENTREGA = {
+  NO_APLICA:    0,
+  POR_ENTREGAR: 1,
+  ENTREGADO:    3,
+};
+
+// Colores por estado
+const ESTADO_COLOR = {
+  ABIERTA:              '#2196F3', // Azul
+  CERRADA:              '#F44336', // Rojo
+  ENVIADA_NO_COBRADA:   '#FFC107', // Amarillo
+  COBRADA_SIN_ENVIAR:   '#FF9800', // Naranja
+  ENTREGADA_SIN_COBRAR: '#4CAF50', // Verde
+  DESCONOCIDO:          '#9E9E9E', // Gris
+};
+
+// Definición de estados: color + acciones visibles
+const ESTADOS = [
+  {
+    nombre: 'ABIERTA',
+    color: ESTADO_COLOR.ABIERTA,
+    match: (sa, se) => sa === STATUS_ADMIN.ABIERTO && se === STATUS_ENTREGA.NO_APLICA,
+    acciones: [
+      ACTION_BUTTONS.CERRAR,
+      ACTION_BUTTONS.ENVIAR,
+      ACTION_BUTTONS.COBRAR,
+      ACTION_BUTTONS.CANCELAR,
+    ],
+  },
+  {
+    nombre: 'CERRADA',
+    color: ESTADO_COLOR.CERRADA,
+    match: (sa, se) =>
+      sa === STATUS_ADMIN.CERRADO &&
+      (se === STATUS_ENTREGA.NO_APLICA),
+    acciones: [
+      ACTION_BUTTONS.ENVIAR,
+      ACTION_BUTTONS.COBRAR,
+      ACTION_BUTTONS.CANCELAR,
+    ],
+  },
+  {
+    nombre: 'ENVIADA_NO_COBRADA',
+    color: ESTADO_COLOR.ENVIADA_NO_COBRADA,
+    match: (sa, se) => sa === STATUS_ADMIN.CERRADO && se === STATUS_ENTREGA.POR_ENTREGAR,
+    // Nota: "en_reparto" no existe en el catálogo oficial; se mapea a PROCESADO (3)
+    acciones: [
+      // ACTION_BUTTONS.COBRAR,
+      ACTION_BUTTONS.ENTREGADA,
+      ACTION_BUTTONS.CAMBIAR_REPARTIDOR,
+      ACTION_BUTTONS.CANCELAR,
+    ],
+  },
+  {
+    nombre: 'COBRADA_SIN_ENVIAR',
+    color: ESTADO_COLOR.COBRADA_SIN_ENVIAR,
+    match: (sa, se) => sa === STATUS_ADMIN.PROCESADO && se === STATUS_ENTREGA.NO_APLICA,
+    acciones: [
+      ACTION_BUTTONS.ENVIADA,
+      ACTION_BUTTONS.ENTREGADA,
+      ACTION_BUTTONS.CANCELAR,
+    ],
+  },
+  {
+    nombre: 'COBRADA_ENVIADA',
+    color: ESTADO_COLOR.COBRADA_SIN_ENVIAR,
+    match: (sa, se) => sa === STATUS_ADMIN.PROCESADO && se === STATUS_ENTREGA.POR_ENTREGAR,
+    acciones: [
+      // ACTION_BUTTONS.ENVIADA,
+      ACTION_BUTTONS.ENTREGADA,
+      ACTION_BUTTONS.CANCELAR,
+    ],
+  },
+  {
+    nombre: 'ENTREGADA_SIN_COBRAR',
+    color: ESTADO_COLOR.ENTREGADA_SIN_COBRAR,
+    match: (sa, se) => sa === STATUS_ADMIN.CERRADO && se === STATUS_ENTREGA.ENTREGADO,
+    acciones: [
+      ACTION_BUTTONS.COBRAR,
+      ACTION_BUTTONS.CANCELAR,
+    ],
+  },
+];
+
+
+
+/**
+ * Resuelve el estado de una fila según StatusAdministrativo y StatusEntrega.
+ * @param {number} statusAdmin   - Valor numérico de StatusAdministrativo
+ * @param {number} statusEntrega - Valor numérico de StatusEntrega
+ * @returns {{ nombre, color, acciones }}
+ */
+function resolverEstado(statusAdmin, statusEntrega) {
+  const estado = ESTADOS.find(e => e.match(statusAdmin, statusEntrega));
+  return estado ?? { nombre: 'DESCONOCIDO', color: ESTADO_COLOR.DESCONOCIDO, acciones: [] };
+}
+
+/**
+ * Aplica visibilidad a los botones del DOM según el estado de la fila.
+ * Oculta TODOS los botones primero, luego muestra solo los permitidos.
+ * @param {object} rowData - Objeto con los datos de la fila (debe tener StatusAdministrativo y StatusEntrega)
+ */
+function aplicarVisibilidadBotones(_rowData) 
+{
+      let rowData=views.keysToLower(_rowData);
+      
+  const { statusadministrativo, statusentrega } = rowData;
+  const { nombre, color, acciones } = resolverEstado(statusadministrativo, statusentrega);
+
+  // 1. Ocultar todos los botones
+  Object.values(ACTION_BUTTONS).forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = 'none';
+  });
+
+  // 2. Mostrar solo los botones permitidos
+  acciones.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) 
+    {
+      btn.classList.remove("disabled");
+      btn.style.display = '';
+    }
+  });
+
+  // 3. Aplicar color de estado (opcional: al contenedor de la fila)
+  // Ajusta el selector según tu estructura HTML
+  const fila = document.getElementById('fila-orden');
+  if (fila) fila.style.borderColor = color;
+
+  console.log(`Estado resuelto: ${nombre} | Color: ${color} | Acciones: ${acciones.join(', ')}`);
+  return { nombre, color, acciones };
+}
+
+
+//productos variables
+// CONFIGURACIÓN
+let min = 1;
+let max = 1;
+
+// DATA SIMULADA
+const data = {
+//     grupo1: [
+//         {codigo: "p1", nombre: "Producto 1"},
+//         {codigo: "p2", nombre: "Producto 2"}
+//     ],
+//     grupo2: [
+//         {codigo: "p3", nombre: "Producto 3"},
+//         {codigo: "p4", nombre: "Producto 4"}
+//     ]
+};
+
+// ESTADO
+let grupoActual = null;
+let productoSeleccionado = null;
+
+// ESTRUCTURA FINAL
+let seleccion = {};
+
+// RENDER GRUPOS
+
+function printGrupo(grupos)
+{
+      const contGrupos = document.getElementById("grupos");
+      const cont = document.getElementById("productos");
+      cont.innerHTML="";
+      contGrupos.innerHTML="";
+      grupoActual=null;
+      productoSeleccionado=null;
+
+      for (let i = 0; i < grupos.length; i++) 
+      {
+            const grupo = grupos[i];
+            if(grupo.productos.length >0)
+            {
+                  const btn = document.createElement("div");
+                  btn.className = "btn btn-grupo";
+                  btn.style.cssText="border: 1px solid gray !important;";
+                  btn.innerText = grupo.nombre;
+                  btn.onclick = () => 
+                  {
+                        // quitar selección previa
+                        document.querySelectorAll('.btn-grupo').forEach(btn => 
+                        {
+                              btn.classList.remove('activo');
+                        });
+
+                        // marcar el actual
+                        btn.classList.add('activo');
+                        cargarGrupo(grupo);
+                  }
+                  if(i==0)btn.click();
+                  contGrupos.appendChild(btn);
+            }
+      }
+}
+
+
+// CARGAR PRODUCTOS
+function cargarGrupo(data_grupo) 
+{
+      let grupo=data_grupo.grupo;
+    grupoActual = grupo;
+    min=data_grupo.minimo??1;
+    max=data_grupo.maximo??1;
+    data[grupo]=data_grupo.productos;
+    if (!seleccion[grupo]) seleccion[grupo] = {};
+
+    const cont = document.getElementById("productos");
+    cont.innerHTML = "";
+
+    data_grupo.productos.forEach(prod => 
+      {
+        const btn = document.createElement("div");
+        btn.className = "btn mb-2";
+        btn.style.cssText="border: 1px solid gray !important;";
+        btn.innerText = prod.description;
+
+        btn.onclick = () => agregarProducto(prod);
+        cont.appendChild(btn);
+    });
+
+    renderTabla();
+}
+
+// AGREGAR PRODUCTO
+function agregarProducto(prod) 
+{
+    productoSeleccionado = prod.sys_pk;
+      
+      if(seleccion[grupoActual] && !validarCantidad())
+      {
+            return ;
+      }
+    if (!seleccion[grupoActual][prod.sys_pk]) {
+        seleccion[grupoActual][prod.sys_pk] = min;
+    }
+
+    renderTabla();
+}
+
+// RENDER TABLA
+function renderTabla() {
+    const tbody = document.querySelector("#tabla tbody");
+    tbody.innerHTML = "";
+
+    if (!grupoActual) return;
+
+    Object.entries(seleccion[grupoActual]).forEach(([sys_pk, cantidad]) => 
+      {
+        const prod = data[grupoActual].find(p => Number(p.sys_pk) === Number(sys_pk));
+        
+        if(!prod)return;
+            
+        const tr = document.createElement("tr");
+
+      //   tr.onclick = () => productoSeleccionado = sys_pk;
+
+        tr.innerHTML = `
+            <td>${prod.description}</td>
+            <td>
+                <button onclick="cambiarCantidadProducto('${sys_pk}', -1)">➖</button>
+                ${cantidad}
+                <button onclick="cambiarCantidadProducto('${sys_pk}', 1)">➕</button>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// CAMBIAR CANTIDAD
+function cambiarCantidad(delta) {
+    if (!grupoActual || !productoSeleccionado) return;
+
+    let actual = seleccion[grupoActual][productoSeleccionado];
+
+    let nueva = actual + delta;
+
+    if (nueva > max) nueva = max;
+    if (nueva < min) nueva = min;
+
+    seleccion[grupoActual][productoSeleccionado] = nueva;
+
+    renderTabla();
+}
+function cambiarCantidadProducto(codigo, delta) 
+{
+      if(delta > 0 && !validarCantidad())
+      {
+            return ;
+      }
+    let actual = seleccion[grupoActual][codigo];
+    let nueva = actual + delta;
+
+    if (nueva > max) nueva = max;
+    if (nueva < min) nueva = min;
+
+    seleccion[grupoActual][codigo] = nueva;
+
+    renderTabla();
+}
+
+function validarCantidad()
+{
+      if(Object.keys(seleccion[grupoActual]).length == max || totalCantidad(seleccion) >=max)
+      {
+            alert("No se puede agregar más elementos de este grupo, si desea realizar un cambio elimine o disminuya la cantidad de algunos elementos y vuelva a intentarlo");
+            return false;
+      }
+      return true;
+}
+function totalCantidad(seleccion) 
+{
+    return Object.values(seleccion) // grupos
+        .flatMap(grupo => Object.values(grupo)) // cantidades
+        .reduce((acc, val) => acc + val, 0);
+}
+
+// Tiempo de inactividad en ms (3 minutos por default)
+// Configuración en segundos
+views.interval_refresh_data_tables = 0; // 3 minutos = 180 segundos
+
+
+
+// Guardamos el último momento de actividad
+views.lastActivity = Date.now();
+
+// Función para resetear actividad
+function resetActivity() {
+  views.lastActivity = Date.now();
+}
+
+// Eventos de actividad
+["mousemove", "touchmove", "pointerdown", "keydown"].forEach(event => {
+  window.addEventListener(event, resetActivity, { passive: true });
+});
+
+views.InitInterval=()=> 
+{
+      // Convertir a milisegundos cuando se usa
+      const intervalMs = views.interval_refresh_data_tables * 1000;
+      // Intervalo que revisa cada cierto tiempo (ej: cada 5 segundos)
+      if(views.interval_refresh_data_tables  > 0)
+      {     
+            views.set_interval_table = setInterval(() => 
+            {
+                  const now = Date.now();
+                  const inactiveTime = now - views.lastActivity;
+                        console.log("revisando...",inactiveTime)
+                  if (inactiveTime >= intervalMs) {
+                        console.log("Ejecutar refresh porque el usuario está inactivo");
+
+                        // 👉 Aquí tu lógica
+                        // refreshDataTables();
+                        views.clear_detalle();
+                        controller.resfresh_tables();
+
+                        // Opcional: evitar que se ejecute muchas veces seguidas
+                        views.lastActivity = Date.now();
+                  }
+
+            }, 5000); // revisa cada 5 segundos
+      }
+}
+
+

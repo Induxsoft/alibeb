@@ -8,10 +8,10 @@ module ""
             div(class="")
             {
                 p(id="name_table" style="height: 10%;"){"---"}
-                label{""label(id="lblticket"){"---"} }
+                label(class="w-100"){""label(id="lblticket"){"---"} }
+                small(id="account_dealer"){"---"}
             }
             div(class="mt-2 just-mgn-4 d-flex just-cont-end just-itm-center" ){""h3(id="lbltotal" style="color:var(--purple);"){"$ 0.00"} }
-            
         }
         
     }
@@ -38,7 +38,7 @@ module ""
                 div(class="div-img"){
                     svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16"){path(d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z")}
                 }
-                "Imp/Cerrar"
+                "Cerrar"
             }
             button(class="btn disabled" id="re_print")
             {
@@ -51,7 +51,7 @@ module ""
                 }
                 "Reimprimir"
             }
-            a(class="btn " id="btn-cobrar" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+            buttom(class="btn " id="btn-cobrar" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
             {
                 div(class="div-img")
                 {
@@ -60,6 +60,152 @@ module ""
                     </svg>'
                 }
                 "Cobrar"
+            }
+            buttom(class="btn " id="btn-cancelar" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+            {
+                div(class="div-img")
+                {
+                    $'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-file-x" viewBox="0 0 16 16">
+                    <path d="M6.146 6.146a.5.5 0 0 1 .708 0L8 7.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707 6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8 6.146 6.854a.5.5 0 0 1 0-.708"/>
+                    <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1"/>
+                    </svg>'
+                }
+                "Cancelar"
+            }
+            buttom(class="btn " id="btn-show-cortesia" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>" onclick='')
+            {
+                div(class="div-img")
+                {
+                    $'<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+                        <!-- Base de la caja -->
+                        <rect x="40" y="100" width="176" height="100" rx="10"/>
+
+                        <!-- Tapa -->
+                        <rect x="30" y="70" width="196" height="40" rx="10"/>
+
+                        <!-- Cinta vertical -->
+                        <line x1="128" y1="70" x2="128" y2="200"/>
+
+                        <!-- Cinta horizontal -->
+                        <line x1="40" y1="120" x2="216" y2="120"/>
+
+                        <!-- Moño -->
+                        <path d="M128 70 
+                                C110 40, 70 50, 90 80
+                                C105 100, 128 85, 128 70"/>
+                        
+                        <path d="M128 70 
+                                C146 40, 186 50, 166 80
+                                C151 100, 128 85, 128 70"/>
+
+                        </svg>'
+                }
+                "Cortesía"
+            }
+
+            //ds
+            buttom(class="btn " id="btn-enviar" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+            {
+                div(class="div-img")
+                {
+                    $'<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+                    <!-- Ruedas -->
+                        <circle cx="70" cy="180" r="25"/>
+                        <circle cx="170" cy="180" r="25"/>
+
+                        <!-- Base moto -->
+                        <line x1="45" y1="180" x2="145" y2="180"/>
+                        <line x1="100" y1="140" x2="145" y2="180"/>
+
+                        <!-- Caja de comida -->
+                        <rect x="50" y="100" width="70" height="50" rx="8"/>
+
+                        <!-- Vapor (comida caliente) -->
+                        <path d="M70 90 C70 80, 80 80, 80 70"/>
+                        <path d="M90 90 C90 80, 100 80, 100 70"/>
+
+                        <!-- Manubrio -->
+                        <line x1="145" y1="140" x2="165" y2="120"/>
+                        <line x1="165" y1="120" x2="185" y2="120"/>
+
+                        <!-- Flecha (envío) -->
+                        <line x1="190" y1="80" x2="230" y2="80"/>
+                        <polyline points="215,65 230,80 215,95"/>
+
+                        </svg>'
+                }
+                "Enviar"
+            }
+            buttom(class="btn " id="btn-entregada" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+            {
+                div(class="div-img")
+                {
+                    $'<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+                    <!-- Caja -->
+                    <rect x="50" y="90" width="100" height="80" rx="10"/>
+                    <line x1="50" y1="120" x2="150" y2="120"/>
+                    <line x1="100" y1="90" x2="100" y2="170"/>
+
+                    <!-- Check (entregado) -->
+                    <circle cx="180" cy="150" r="30"/>
+                    <path d="M165 150 L178 163 L200 140"/>
+
+                    </svg>'
+                }
+                "Entregada"
+            }
+            buttom(class="btn " id="btn-change-dealer" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+            {
+                div(class="div-img")
+                {
+                    $'<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+                    <!-- Repartidor 1 (izquierda) -->
+                    <circle cx="70" cy="90" r="15"/>
+                    <rect x="50" y="110" width="40" height="50" rx="8"/>
+
+                    <!-- Repartidor 2 (derecha) -->
+                    <circle cx="186" cy="90" r="15"/>
+                    <rect x="166" y="110" width="40" height="50" rx="8"/>
+
+                    <!-- Flecha superior (izq → der) -->
+                    <line x1="90" y1="70" x2="166" y2="70"/>
+                    <polyline points="150,55 166,70 150,85"/>
+
+                    <!-- Flecha inferior (der → izq) -->
+                    <line x1="166" y1="190" x2="90" y2="190"/>
+                    <polyline points="106,175 90,190 106,205"/>
+
+                    </svg>'
+                }
+                "Cambiar repartidor"
+            }
+            buttom(class="btn " id="btn-enviada" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+            {
+                div(class="div-img")
+                {
+                    $'<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+                    <!-- Caja -->
+                    <rect x="40" y="80" width="90" height="90" rx="10"/>
+                    <line x1="40" y1="120" x2="130" y2="120"/>
+                    <line x1="85" y1="80" x2="85" y2="170"/>
+
+                    <!-- Flecha (envío) -->
+                    <line x1="140" y1="120" x2="210" y2="120"/>
+                    <polyline points="190,100 210,120 190,140"/>
+
+                    <!-- Líneas de movimiento -->
+                    <line x1="20" y1="100" x2="40" y2="100"/>
+                    <line x1="10" y1="120" x2="40" y2="120"/>
+                    <line x1="20" y1="140" x2="40" y2="140"/>
+
+                    </svg>'
+                }
+                "Enviada"
             }
         }
     }

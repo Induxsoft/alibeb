@@ -37,7 +37,7 @@ module "index"
 	file_include=""
 	ref @__divisa=@null
 	pos_card_procesor=""
-	
+	pos_refrescar_mesas= 0
 	switch view
 	{
 		case "vw_principal"
@@ -47,6 +47,7 @@ module "index"
 			ref divisas=GetDivisas()
 			ref categorias=GetCategorias("1,2")
 			file_include= path.concat(@path_view,"vw_principal.dkl")
+			pos_refrescar_mesas=parse.num(GetVars("pos_refrescar_mesas"))
 			break
 		}
 		case "vw_infocuenta"
@@ -119,6 +120,7 @@ module "index"
 		#!
 		#include "_views/modals.dkl"	 
 		#$
+		script(src="#<GetFilePrn('prn_generic.js')>"){""}
 		script(src="#<GetFilePrn('model_prn.js')>"){""}
 		script(src="#<GetFilePrn('prn_arqueo.js')>"){""}
 		script(src="#<GetFilePrn('prn_egreso.js')>"){""}
@@ -147,13 +149,14 @@ module "index"
 			var caption="#<@@(@waiter,"caption")>";
 			var zone="#<@@(@waiter,"zone")>";
 
-			
 			const css_class_mesa="mesas";
 
 			if(token!=""){controller.gettoken("#<@token>");}
 
 			controller.getData=#<to.json(@GET)>;
 			controller.url_redir="#<@url_redir>";
+			views.interval_refresh_data_tables=#<pos_refrescar_mesas>;
+			views.InitInterval();
 			//para test desde android
 			// var vConsole = new VConsole();
 			'

@@ -20,15 +20,53 @@ module "index.dkl"
     @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
 
     if @@(@http_context,"request/headers/REQUEST_METHOD")=="OPTIONS"{return}
+
+	method=@@(@http_context,"request/headers/REQUEST_METHOD")
+	ref params=@@(@http_context,"&request/get")
+	ref postData=@@(@http_context,"&request/post")
+
    	//comentar esto para ver las linea de los errores
 	// do errordet(@false)
+	_entity=@@(params,"$entity")
+	if isanyword(_entity,"clientes,repartidores") 
+	{
+		
+		ref db=dbr.open(@@(@config,"$connection"))
 
+		switch _entity
+		{
+			case "clientes"
+			{
+				ref clientes=get.clientes(db,params)
+				do setResponse(to.json(clientes))
+				break
+			}
+			case "repartidores"
+			{
+				ref repartidores=getRepartidores(db,params)
+				do setResponse(to.json(repartidores))
+				break
+			}
+		}
+		
+		exception
+		{
+			new r
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+			do setResponse(to.json(r))
+		}
+		if isset("db")
+		{
+			if dbr.is_open(db){do dbr.close(db)}
+		}
+		return
+	}
 	go api_base_service (responseJSONdata:response) 
 	{
-		method=@@(@http_context,"request/headers/REQUEST_METHOD")
-		ref params=@@(@http_context,"&request/get")
-		ref postData=@@(@http_context,"&request/post")
-
+		
 		dm_token=""
 		module "Authorization"
 		{
@@ -37,7 +75,7 @@ module "index.dkl"
 			workspace=""
 			
 			isadmin=@false
-			if admin==""
+			if admin=="" && not(@@(params,"#admin"))
 			{
 				auth=@@(@http_context,"$request/headers/http_Authorization")
 				if auth=="" && method != "GET" { do rise_error(0,"No autorizado") }
@@ -52,7 +90,6 @@ module "index.dkl"
 				}
 				
 				if dm_token=="" && not(parse.bool(@@(params,"access"))) && @@(params,"id_table")!=@idlogin{ do rise_error(0,"No autorizado") }
-				
 			}
 			else
 			{
@@ -60,7 +97,7 @@ module "index.dkl"
 				isadmin=@true
 			}
 			if not(@accept_qnames) && contains(workspace,"@"){do rise_error(99,"No se aceptan nombres cualificados.")}
-			if workspace == ""{workspace=@@(@config,"connection")}
+			if workspace == ""{workspace=@@(@config,"$connection")}
 			if workspace==""{do rise_error(99,"Falta la conexión a la base de datos.")}
 
 			qname=""
@@ -158,6 +195,11 @@ module "index.dkl"
 						else{ref data=get.mesas(db,params) }
 						break
 					}
+					case "clientes"
+					{
+						ref response=get.clientes(db,params)
+						return
+					}
 				}
 			}
 			case "POST"
@@ -200,10 +242,13 @@ module "index.dkl"
 							postData<"id_table">:@@(params,"$id_table")
 							ref data=update.order(db,postData)
 						}
-						case "reprint"
-						{
-							ref data=printer_ordertable(db,@@(params,"#id_table"),postData)
-						}
+						case "reprint"{ref data=printer_ordertable(db,@@(params,"#id_table"),postData)}
+						case "cancel"{ref data=cancel.table(db,params,postData)}
+						case "cortesia"{ref data=cortesia.table(db,params,postData)}
+						case "enviar"{ref data=table.enviar(db,params,postData)}
+						case "change-dealer"{ref data=table.setdealer(db,params,postData)}
+						case "entregada"{ref data=table.entregada(db,params,postData)}
+						case "enviada"{ref data=table.enviada(db,params,postData)}
 						default{do rise_error(99,"Acción no encontrada.")}
 					}
 				}

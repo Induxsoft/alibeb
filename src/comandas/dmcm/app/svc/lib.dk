@@ -158,7 +158,8 @@ module "lib.dk"
             qv.icconsumo as 'cc',
             qv.iagente as 'ag',
             qv.idivisa AS 'divisa', 
-            qv.tipocambio AS 'tcambio'
+            qv.tipocambio AS 'tcambio',
+            qv.sys_info as service
         from
             qventasserviciomesa qv
         where
@@ -252,18 +253,21 @@ module "lib.dk"
         // }
         // do DataTicket(db,@@(postData,"#venta"),response)
 
+        statusentrega=dbr.num(db,"SELECT statusentrega from venta where sys_pk=@venta",postData)
+        sta_entrega= 3
+        // if statusentrega == 0{sta_entrega= 1}
         //actualizar venta
         new venta
         {
             @"importeadicional":@@(postData,"#propina")
-            @"statusadministrativo":3
-            @"statusentrega":3
+            @"statusadministrativo": 3
+            @"statusentrega":sta_entrega
             @"statusfacturacion":1
             @"icaja":dbr.num(db,"select icaja from corte where sys_pk=@icorte",movcaja)
             @"icorte":corte
             @"imovcaja":idmovcaja
         }
-    
+        if toupper(@@(rsource,"$service")) == "DS"{do field.remove(venta,"statusentrega")}
         do dbr.update(db,"venta",venta,"sys_pk=@venta",postData)
 
         //ACTULIZAR ORDEN
@@ -439,6 +443,11 @@ module "lib.dk"
     
     
     //#region OBTENER DATOS
+    getRepartidores::&db,&params
+    {
+        return dbr.list(db," SELECT sys_pk,codigo,nombre FROM repartidor ;",params)
+    }
+
     GetCajaCorte::&db
     {
         new p{@"token":@dmtoken}
@@ -660,7 +669,10 @@ module "lib.dk"
     }
     get.clientes::&db,&params
     {
-        do rise_error(0,"1211221")
+        return dbr.list(db,"SELECT c.codigo,c.nombre,c.telefonos telefono,CONCAT_WS(' ',d1.codpos,d1.colonia,d1.direccion)direccion 
+				FROM cliente c 
+				LEFT JOIN domicilio d1 ON c.domicilio1=d1.sys_pk
+				WHERE CONCAT_WS(' ',c.codigo,c.nombre) LIKE CONCAT('%',@s,'%');",params)
     }
     GetCategoriaByCodigo::&db,codcat
     {
@@ -1273,6 +1285,30 @@ module "lib.dk"
     //#region VENTA/ORDEN
     get.mesas::&db,&params
     {
+        
+        //obtener variables globales
+        pos_url_img_mesa=dbr.vars.get(db,"pos_url_img_mesa")
+        pos_url_img_mesa_ff=dbr.vars.get(db,"pos_url_img_mesa_ff")
+        pos_url_img_mesa_ds=dbr.vars.get(db,"pos_url_img_mesa_ds")
+        
+        if pos_url_img_mesa != ""
+        {
+            @pos_url_img_mesa=pos_url_img_mesa
+        }
+
+        if pos_url_img_mesa_ff != ""
+        {
+            @pos_url_img_mesa_ff=pos_url_img_mesa_ff
+        }
+
+        if pos_url_img_mesa_ds != ""
+        {
+            @pos_url_img_mesa_ds=pos_url_img_mesa_ds    
+        }
+        @icon_mesa=ftext(@icon_mesa_def)
+        @icon_mesa_ff=ftext(@icon_mesa_ff)
+        @icon_mesa_ds=ftext(@icon_mesa_ds)
+
         query=@list_mesa_waiter_cc 
         where="where true"
         if @@(params,"waiter")!=""
@@ -1284,6 +1320,43 @@ module "lib.dk"
         {
             query=query+" INNER JOIN cconsumo cc ON qv.ICConsumo=cc.Sys_PK "
             where = where + " AND cc.Sys_PK=@cc "
+        }
+
+        switch @@(params,"$cuentas")
+        {
+            case "sm"
+            {
+                where =where + " AND ifnull(qv.sys_info,'')<>'FF' AND ifnull(qv.sys_info,'')<>'DS'"
+                break
+            }
+            case "ff"
+            {
+                where =where + " AND qv.sys_info='FF'"
+                break
+            }
+            case "ds"
+            {
+                where =where + " AND qv.sys_info='DS'"
+                break
+            }
+            case "ds-enviar"
+            {
+                where =where + " AND qv.sys_info='DS' AND (
+                    qv.statusadministrativo=2 AND qv.statusentrega=0  
+                    OR (qv.statusadministrativo = 3 AND qv.statusentrega = 0)
+                    )"
+                break
+            }
+            case "ds-reparto"
+            {
+                where =where + " AND qv.sys_info='DS' AND qv.statusadministrativo=2 AND qv.statusentrega=1 "
+                break
+            }
+            case "ds-entregada"
+            {
+                where =where + " AND qv.sys_info='DS' AND qv.statusentrega=3 AND qv.statusadministrativo=2"
+                break
+            }
         }
         //descomentar si a cada mesero pueda abrir la misma mesa
         // query=query+ifstr(@@(params,"waiter")!=""," where a.Codigo=@waiter ","")
@@ -1319,6 +1392,7 @@ module "lib.dk"
             mz<"is_celebration">:0
             mz<"lifespan*">:@null
             mz<"flag">:dbr.num(db,@flag,p)
+            mz<"img">:@icon_mesa
             record<@@(mz,"code")+"*">:mz
 
         }
@@ -1328,13 +1402,21 @@ module "lib.dk"
         for i=0;i<@count(mesas_waiter_cc)
         {
             ref itm=@item(mesas_waiter_cc,i)
+            service=trim(@@(itm,"$service"))
+            key_code=replace(ranychars(@@(itm,"$code"),"/,[]{}"," ")," ","")
+            
+            if service == "FF"{itm<"img">:@icon_mesa_ff}
+            else if service == "DS"{itm<"img">:@icon_mesa_ds}
+            else{itm<"img">:@icon_mesa}
+
             new p
             {
                 @"cliente":@@(itm,"#cliente")
                 @"cc":@@(itm,"#icc")
                 @"ag":@@(itm,"#ag")
-                @"code":@@(itm,"code")
+                @"code":key_code
             }
+            
             itm<"customer*">:dbr.rec(db,@customer,p)
             itm<"cc*">:dbr.rec(db,@cc,p)
             itm<"waiter*">:dbr.rec(db,@waiter,p)
@@ -1342,6 +1424,7 @@ module "lib.dk"
             itm<"lifespan*">:get.lifespan(db,@@(itm,"sys_pk"))
 
             ref joined_tables=split(@@(p,"code"),"+")
+            
             available=0
             for j=0;j<list.count(joined_tables)
             {
@@ -1349,17 +1432,17 @@ module "lib.dk"
                 available=available + dbr.num(db,@available,pa)
             }
             if available==0{available =@@(itm,"#occupied_seats")}
-
+            
             itm<"available_seats">:available
             itm<"flag">:dbr.num(db,@flag,p)
 
             do field.remove(itm,"cliente")
             do field.remove(itm,"icc")
             do field.remove(itm,"ag")
-
-            record<@@(itm,"code")+"*">:itm
+            
+            record<key_code+"*">:itm
         }
-
+        
         //lista para definir todas las mesas
         ref lf=list.create()
         ref lclaves=list.create_from_fields(record)
@@ -1517,14 +1600,28 @@ module "lib.dk"
     {
         do dbr.begin(db)
         data<"validate">:@false
-        
+
         do VerifyToken(db,data)
+
+        serie=dbr.str(db,@blockdoc,@null)
+        ref data_folio=insert.folio(db,params)
+        referencia=get.referencia(serie,@@(data_folio,"folio"),@@(data,"format"))
+        
+        if parse.bool(@@(params,"$fastfoot"))
+        {
+            data<"info">:"FF"
+            data<"table">:cut("FF/"+referencia,45)
+        }
+        else if parse.bool(@@(params,"$homedelivery"))
+        {
+            data<"info">:"DS"
+            data<"table">:cut("DS/"+referencia,45)
+        }
         
         @divisa=GetDivisaPredet(db)
         
-        ref data_folio=insert.folio(db,params)
         using params{@"divisa":@divisa}
-        serie=dbr.str(db,@blockdoc,@null)
+        
         new venta
         {
             @"Sys_TimeStamp*":now()
@@ -1532,6 +1629,7 @@ module "lib.dk"
             @"Sys_DTCreated*":now()
             @"Sys_Exported":0
             @"Sys_DTExported*":now()
+            @"sys_info":@@(data,"$info")
             @"Auditado":0
             @"Contabilizado":0
             @"Descuento1":0
@@ -1542,9 +1640,9 @@ module "lib.dk"
             @"Impuesto2":0
             @"Impuesto3":0
             @"Impuesto4":0
-            @"referencia":get.referencia(serie,@@(data_folio,"folio"),@@(data,"format"))
-            @"dmnsMesa":@@(data,"table")
-            @"dmnsNota":@@(data,"notes")
+            @"referencia":referencia
+            @"dmnsMesa":@@(data,"$table")
+            @"dmnsNota":@@(data,"$notes")
             @"dmnsPersonas":@@(data,"num_people")
             @"documento":@documento_venta
             @"StatusAdministrativo":@_status_admin_abierto
@@ -1572,9 +1670,36 @@ module "lib.dk"
         if @@(data,"#icorte") > 0{venta<"icorte">:@@(data,"#icorte")}
 
         do dbr.insert(db,"venta",venta)
+        params<"id_table">:dbr.num(db,@max_venta,@null)
+
+        if parse.bool(@@(params,"$homedelivery"))
+        {
+            ref dmns_destino=record.copy(data,"nombre,telefono,direccion,notas")
+            using dmns_destino
+            {
+                @"sys_TimeStamp*":now()
+                @"sys_guid":uuid()
+                @"sys_DTCreated*":now()
+                @"sys_Exported":0
+                @"sys_DTExported*":now()
+            }
+            do dbr.insert(db,"dmns_destino",dmns_destino)
+
+            new dmns_entrega
+            {
+                @"Sys_TimeStamp*":now()
+                @"Sys_GUID":uuid()
+                @"Sys_DTCreated*":now()
+                @"Sys_Exported":0
+                @"Sys_DTExported*":now()
+                @"destino":dbr.num(db,"SELECT sys_pk from dmns_destino where sys_guid=@sys_guid",dmns_destino)
+                @"venta":@@(params,"#id_table")
+            }
+            do dbr.insert(db,"dmns_entrega",dmns_entrega)
+        }
         do dbr.commit(db)
 
-        params<"id_table">:dbr.num(db,@max_venta,@null)
+        
         return get.mesa(db,params)//dbr.rec(db,"select * from venta where Sys_GUID=@Sys_GUID",venta)
 
         exception
@@ -1624,7 +1749,13 @@ module "lib.dk"
         return mesa
     }
 
-    
+    table.enviar::&db,&params,&data
+    {
+        ref mesa=close.table(db,params,data)
+        do dbr.execute(db,"UPDATE venta SET statusentrega=1 where sys_pk=@id_table",params)
+        return mesa
+    }
+
     get.lifespan::&db,sys_pk
     {
         new p{@"sys_pk":sys_pk}
@@ -1830,6 +1961,7 @@ module "lib.dk"
                 @"cod_cp":@@(item,"cod_cp")
                 @"cod_cc":@@(item,"cod_cc")
                 @"data_img*":CreateHost(db,tolower(@@(item,"$sku")),"")
+                @"grupos*":getGroupProducts(db,@@(item,"#sys_pk"))
             }
             do list.add(list_foodbev,data_foodbev)
         }
@@ -1844,6 +1976,35 @@ module "lib.dk"
        
         return datafood
 
+    }
+    getGroupProducts::&db,producto
+    {
+        producto >> p
+
+        ref grupos=dbr.list(db,"SELECT v.sys_pk,v.cdirectoprom,v.cindirectoprom,
+        v.cmanoobraprom,v.cmaquinariaprom,v.descripcion,v.`factor`,
+        v.maximo,v.minimo,v.padicional,v.grupo,
+        gp.nombre,gp.notas
+        FROM ivariable v
+        INNER JOIN grupoproductos gp ON v.grupo=gp.sys_pk
+        WHERE v.fk_producto_ivariables=@producto; ",p)
+
+        for i = 0; i < @count(grupos)
+        {
+            ref grupo=@item(grupos,i)
+
+            ref productos=dbr.list(db,"SELECT p.sys_pk,p.codigo as sku,p.descripcion as description,p.precio1 FROM grupoproductos_producto_ gp
+            INNER JOIN producto p ON gp.iproductos=p.sys_pk
+            WHERE gp.igrupos=@grupo;",grupo)
+
+            for j = 0; j < @count(productos)
+            {
+                ref pdt=@item(productos,j)
+                pdt<"data_img*">:CreateHost(db,tolower(@@(pdt,"$sku")),"")
+            }
+            grupo<"productos*">:productos
+        }
+        return grupos
     }
     GetIndicaciones::indicaciones
     {
@@ -2058,6 +2219,7 @@ module "lib.dk"
     
     table.dorden::&db,&itm_details,&postData
     {
+        // do rise_error(0,to.json(@@(itm_details,"&variables")))
         ref list_dorders=list.create()
         ref sku=@@(itm_details,"&sku")
         new p{@"sys_pk":@@(sku,"#sys_pk")}
@@ -2086,7 +2248,11 @@ module "lib.dk"
             @"IDivisa":@@(product,"#idivisa")
             @"IProducto":@@(product,"#sys_pk")
         }
-        dorden<"adds*">:get.adds(db,@@(itm_details,"&options"))
+
+        ref adds=get.adds(db,@@(itm_details,"&options"))
+        do adds_variables(db,adds,@@(itm_details,"&variables"))
+        
+        dorden<"adds*">:adds
         return dorden
     }
     
@@ -2101,6 +2267,60 @@ module "lib.dk"
         return round(subtotal / (1+@tasa_iva),@DecimalesEnImportes)
     }
     
+    adds_variables::&db,&adds,&variables
+    {
+        if isnull(variables){return}
+
+        ref now=now()
+
+        ref l=list.create_from_fields(variables)
+        
+        for i = 0; i < @count(l)
+        {
+            grupo=list.str(l,i)
+            ref prod=@@(variables,"&"+grupo)
+            
+            if not(isnull(prod))
+            {
+                ref p=list.create_from_fields(prod)
+                for j = 0; j < @count(p)
+                {
+                    pk_prod=list.str(p,j)
+                    cantidad=@@(prod,"#"+pk_prod)
+
+                    new p
+                    {
+                        @"grupo":grupo
+                        @"prod":pk_prod
+                    }
+
+                    ref prd=dbr.rec(db,"select p.cdirecto,p.cindirecto,p.cmanoobra,p.cmaquinaria,p.precio1,
+                p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos
+                from producto p where p.sys_pk=@prod;",p)
+
+                    amount= 0
+                    ref dt_imp=GetDataImpuestos(db,amount,cantidad,0,0,@@(prd,"#impuestos"))
+
+                    new item_adds
+                    {
+                        @"Sys_TimeStamp*":now
+                        @"Sys_GUID":uuid()
+                        @"Sys_DTCreated*":now
+                        @"Sys_DTExported*":now
+                        @"Cantidad": cantidad
+                        @"CDirecto": 0 //@@(prd,"#cdirecto")
+                        @"CIndirecto": 0 // @@(prd,"#cindirecto")
+                        @"CManoObra": 0 //@@(prd,"#cmanoobraprom")
+                        @"CMaquinaria": 0 //@@(prd,"#cmaquinariaprom")
+                        @"Precio":@@(dt_imp,"#total")
+                        @"IProducto":pk_prod
+                    }
+
+                    do list.add(adds,item_adds)
+                }
+            }
+        }
+    }
     get.adds::&db,&options
     {
         ref list_adds=list.create()
@@ -2364,6 +2584,94 @@ module "lib.dk"
             do rise_error(99,last_error())
         }
     }
+
+    cancel.table::&db,&params,&data
+    {
+        ordenes_listos=dbr.num(db," SELECT COUNT(*) FROM orden o WHERE o.iventa=@id_table AND o.`status` IN(1,2,3);",params)
+
+        if ordenes_listos > 0{do rise_error(500,"No es posible cancelar la cuenta ya que contiene ordenes en preparación")}
+
+        do dbr.begin(db)
+        //cancelar ordenes
+        do dbr.execute(db,"UPDATE orden set `status`=4 where iventa=@id_table",params)
+        //cancelar venta
+        do dbr.execute(db,"UPDATE venta set statusadministrativo=99 where sys_pk=@id_table",params)
+        do dbr.commit(db)
+
+        return @null
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(last_error_code(),last_error())
+        }
+    }
+    cortesia.table::&db,&params,&data
+    {
+        percentaje=@@(data,"#percentaje_cortesia")
+
+        ref mesa=get.mesa(db,params)
+        subtotal=@@(mesa,"#subtotal")
+        
+        new v
+        {
+            @"notas":"Descuento "+str(percentaje)+"% por cortesía"
+            @"descuento1":(div(percentaje,100) * subtotal)
+        }
+
+        process_venta=(percentaje == 100)
+        if process_venta
+        {
+            using v
+            {
+                @"impuesto1": 0
+                @"impuesto2": 0
+                @"impuesto3": 0
+                @"impuesto4": 0
+            }
+        }
+        do dbr.begin(db)
+        do dbr.update(db,"venta",v,"sys_pk=@id_table",params)
+
+        if process_venta
+        {
+            ref v=close.table(db,params,data)
+            do dbr.execute(db,"UPDATE venta set statusadministrativo=3 where sys_pk=@id_table",params)
+            v<"status">: 3
+        }
+
+        do dbr.commit(db)
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(last_error_code(),last_error())
+        }
+        return v
+    }
+
+    table.setdealer::&db,&params,&data
+    {
+        params<"repartidor">:@@(data,"#repartidor")
+        if dbr.num(db,"SELECT sys_pk FROM repartidor WHERE sys_pk=@repartidor;",params)<1{do rise_error(500,"No se encontró el repartidor indicado")}
+
+        do dbr.execute(db,"UPDATE venta set irepartidor=@repartidor WHERE sys_pk=@id_table",params)
+        ref mesa= table.enviar(db,params,data)
+
+        return mesa
+    }
+    table.entregada::&db,&params,&data
+    {
+        // ref mesa=close.table(db,params,data)
+        do dbr.execute(db,"UPDATE venta SET statusentrega=3 where sys_pk=@id_table",params)
+        return @null
+    }
+    table.enviada::&db,&params,&data
+    {
+        // ref mesa=close.table(db,params,data)
+        do dbr.execute(db,"UPDATE venta SET statusentrega=1 where sys_pk=@id_table",params)
+        return @null
+    }
     //#endregion
     
     // ********************************************************
@@ -2371,7 +2679,6 @@ module "lib.dk"
     //#region Waiter(admin)
     get.code_waiter::&db
     {
-
         sys_pk=dbr.num(db,"select max(sys_pk) from agente",@null)
         code="000"+str(sys_pk+1)
         if length(code)>5{code=right(code,5)}
@@ -2514,6 +2821,15 @@ module "lib.dk"
     }
     access.config::&db,&params,&postData
     {
+        privilegio="CA70"
+        
+        if @@(postData,"$sitem") == "cortesia"{privilegio="CA72"}
+        else if @@(postData,"$sitem") == "cancelar"{privilegio="CA71"}
+
+        do access(db,params,postData,privilegio)
+    }
+    access::&db,&params,&postData,privilegio
+    {
         using params
         {
             @"uid":trim(@@(postData,"$user"))
@@ -2535,7 +2851,7 @@ module "lib.dk"
         @http_context<"session/idp/database*">:_db
         @http_context<"session/user/uid*">:@@(params,"$uid")
 
-        do dbr.apps.action.grant("CA70")
+        do dbr.apps.action.grant(privilegio)
     }
     //#endregion
     

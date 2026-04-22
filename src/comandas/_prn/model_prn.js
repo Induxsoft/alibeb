@@ -89,7 +89,19 @@ var model_prn=
     print_arqueo(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
+        
+        if(!config.data || config.printer=="server")
+        {
+            try
+            {
+                prn_generic.print_arqueo(data,callbackinterval);
+                return;
+            }
+            catch{}
+            
+
+            this.Redirec(data?.url_redir??"");return;
+        }
 
         prn_arqueo.Print(data,config.data,callbackinterval)
     },
@@ -110,7 +122,17 @@ var model_prn=
     print_ticket(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
+        if(!config.data || config.printer=="server")
+        {
+            try
+            {
+                prn_generic.print_ticket(data,callbackinterval);
+                return;
+            }
+            catch{}
+
+            this.Redirec(data?.url_redir??"");return;
+        }
 
         prn_ticket.Print(data,config.data,callbackinterval);
     },

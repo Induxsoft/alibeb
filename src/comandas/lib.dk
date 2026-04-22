@@ -71,7 +71,12 @@ module "lib.dk"
         @http_context<"response/output">:"text"
         @http_context<"response/text">: to.json(responseJSONdata)
     }
-
+	setResponse::content
+	{
+		@http_context<"response/headers/Content-Type">:"application/json;charset=utf-8"
+        @http_context<"response/output">:"text"
+        @http_context<"response/text">: content
+	}
 	TableExist::&db,table
     {
         table >> p
@@ -156,6 +161,11 @@ module "lib.dk"
 			if trim(@@(cprinter,"$data"))==""{return @null}
 
 			return from.json(@@(cprinter,"$data"))
+		}
+		else if not(isnull(config))
+		{
+			config<"req_data">:@true
+			return config
 		}
 		else{return @null}
 	}
