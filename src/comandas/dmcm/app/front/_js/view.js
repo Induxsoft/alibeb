@@ -462,7 +462,9 @@ var views=
 
                   btn_acept_prods_vars.addEventListener("click",()=>
                   {
-                        if(totalCantidad(seleccion) < min)
+                        let total=totalCantidad(seleccion,null,true);
+                        if(total == -1){return;}
+                        if( total < min)
                         {
                               alert("Debe seleccionar al menos un elemento");
                               return;
@@ -1461,11 +1463,12 @@ let productoSeleccionado = null;
 
 // ESTRUCTURA FINAL
 let seleccion = {};
-
+let _grupos=[];
 // RENDER GRUPOS
 
 function printGrupo(grupos)
 {
+      _grupos=grupos;
       const contGrupos = document.getElementById("grupos");
       const cont = document.getElementById("productos");
       cont.innerHTML="";
@@ -1473,6 +1476,7 @@ function printGrupo(grupos)
       grupoActual=null;
       productoSeleccionado=null;
       seleccion = {};
+      minmaxgrupos={};
 
       for (let i = 0; i < grupos.length; i++) 
       {
@@ -1483,6 +1487,10 @@ function printGrupo(grupos)
                   btn.className = "btn btn-grupo";
                   btn.style.cssText="border: 1px solid gray !important;";
                   btn.innerText =grupo.descripcion??grupo.nombre;
+                  btn.id="group_"+grupo.sys_pk;
+                  
+                  if (!seleccion[grupo.grupo]) seleccion[grupo.grupo] = new Map();
+
                   btn.onclick = () => 
                   {
                         // quitar selección previa
@@ -1505,13 +1513,19 @@ function printGrupo(grupos)
 // CARGAR PRODUCTOS
 function cargarGrupo(data_grupo) 
 {
+      if(!visible && btnToggle)btnToggle.click();
+
       let grupo=data_grupo.grupo;
     grupoActual = grupo;
     min=data_grupo.minimo??1;
     max=data_grupo.maximo??1;
+    minmaxgrupos[grupo]=
+    {
+      min:min,
+      max:max
+    };
     data[grupo]=data_grupo.productos;
 //     if (!seleccion[grupo]) seleccion[grupo] = {};
-    if (!seleccion[grupo]) seleccion[grupo] = new Map();
 
     const cont = document.getElementById("productos");
     cont.innerHTML = "";
@@ -1576,6 +1590,7 @@ function renderTabla() {
                 <button onclick="cambiarCantidadProducto(${sys_pk}, -1)">➖</button>
                 ${cantidad}
                 <button onclick="cambiarCantidadProducto(${sys_pk}, 1)">➕</button>
+                <button onclick="eliminarProducto(${sys_pk})">🗑</button>
             </td>
         `;
 
@@ -1603,15 +1618,27 @@ function cambiarCantidadProducto(codigo, delta)
 
     renderTabla();
 }
+function eliminarProducto(sys_pk) 
+{
+    if (!grupoActual) return;
 
-function validarCantidad() {
+    const grupo = seleccion[grupoActual];
+
+    if (!(grupo instanceof Map)) return;
+
+    grupo.delete(sys_pk);
+
+    renderTabla();
+}
+function validarCantidad() 
+{
     const grupo = seleccion[grupoActual];
 
     // cantidad de productos distintos en el grupo
     const totalItemsGrupo = grupo.size;
 
     // suma total de cantidades en todos los grupos
-    const total = totalCantidad(seleccion);
+    const total = totalCantidad(seleccion,grupoActual);
 
     if (totalItemsGrupo === max || total >= max) {
         alert("No se puede agregar más elementos de este grupo, si desea realizar un cambio elimine o disminuya la cantidad de algunos elementos y vuelva a intentarlo");
@@ -1620,17 +1647,48 @@ function validarCantidad() {
 
     return true;
 }
-function totalCantidad(seleccion) 
+function totalCantidad(seleccion, grupoActual = null,validatebygroup=false) 
 {
     let total = 0;
 
-    Object.values(seleccion).forEach(grupo => {
-        if (!(grupo instanceof Map)) return;
-
-        grupo.forEach(cantidad => {
+    // 🔹 Si viene un grupo válido
+    if (grupoActual && seleccion[grupoActual] instanceof Map) {
+        seleccion[grupoActual].forEach(cantidad => {
             total += cantidad;
         });
-    });
+
+        return total;
+    }
+    
+      for (const [grupoId, grupo] of Object.entries(seleccion)) 
+      {
+            if (!(grupo instanceof Map)) continue;
+
+            let total_grupo = 0;
+
+            for (const cantidad of grupo.values()) {
+                  total += cantidad;
+                  total_grupo += cantidad;
+            }
+
+            // 🔹 aquí YA tienes el grupo
+            if (validatebygroup) {
+                  const g = _grupos.find(g => Number(g.grupo) === Number(grupoId));
+
+                  if (!g) continue;
+                  // console.log("Grupo:", grupoId, "Total:", total_grupo, "Config:", g);
+
+                  // aquí puedes validar contra min/max del grupo
+                  // ejemplo:
+                  if (g.minimo && total_grupo < g.minimo ) 
+                  {
+                        let btn_group=document.getElementById("group_"+g.sys_pk);
+                        if(btn_group)btn_group.click();
+                        alert(`La cantidad de elementos del grupo: ${g.descripcion} debe estar entre ${g.minimo} y ${g.maximo}`);
+                        return -1;
+                  }
+            }
+      }
 
     return total;
 }
@@ -1682,4 +1740,25 @@ views.InitInterval=()=>
       }
 }
 
+
+//boton togle productos
+const btnToggle = document.getElementById("toggleProductos");
+const contProductos = document.getElementById("contenedorProductos");
+const tabla = document.querySelector(".tabla");
+
+let visible = true;
+
+if(btnToggle)btnToggle.addEventListener("click", () => {
+    visible = !visible;
+
+    if (!visible) {
+        contProductos.classList.add("oculto");
+        tabla.classList.add("full");
+        btnToggle.innerText = "➡ Mostrar";
+    } else {
+        contProductos.classList.remove("oculto");
+        tabla.classList.remove("full");
+        btnToggle.innerText = "⬅ Ocultar";
+    }
+});
 

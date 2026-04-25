@@ -289,14 +289,20 @@ div(id="modal-recetas-variables" class="show_modal_center open-table hidde_contr
             {
                 $'<div class="header" id="grupos"></div>
 
+                <div class="d-flex justify-content-end container-btn-prods">
+                    <button class="btn btn-sm" id="toggleProductos" class="btn-toggle">
+                        ⬅ Ocultar
+                    </button>
+                </div>
+                
                 <div class="content">
 
-                    <div class="productos" >
-                        <div id="productos" style="margin-top: 24px;"></div>
+                    <div class="productos" id="contenedorProductos">
+                        <div id="productos" style=""></div>
                     </div>
 
                     <div class="tabla">
-                        <table class="table-var" id="tabla">
+                        <table class="table" id="tabla">
                             <thead>
                                 <tr>
                                     <th>Producto</th>
