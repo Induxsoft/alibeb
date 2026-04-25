@@ -669,10 +669,36 @@ module "lib.dk"
     }
     get.clientes::&db,&params
     {
-        return dbr.list(db,"SELECT c.codigo,c.nombre,c.telefonos telefono,CONCAT_WS(' ',d1.codpos,d1.colonia,d1.direccion)direccion 
-				FROM cliente c 
-				LEFT JOIN domicilio d1 ON c.domicilio1=d1.sys_pk
-				WHERE CONCAT_WS(' ',c.codigo,c.nombre) LIKE CONCAT('%',@s,'%');",params)
+        // return dbr.list(db,"SELECT c.codigo,c.nombre,c.telefonos telefono,CONCAT_WS(' ',d1.codpos,d1.colonia,d1.direccion)direccion 
+		// 		FROM cliente c 
+		// 		LEFT JOIN domicilio d1 ON c.domicilio1=d1.sys_pk
+		// 		WHERE CONCAT_WS(' ',c.codigo,c.nombre) LIKE CONCAT('%',@s,'%');",params)
+
+        return dbr.list(db,"SELECT
+            0 sys_pk,
+            c.codigo,
+            c.nombre,
+            c.telefonos telefono,
+            CONCAT_WS(' ', d1.codpos, d1.colonia, d1.direccion) direccion,
+            '' notas
+        FROM
+            cliente c
+            LEFT JOIN domicilio d1 ON c.domicilio1 = d1.sys_pk
+        WHERE
+            CONCAT_WS(' ', c.codigo, c.nombre,d1.codpos, d1.colonia, d1.direccion) LIKE CONCAT('%', @s, '%')
+        UNION
+        SELECT
+            d.sys_pk,
+            d.sys_pk codigo,
+            d.nombre,
+            d.telefono,
+            d.direccion,
+            d.notas
+        FROM
+            dmns_destino d
+        WHERE
+            CONCAT_WS(' ', d.telefono, d.nombre, d.direccion, d.notas,d.sys_pk) LIKE CONCAT('%', @s, '%');",params)
+            
     }
     GetCategoriaByCodigo::&db,codcat
     {
@@ -1344,6 +1370,7 @@ module "lib.dk"
                 where =where + " AND qv.sys_info='DS' AND (
                     qv.statusadministrativo=2 AND qv.statusentrega=0  
                     OR (qv.statusadministrativo = 3 AND qv.statusentrega = 0)
+                    OR (qv.statusadministrativo=1 AND qv.statusentrega=0 )
                     )"
                 break
             }
@@ -1674,6 +1701,7 @@ module "lib.dk"
 
         if parse.bool(@@(params,"$homedelivery"))
         {
+            
             ref dmns_destino=record.copy(data,"nombre,telefono,direccion,notas")
             using dmns_destino
             {
@@ -1683,7 +1711,20 @@ module "lib.dk"
                 @"sys_Exported":0
                 @"sys_DTExported*":now()
             }
-            do dbr.insert(db,"dmns_destino",dmns_destino)
+            destino=@@(data,"#sys_pk")
+            if destino < 1
+            {
+                do dbr.insert(db,"dmns_destino",dmns_destino)
+                destino=dbr.num(db,"SELECT sys_pk from dmns_destino where sys_guid=@sys_guid",dmns_destino)
+            }
+            else
+            {
+                do field.remove(dmns_destino,"sys_guid")
+                do field.remove(dmns_destino,"sys_DTCreated")
+                do field.remove(dmns_destino,"sys_DTExported")
+
+                do dbr.update(db,"dmns_destino",dmns_destino,"sys_pk=@sys_pk",data)
+            }
 
             new dmns_entrega
             {
@@ -1692,7 +1733,7 @@ module "lib.dk"
                 @"Sys_DTCreated*":now()
                 @"Sys_Exported":0
                 @"Sys_DTExported*":now()
-                @"destino":dbr.num(db,"SELECT sys_pk from dmns_destino where sys_guid=@sys_guid",dmns_destino)
+                @"destino":destino
                 @"venta":@@(params,"#id_table")
             }
             do dbr.insert(db,"dmns_entrega",dmns_entrega)
@@ -1717,7 +1758,7 @@ module "lib.dk"
 
         idtable=dbr.str(db,@exist_table,params)
 
-        if idtable!=""{do rise_error(99,"Ya existe una mesa aún sin procesar con el número de mesa indicado.")}
+        if idtable!=""{do rise_error(99,"Ya existe una mesa con el mismo nombre")}
 
         ispaid=dbr.num(db,@table_paid,params)
         if ispaid > 0{do rise_error(500,"La cuenta de la mesa no ha sido cobrada.")}
@@ -2283,20 +2324,21 @@ module "lib.dk"
             if not(isnull(prod))
             {
                 ref p=list.create_from_fields(prod)
+                
                 for j = 0; j < @count(p)
                 {
                     pk_prod=list.str(p,j)
                     cantidad=@@(prod,"#"+pk_prod)
 
-                    new p
+                    new params
                     {
                         @"grupo":grupo
                         @"prod":pk_prod
                     }
 
                     ref prd=dbr.rec(db,"select p.cdirecto,p.cindirecto,p.cmanoobra,p.cmaquinaria,p.precio1,
-                p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos
-                from producto p where p.sys_pk=@prod;",p)
+                    p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos
+                    from producto p where p.sys_pk=@prod;",params)
 
                     amount= 0
                     ref dt_imp=GetDataImpuestos(db,amount,cantidad,0,0,@@(prd,"#impuestos"))
@@ -2319,6 +2361,7 @@ module "lib.dk"
                     do list.add(adds,item_adds)
                 }
             }
+            
         }
     }
     get.adds::&db,&options
@@ -2849,8 +2892,8 @@ module "lib.dk"
         if isnull(@@(@http_context,"&session/user")){@http_context<"session/user*">:record.create()}
 
         @http_context<"session/idp/database*">:_db
-        @http_context<"session/user/uid*">:@@(params,"$uid")
-
+        @http_context<"session/user/uid">:@@(params,"$uid")
+        @http_context<"session/user/ids">:dbr.getSID(_db)
         do dbr.apps.action.grant(privilegio)
     }
     //#endregion
@@ -3081,6 +3124,14 @@ module "lib.dk"
         ticket<"importe_letras">:Int2Ltr(@@(ticket,"#total"))+" "+Dec2Ltr(@@(ticket,"#total"))
         ticket<"text_footer">:dbr.str(db,"SELECT varvalue FROM globalvar g WHERE g.VarName='FXCA113';",@null)
         ticket<"nota_adicional">:"*NO ES UN COMPROBANTE DE PAGO*"
+
+        //datos de entrega
+        ref entrega=dbr.rec(db,"SELECT d.sys_pk,d.nombre,d.telefono,d.direccion,d.notas AS referencia FROM dmns_entrega e 
+        INNER JOIN dmns_destino d ON e.destino=d.sys_pk
+        WHERE e.venta=@iventa;",p)
+
+        ticket<"entrega*">:entrega
+
         return ticket
     }
     ticket.fpagos::&db,venta,_movcaja

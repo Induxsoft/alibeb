@@ -1,17 +1,32 @@
 module ""
 {
     #$
-    div(class="info-total" id="info-vnt" style="background-color:#FFF;height:4rem;")
+    div(class="info-total" id="info-vnt" style="background-color:#FFF;")
     {
-        div(class="d-flex div-footer" style="height: 100%;")
+        div(class="div-footer" style="height: 100%;")
         {
-            div(class="")
+            div(class="d-flex ")
             {
-                p(id="name_table" style="height: 10%;"){"---"}
-                label(class="w-100"){""label(id="lblticket"){"---"} }
-                small(id="account_dealer"){"---"}
+                div(class="flex-grow-1")
+                {
+                    p(id="name_table" style="height: 10%;"){"---"}
+                    label(class="w-100"){""label(id="lblticket"){"---"} }
+                }
+                div(class="mt-2 just-mgn-4 d-flex just-cont-end just-itm-center" ){""h3(id="lbltotal" style="color:var(--purple);"){"$ 0.00"} }
             }
-            div(class="mt-2 just-mgn-4 d-flex just-cont-end just-itm-center" ){""h3(id="lbltotal" style="color:var(--purple);"){"$ 0.00"} }
+            
+
+            div(class="d-flex justify-content-end")
+            {
+                div(class="")
+                {
+                    small(class="d-block text-end" id="lbl_subtotal"){"---"}
+                    small(class="d-block text-end" id="lbl_descuento"){"---"}
+                    small(class="d-block text-end" id="lbl_impuestos"){"---"}
+                }
+            }
+
+            small(id="account_dealer"){"---"}
         }
         
     }

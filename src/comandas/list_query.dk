@@ -9,14 +9,14 @@ module "lista de consultas"
 	@available="select d.personas from dmnsmesa d where d.id=@code"
 
 	@exist_table="select dmnsmesa from  venta v INNER JOIN agente a ON v.iagente=a.sys_pk
-                where v.dmnsmesa=@code and v.StatusAdministrativo=1 AND a.codigo=@waiter;"
+                where v.dmnsmesa=@code and v.StatusAdministrativo<3;"
 
     @table_paid="select ifnull(v.sys_pk,0)pk_venta from  venta v INNER JOIN agente a ON v.iagente=a.sys_pk
                 where v.dmnsmesa=@code 
                 and v.StatusAdministrativo<>3 
                 and v.statusentrega<>3
-                and trim(ifnull(v.sys_info,''))=''
-                AND a.codigo=@waiter;"
+                and v.StatusAdministrativo<>99
+                and trim(ifnull(v.sys_info,''))=''"
 
 	@lifespan="select hour(v.sys_dtcreated)as hours,minute(v.sys_dtcreated)as minutes,second(v.sys_dtcreated) as seconds from venta v where v.sys_pk=@sys_pk"
 

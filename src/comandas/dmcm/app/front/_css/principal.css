@@ -846,7 +846,7 @@ html{scroll-behavior: smooth;}
 .mb-2{margin-bottom: 2px !important;}
 .info-total
 {
-  height: 5rem;
+  height: max-content;
   box-shadow: 0 2px 2px 0 rgb(0 0 0 / 10%);
 }
 .d-flex

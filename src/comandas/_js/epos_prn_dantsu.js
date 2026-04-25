@@ -8,7 +8,7 @@ function createDriver_generic(){
             switch(device.type)
             {
                 case "ethernet":
-                    dsEscPrn.openPrinterTCP(device.address, device.port, device.timeout, device.dpi, device.printWidth, device.charsPerLine);
+                    dsEscPrn.openPrinterTCP(device.address, Number(device.port), Number(device.timeout), Number(device.dpi), Number(device.printWidth), Number(device.charsPerLine));
                     break;
                 case "usb":
                     dsEscPrn.openPrinterUSB(device.dpi, device.printWidth, device.charsPerLine);

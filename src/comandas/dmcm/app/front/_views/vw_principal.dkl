@@ -12,7 +12,7 @@ module "terminal de mesero"
 			{
 				div(class="card cmn-header")
 				{
-					div(class="card-header " style="align-items: center;" id="card_header_actions")
+					div(class="card-header d-sm-flex d-block " style="align-items: center;" id="card_header_actions")
 					{
 						buttom(class="btn img mr-2 " onclick="controller.show_modal(\'#open-table\');")
 						{

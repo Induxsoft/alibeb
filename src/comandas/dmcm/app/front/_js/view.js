@@ -462,7 +462,7 @@ var views=
 
                   btn_acept_prods_vars.addEventListener("click",()=>
                   {
-                        if( totalCantidad(seleccion) < max)
+                        if(totalCantidad(seleccion) < min)
                         {
                               alert("Debe seleccionar al menos un elemento");
                               return;
@@ -525,9 +525,9 @@ var views=
                               if(!h)return;
                               
                               const filtrado = Object.fromEntries(
-                                    Object.entries(seleccion).filter(([key, value]) => 
-                                    Object.keys(value).length > 0
-                                    )
+                              Object.entries(seleccion)
+                                    .filter(([key, value]) => value instanceof Map && value.size > 0)
+                                    .map(([key, value]) => [key, Object.fromEntries(value)])
                               );
 
                               if(Object.keys(filtrado).length > 0)sku["variables"]=filtrado;
@@ -551,7 +551,7 @@ var views=
                                           <h3>$ ${views.format(itm.price * 1,2,".",",")}</h3>
                                     </div>
                                     <div class="" id="detail-indications_${uuid}"></div>
-                                    <small>${sku.variables ? Object.keys(sku.variables).length +"+ Producto variable":""} </small>
+                                    <small>${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </small>
                               </div>
                         <small class="list-btns">
 							<button onclick="controller.data_foodbev(${itm.sys_pk},true)" title="Otro igual a este">
@@ -915,8 +915,9 @@ var views=
             }
       },
       account_selected:null,
-      print_ordenes:function(data)
+      print_ordenes:function(_data)
       {
+            const data=views.keysToLower(_data);
             this.account_selected=data;
             var table_ordenes=document.querySelector(".ordenes");
             var lbltotal=document.querySelector("#lbltotal");
@@ -935,11 +936,18 @@ var views=
             var infvnt=document.querySelector("#info-vnt");
             var lblnotavnt=document.querySelector("#lblnotavnt");
 
+            let lbl_subtotal=document.getElementById("lbl_subtotal")
+            let lbl_descuento=document.getElementById("lbl_descuento")
+            let lbl_impuestos=document.getElementById("lbl_impuestos");
+
+            lbl_subtotal.textContent="SubTotal: $ "+views.format(data.subtotal,controller.decimals,".",",")
+            lbl_descuento.textContent="Descuento: $ "+views.format((data.d1??0) + (data.d2??0),controller.decimals,".",",")
+            lbl_impuestos.textContent="Impuestos: $ "+views.format((data.i1+data.i2+data.i3+data.i4),controller.decimals,".",",")
             lblnotavnt.innerHTML=data.notetable;
-            if(infvnt && data.notetable=="")
-                  infvnt.style.height="5rem";
-            else
-                  infvnt.style.height="5rem";
+            // if(infvnt && data.notetable=="")
+            //       infvnt.style.height="5rem";
+            // else
+            //       infvnt.style.height="5rem";
 
             if(mesa)
                   if(mesa.classList.contains("table_opened"))
@@ -1006,7 +1014,7 @@ var views=
             if(table_ordenes)
             table_ordenes.innerHTML=html;
             if(name_table)
-            name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div><br>`;
+            name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div>`;
       
             var btncancel=document.getElementById("btn-cancelar");
             var btncortesia=document.getElementById("btn-cortesia");
@@ -1098,7 +1106,6 @@ var views=
             
             if((data.service??"").toUpperCase() !="DS")return;
             
-            console.log(data)
             let acciones=aplicarVisibilidadBotones(data);
       },
       clear_detalle()
@@ -1214,14 +1221,30 @@ var views=
             
             const form=document.getElementById("form_home_delivery");
             if(!form)return;
-
+            
+            let element_not_set_val=false;
             for(let k in data)
             {
-                  let element=form.querySelector("input[name='"+k+"']");
-                  if(!element)continue;
+                  let value=data[k] ?? "";
 
-                  element.value=data[k] ?? "";
-                  element.focus();
+                  let element=form.querySelector("input[name='"+k+"']");
+                  if(!element)element=form.querySelector("textarea[name='"+k+"']");
+                  
+                  if(!element)continue;
+                  
+                  element.value="";
+                  if(!value && k!="sys_pk")
+                  {
+                        if(!element_not_set_val)
+                        {
+                              element_not_set_val=true;
+                              element.focus();
+                        }
+                        continue;
+                  }
+
+                  element.value=value;
+                  if(!element_not_set_val)element.focus();
             }
       },
       getDataForm(idform="form_home_delivery")
@@ -1410,7 +1433,7 @@ function aplicarVisibilidadBotones(_rowData)
   const fila = document.getElementById('fila-orden');
   if (fila) fila.style.borderColor = color;
 
-  console.log(`Estado resuelto: ${nombre} | Color: ${color} | Acciones: ${acciones.join(', ')}`);
+//   console.log(`Estado resuelto: ${nombre} | Color: ${color} | Acciones: ${acciones.join(', ')}`);
   return { nombre, color, acciones };
 }
 
@@ -1449,6 +1472,7 @@ function printGrupo(grupos)
       contGrupos.innerHTML="";
       grupoActual=null;
       productoSeleccionado=null;
+      seleccion = {};
 
       for (let i = 0; i < grupos.length; i++) 
       {
@@ -1458,7 +1482,7 @@ function printGrupo(grupos)
                   const btn = document.createElement("div");
                   btn.className = "btn btn-grupo";
                   btn.style.cssText="border: 1px solid gray !important;";
-                  btn.innerText = grupo.nombre;
+                  btn.innerText =grupo.descripcion??grupo.nombre;
                   btn.onclick = () => 
                   {
                         // quitar selección previa
@@ -1486,7 +1510,8 @@ function cargarGrupo(data_grupo)
     min=data_grupo.minimo??1;
     max=data_grupo.maximo??1;
     data[grupo]=data_grupo.productos;
-    if (!seleccion[grupo]) seleccion[grupo] = {};
+//     if (!seleccion[grupo]) seleccion[grupo] = {};
+    if (!seleccion[grupo]) seleccion[grupo] = new Map();
 
     const cont = document.getElementById("productos");
     cont.innerHTML = "";
@@ -1514,10 +1539,16 @@ function agregarProducto(prod)
       {
             return ;
       }
-    if (!seleccion[grupoActual][prod.sys_pk]) {
-        seleccion[grupoActual][prod.sys_pk] = min;
+//     if (!seleccion[grupoActual][prod.sys_pk]) 
+//       {
+//         seleccion[grupoActual][prod.sys_pk] = min;
+//     }
+      if (!seleccion[grupoActual].has(prod.sys_pk)) 
+      {
+        seleccion[grupoActual].set(prod.sys_pk,min);
     }
-
+    else cambiarCantidadProducto(productoSeleccionado, 1);
+    
     renderTabla();
 }
 
@@ -1528,22 +1559,23 @@ function renderTabla() {
 
     if (!grupoActual) return;
 
-    Object.entries(seleccion[grupoActual]).forEach(([sys_pk, cantidad]) => 
+//     Object.entries(seleccion[grupoActual]).forEach(([sys_pk, cantidad]) => 
+      seleccion[grupoActual].forEach((cantidad, sys_pk) => 
       {
         const prod = data[grupoActual].find(p => Number(p.sys_pk) === Number(sys_pk));
         
         if(!prod)return;
             
         const tr = document.createElement("tr");
-
+            tr.style.cssText="border: 1px solid black;"
       //   tr.onclick = () => productoSeleccionado = sys_pk;
 
         tr.innerHTML = `
-            <td>${prod.description}</td>
-            <td>
-                <button onclick="cambiarCantidadProducto('${sys_pk}', -1)">➖</button>
+            <td data-label="Producto">${prod.description}</td>
+            <td data-label="Cantidad">
+                <button onclick="cambiarCantidadProducto(${sys_pk}, -1)">➖</button>
                 ${cantidad}
-                <button onclick="cambiarCantidadProducto('${sys_pk}', 1)">➕</button>
+                <button onclick="cambiarCantidadProducto(${sys_pk}, 1)">➕</button>
             </td>
         `;
 
@@ -1552,51 +1584,55 @@ function renderTabla() {
 }
 
 // CAMBIAR CANTIDAD
-function cambiarCantidad(delta) {
-    if (!grupoActual || !productoSeleccionado) return;
 
-    let actual = seleccion[grupoActual][productoSeleccionado];
-
-    let nueva = actual + delta;
-
-    if (nueva > max) nueva = max;
-    if (nueva < min) nueva = min;
-
-    seleccion[grupoActual][productoSeleccionado] = nueva;
-
-    renderTabla();
-}
 function cambiarCantidadProducto(codigo, delta) 
 {
       if(delta > 0 && !validarCantidad())
       {
             return ;
       }
-    let actual = seleccion[grupoActual][codigo];
+//     let actual = seleccion[grupoActual][codigo];
+    let actual = seleccion[grupoActual].get(codigo);
     let nueva = actual + delta;
 
     if (nueva > max) nueva = max;
     if (nueva < min) nueva = min;
 
-    seleccion[grupoActual][codigo] = nueva;
+//     seleccion[grupoActual][codigo] = nueva;
+    seleccion[grupoActual].set(codigo,nueva);
 
     renderTabla();
 }
 
-function validarCantidad()
-{
-      if(Object.keys(seleccion[grupoActual]).length == max || totalCantidad(seleccion) >=max)
-      {
-            alert("No se puede agregar más elementos de este grupo, si desea realizar un cambio elimine o disminuya la cantidad de algunos elementos y vuelva a intentarlo");
-            return false;
-      }
-      return true;
+function validarCantidad() {
+    const grupo = seleccion[grupoActual];
+
+    // cantidad de productos distintos en el grupo
+    const totalItemsGrupo = grupo.size;
+
+    // suma total de cantidades en todos los grupos
+    const total = totalCantidad(seleccion);
+
+    if (totalItemsGrupo === max || total >= max) {
+        alert("No se puede agregar más elementos de este grupo, si desea realizar un cambio elimine o disminuya la cantidad de algunos elementos y vuelva a intentarlo");
+        return false;
+    }
+
+    return true;
 }
 function totalCantidad(seleccion) 
 {
-    return Object.values(seleccion) // grupos
-        .flatMap(grupo => Object.values(grupo)) // cantidades
-        .reduce((acc, val) => acc + val, 0);
+    let total = 0;
+
+    Object.values(seleccion).forEach(grupo => {
+        if (!(grupo instanceof Map)) return;
+
+        grupo.forEach(cantidad => {
+            total += cantidad;
+        });
+    });
+
+    return total;
 }
 
 // Tiempo de inactividad en ms (3 minutos por default)

@@ -225,11 +225,13 @@ div(class="modal fade " id="modal-home-delivery" tabindex="-1" "data-bs-backdrop
                     "data-text"="nombre" 
                     "data-source"="/dmcm/pos/dinner/clientes/?admin=1&s=@search" 
                     "data-value"="{}" 
-                    columns="codigo,nombre,telefonos,direccion" 
-                    colcaptions="Código,Nombre,Telefonos,Dirección"){$""}
+                    columns="codigo,nombre,telefono,direccion,notas" 
+                    colcaptions="Código,Nombre,Telefono,Dirección,Notas"){$""}
                 hr{}
                 form(action="." method="POST" id="form_home_delivery")
                 {
+                    input(type="hidden" name="sys_pk" id="sys_pk")
+
                     div(class="row")
                     {
                         div(class="col-md-6")
@@ -281,15 +283,17 @@ div(id="modal-recetas-variables" class="show_modal_center open-table hidde_contr
     
     div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
     {
-        div(class="card")
+        div(class="card p-0")
         {
-            div(class="card-body")
+            div(class="card-body p-1")
             {
                 $'<div class="header" id="grupos"></div>
 
                 <div class="content">
 
-                    <div class="productos" id="productos"></div>
+                    <div class="productos" >
+                        <div id="productos" style="margin-top: 24px;"></div>
+                    </div>
 
                     <div class="tabla">
                         <table class="table-var" id="tabla">
@@ -346,7 +350,8 @@ div(id="modal-cortesia" class="show_modal_center open-table hidde_control modal-
                         label(class="fw-bold" "for"=""){"%"}
                     }
                     
-
+                    small(style="color:dimgray;"){"[0% = Restablecer cuenta]"}
+                    br{}
                     br{}
 
                     div(class="d-flex flex-wrap")

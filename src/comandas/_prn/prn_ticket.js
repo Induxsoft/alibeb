@@ -13,11 +13,11 @@ var prn_ticket=
 
         eposprn.connect(config, (status)=>
         {
-            if(!eposprn.driver.isConnected)
-            {
-                if(url_redir)window.location.href=data.url_redir;
-                return;
-            }
+            // if(!eposprn.driver.isConnected)
+            // {
+            //     if(url_redir)window.location.href=data.url_redir;
+            //     return;
+            // }
 
             this.CreateTicket(data,callbackinterval)
         },
@@ -51,7 +51,15 @@ var prn_ticket=
 
         eposprn.printText("Mesero: "+mesero.nombre);
         eposprn.printText("Cajero: "+cajero.nombre);
-        eposprn.printText("Cliente: "+cliente.name);
+        if(data.repartidor)eposprn.printText("Repartidor: "+data.repartidor);
+        if(data.entrega)
+        {
+            eposprn.printText("Cliente: "+data.entrega.nombre);
+            printer.printText("Tel.: "+data.entrega.telefono);
+            if(data.entrega.direccion)eposprn.printText("Dirección: "+data.entrega.direccion);
+            if(data.entrega.referencia)eposprn.printText("Referencia: "+data.entrega.referencia);
+        }
+        else eposprn.printText("Cliente: "+cliente.name);
 
         eposprn.printText(divider_full);
         eposprn.setAlign(1) //1 -> center

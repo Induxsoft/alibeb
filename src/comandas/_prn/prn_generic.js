@@ -64,12 +64,20 @@ var prn_generic=
         data.success=true;
 
         // 👇 si NO es impresora real → mostrar modal
-        if(printer === PrinterBuffer){
-            showPrintModal(PrinterBuffer.getText());
+        if(printer === PrinterBuffer)
+        {
+            let _action={}
+            if(data.url_redir)
+            {
+                _action["btnclose"]={
+                    onclick:()=>window.location.href=data.url_redir
+                }
+            }
+            showPrintModal(PrinterBuffer.getText(),_action);
         }
+        else if(data.url_redir)window.location.href=data.url_redir;
 
-        if(data.url_redir)window.location.href=data.url_redir;
-        else if(callbackinterval)callbackinterval(data);
+        if(callbackinterval)callbackinterval(data);
     },
     print_ticket(data,callbackinterval=null)
     {
@@ -96,7 +104,16 @@ var prn_generic=
 
         printer.printText("Mesero: "+mesero.nombre);
         printer.printText("Cajero: "+cajero.nombre);
-        printer.printText("Cliente: "+cliente.name);
+
+        if(data.repartidor)printer.printText("Repartidor: "+data.repartidor);
+        if(data.entrega)
+        {
+            printer.printText("Cliente: "+data.entrega.nombre);
+            printer.printText("Tel.: "+data.entrega.telefono);
+            if(data.entrega.direccion)printer.printText("Dirección: "+data.entrega.direccion);
+            if(data.entrega.referencia)printer.printText("Referencia: "+data.entrega.referencia);
+        }
+        else printer.printText("Cliente: "+cliente.name);
 
         printer.printText(divider_full);
         printer.setAlign(1) //1 -> center
@@ -168,12 +185,20 @@ var prn_generic=
         data.success=true;
 
         // 👇 si NO es impresora real → mostrar modal
-        if(printer === PrinterBuffer){
-            showPrintModal(PrinterBuffer.getText());
+        if(printer === PrinterBuffer)
+        {
+            let _action={}
+            if(data.url_redir)
+            {
+                _action["btnclose"]={
+                    onclick:()=>window.location.href=data.url_redir
+                }
+            }
+            showPrintModal(PrinterBuffer.getText(),_action);
         }
+        else if(data.url_redir)window.location.href=data.url_redir;
 
-        if(data.url_redir)window.location.href=data.url_redir;
-        else if(callbackinterval)callbackinterval(data);
+        if(callbackinterval)callbackinterval(data);
     }
 }
 
@@ -218,7 +243,7 @@ function getPrinter(){
     PrinterBuffer.buffer=[];
     return PrinterBuffer;
 }
-function showPrintModal(text)
+function showPrintModal(text,_actions=null)
 {
     let modal = document.createElement("div");
     modal.style = `
@@ -297,6 +322,11 @@ function showPrintModal(text)
         cursor:pointer;
     `;
     btnClose.onclick = ()=> modal.remove();
+
+    if(_actions && _actions.btnclose && Object.keys(_actions.btnclose).length > 0)
+    {
+        Object.assign(btnClose, _actions.btnclose);
+    }
 
     actions.appendChild(btnCopy);
     actions.appendChild(btnClose);

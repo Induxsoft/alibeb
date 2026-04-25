@@ -60,7 +60,7 @@ var controller=
       if(setpropina){this.Propina(importe,this.pos_porcentaje_propina,null,false);}
       let propina=Number(views.propina.value);//obtener la propina indicada o configurada
 
-      let total=importe + propina;
+      let total=this.RoundTo(importe + propina,6);
       if(!isefectivo)views.efectivo_importe.value=0;      
       if((total - importe_tarjeta)>0 && !isefectivo)views.efectivo_importe.value=this.RoundTo(total - importe_tarjeta,this.decimals);
       //efectivo
@@ -68,6 +68,8 @@ var controller=
       let efectivo=Number(views.efectivo_importe?.value??0);
       let resto=total - (efectivo + importe_tarjeta);
       
+      // console.log(`total: ${total}, efectivo=${efectivo}, importe_tarjeta=${importe_tarjeta}, importe=${importe}, propina=${propina}`);
+
       if(resto<0)resto=0;
       
       let cambio=(importe_tarjeta + efectivo) - total;
@@ -118,7 +120,7 @@ var controller=
         return;
       }
 
-      if(totales.resto >0 )
+      if(totales.resto > 0 )
       {
         alert("El importe acumulado no cubre la totalidad de la venta");
         return;
@@ -145,7 +147,7 @@ var controller=
       model.invoke_service(uri,data,
       function(data)
       {
-        controller.PrinTicket(data);
+        controller.PrinTicket(data,()=>{views.toggle(document.body,true);});
       }
       ,function(error)
       {
