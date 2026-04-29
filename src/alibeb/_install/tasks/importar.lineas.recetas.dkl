@@ -35,7 +35,7 @@ program
             }
         }
     }
-    do dbr.apps.action.grant("CF24")
+    do dbr.apps.action.grant("CA14")
 
     data_file = @@(@batch_context,"$params/archivo")
     @cclaseproducto_def= 2

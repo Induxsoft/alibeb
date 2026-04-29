@@ -35,7 +35,7 @@ program "importar.producto.dkl"
             }
         }
     }
-    do dbr.apps.action.grant("CF15")
+    do dbr.apps.action.grant("CA24")
 
     ref lib_csv = _import_library("devkron.serialize.csv.dll")
     do _map_function(lib_csv,"devkron.serialize.csv.csvHelper","CsvRead","CsvRead","System.String,System.String","*")
