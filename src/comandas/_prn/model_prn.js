@@ -3,6 +3,13 @@ var model_prn=
     name_storage:"cfg_printer",
     character_width:25,
     ltimer:5,//intentos de conexión al imin printer
+    objlength:
+    {
+        unidad:5 + 1, //1 por el espacio en blanco
+        cantidad:6 + 1,
+        importe:10 + 1,
+        desc:0 // 0 toma el resto de espacio del papel,
+    },
     TextBetween(text,textleft)
     {
         let lt=text.length+textleft.length;
@@ -11,6 +18,89 @@ var model_prn=
         let l=Math.abs(this.character_width - lt);
 
         return text+"".padEnd(l," ")+textleft;
+    },
+    TextLength(text,key,start=true)
+    {   
+        if (!this._anchosCache) {
+            this._anchosCache = this.calcularAnchos();
+        }
+
+        let l = this._anchosCache[key];
+        if (!l) return "";
+
+        let contentLength = l - 1; // espacio
+
+        let txt = this.cut(text, contentLength);
+
+        if (start) {
+            return txt.padStart(contentLength, " ") + " ";
+        }
+
+        return txt.padEnd(contentLength, " ") + " ";
+    },
+    linea(veces,text="=") 
+    {
+        return text.repeat(veces);
+    },
+    cut(texto, length) 
+    {
+        texto=texto.toString();
+        // if (typeof texto !== "string") return "";
+
+        if (texto.length <= length) {
+            return texto;
+        }
+
+        return texto.substring(0, length);
+    },
+    calcularAnchos() 
+    {
+        const result = {};
+        let sumaFijos = 0;
+        let dinamicos = [];
+
+        // 1. Separar fijos y dinámicos
+        Object.entries(this.objlength).forEach(([key, val]) => {
+            if (val > 0) {
+            result[key] = val;
+            sumaFijos += val;
+            } else {
+            dinamicos.push(key);
+            }
+        });
+
+        let restante = this.character_width - sumaFijos;
+
+        // 🔴 Validación
+        if (restante < 0) {
+            console.warn("Los campos fijos exceden el ancho total");
+            restante = 0;
+        }
+
+        // 2. Repartir entre dinámicos
+        if (dinamicos.length > 0) {
+            let base = Math.floor(restante / dinamicos.length);
+            let sobrante = restante % dinamicos.length;
+
+            dinamicos.forEach((key, i) => {
+            result[key] = base + (i < sobrante ? 1 : 0);
+            });
+        }
+
+        return result;
+    },
+    sumarFijos(obj) 
+    {
+        let suma = 0;
+
+        Object.values(obj).forEach(valor => 
+        {
+            if (typeof valor === "number" && !isNaN(valor) && valor > 0) {
+                suma += valor; //-1 por el espacio en blanco
+            }
+        });
+
+        return suma;
     },
     CreatePrinter(data)
     {

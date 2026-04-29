@@ -11,6 +11,8 @@ var prn_ticket=
     
         model_prn.PrinterException(url_redir,data,callbackinterval);
 
+        if(dsEscPrn)dsEscPrn.setCharsetEncoding("CP1252");
+
         eposprn.connect(config, (status)=>
         {
             // if(!eposprn.driver.isConnected)
@@ -19,7 +21,7 @@ var prn_ticket=
             //     return;
             // }
 
-            this.CreateTicket(data,callbackinterval)
+            this.CreateTicket(data,callbackinterval,config)
         },
         (error)=>
         {
@@ -28,23 +30,38 @@ var prn_ticket=
             else if(callbackinterval)callbackinterval(error);
         });
     },
-    CreateTicket(data,callbackinterval=null)
+    async CreateTicket(data,callbackinterval=null,config=null)
     {
-        let divider_full="=========================";
+        model_prn.character_width=Number(config?.charsPerLine??27);
+        let divider_full=model_prn.linea(model_prn.character_width);
+
         let cconsumo=data.cconsumo??{};
         let mesero=data.mesero??{};
         let cliente=data.cliente??{};
         let list_dorden=data.detalle??[];
         let divisa=data.divisa??{};
         let cajero=data.cajero??{};
+        
+        eposprn.printText("\n");
+        //ejemplo de imprimir barcode
+        // eposprn.printBarcode({},"831254784551");
+        // eposprn.printQr({size:10},"831254784551");
+        // await eposprn.printImage("https://picsum.photos/256",200,256);
+        if(data.empresa)
+        {
+            eposprn.setAlign(1) //1 -> center
+            let titulo=(data.empresa??"").split("\n");
+            for (let i = 0; i < titulo.length; i++) 
+            {
+                const t = titulo[i];
+                eposprn.printText(t);
+            }
+        }
+        
 
-        eposprn.setAlign(1) //1 -> center
-        eposprn.printText(data.empresa??"");
         eposprn.setAlign(0) //1 -> izquierda
-
-        eposprn.printText("Ticket: "+data.referencia);
         eposprn.printText(divider_full);
-
+        eposprn.printText("Ticket: "+data.referencia);
         eposprn.printText(data.fecha_actual??"");
         eposprn.printText("CC: "+cconsumo.description??"");
         eposprn.printText("Mesa: "+data.mesa??"");
@@ -66,13 +83,19 @@ var prn_ticket=
         eposprn.printText("-DETALLE DE SU COMPRA-");
         eposprn.printText(divider_full);
         eposprn.setAlign(0) //1 -> izquierda
+        // eposprn.setAlign(2) //2 -> derecha
                         
-        eposprn.printText("DESC  CANT  UNID  IMPORTE");
+        eposprn.printText(`${model_prn.TextLength("DESC","desc",0)}${model_prn.TextLength("CANT","cantidad")}${model_prn.TextLength("UNID","unidad")}${model_prn.TextLength("IMPORTE","importe")}`);
 
         for (let i = 0; i < list_dorden.length; i++) 
         {
             const row = list_dorden[i];
-            eposprn.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.price,controller.decimals,".",",")}`);
+            let desc=model_prn.TextLength(row.description??"","desc",0);
+            let cantidad=model_prn.TextLength(controller.RoundTo(row.quantity??0,controller.decimals),"cantidad");
+            let unidad=model_prn.TextLength(row.unidad??"","unidad");
+            let importe=model_prn.TextLength("$ "+views.format(row.price??0,controller.decimals,".",","),"importe");
+
+            eposprn.printText(`${desc}${cantidad}${unidad}${importe}`);
         }
 
         eposprn.printText(divider_full);
@@ -114,8 +137,10 @@ var prn_ticket=
         if(tarjeta>0)eposprn.printText(`Tarjeta: $ ${views.format(tarjeta,controller.decimals,".",",")}`);
         if(cambio>0)eposprn.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
 
+        eposprn.setAlign(1) //1 -> center
         eposprn.printText(`${data.text_footer}`);
 
+        eposprn.setAlign(0); //0 -> izquierda
         //para comprobante de pago  ******************************************
         if((data.folio_factura??"")!="")
         {
@@ -124,10 +149,13 @@ var prn_ticket=
             eposprn.printText("# "+data.folio_factura);
         }
         //******************************************
+        eposprn.printText("\n");
+        eposprn.printText("\n");
 
-        eposprn.printText("\n");
-        eposprn.printText("\n");
+        eposprn.printText(divider_full);
+
         eposprn.cut();
+        
         data.success=true;
 
         if(data.url_redir)window.location.href=data.url_redir;

@@ -463,6 +463,7 @@ var views=
                   btn_acept_prods_vars.addEventListener("click",()=>
                   {
                         let total=totalCantidad(seleccion,null,true);
+                        
                         if(total == -1){return;}
                         if( total < min)
                         {

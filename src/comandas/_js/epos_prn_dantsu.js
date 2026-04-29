@@ -3,8 +3,15 @@ function createDriver_generic(){
         buffer:"",
         flag_cut:false,
         flag_cash:false,
+        align:"",
         connect:function(device,success,fail)
         {
+            if(!dsEscPrn)
+            {
+                alert("No existe el controlador indicado");
+                if(success)success("failed");
+                return;
+            }
             switch(device.type)
             {
                 case "ethernet":
@@ -22,15 +29,19 @@ function createDriver_generic(){
         setAlign:function(align)
         {
             //align=0-Izquierda, 1-Centro y 2-derecha
-            this.buffer += align <= 0 ? "[L]" : align >= 2 ? "[R]" : "[C]";
+            this.align = align <= 0 ? "[L]" : align >= 2 ? "[R]" : "[C]";
         },
         setFontBold:function(flag)
         {
             //flag=true/false
             if(flag) { 
-                if(this.buffer.includes("$_text")){ this.buffer.replace("$_text","<b>$_text<b>"); }
-                else{ this.buffer += "<b>$_text<b>"; }
+                if(this.buffer.includes("$_text")){ this.buffer.replace("$_text","<b>$_text</b>"); }
+                else{ this.buffer += "<b>$_text</b>"; }
             }
+        },
+        setCharsetEncoding:function(_encoding)
+        {
+            dsEscPrn.setCharsetEncoding(_encoding);
         },
         setFontItalic:function(flag)
         {
@@ -59,8 +70,8 @@ function createDriver_generic(){
                 case 70: s='big-6'; break;
                 default: s='normal'; break;
             }
-            if(this.buffer.includes("$_text")){ this.buffer.replace("$_text",`<font size='${s}'>$_text</font>`); }
-                else{ this.buffer += `<font size='${s}'>$_text</font>`; }
+            if(this.buffer.includes("$_text")){ this.buffer=this.buffer.replace("$_text",`<font size='${s}'>$_text</font>`); }
+            else{ this.buffer += `<font size='${s}'>$_text</font>`; }
         },
         formatOutPrintText:async function(txt)
         {
@@ -69,16 +80,16 @@ function createDriver_generic(){
             
             const alignments = ["[L]", "[C]", "[R]"];
 
-            if(!alignments.some(al => this.buffer.includes(al))) this.buffer = "[L]" + this.buffer;
+            if(!alignments.some(al => txt.includes(al))) this.buffer = "[L]" + this.buffer;
             
             console.log(this.buffer);
         },
         printText:async function(txt)
         {
             //txt=Cadena de texto a imprimir
-            await this.formatOutPrintText(txt);
-            dsEscPrn.printFormattedText("[L]\n"+this.buffer);
-            this.buffer="";
+            await this.formatOutPrintText(this.align+txt);
+            // dsEscPrn.printFormattedText(this.buffer);//"[L]\n"+
+            // this.buffer="";
         },
         printBarcode:function(std,data)
         {
@@ -121,23 +132,48 @@ function createDriver_generic(){
             let qrCode = `${p}<qrcode size='${std.size*5}'>${data}</qrcode>`;
             this.printText(qrCode);
         },
-        printImage:function(source,h,w)
+        printImageHex(hex)
         {
-            //source=Cadena o qué? -> dataURL
-            //h=alto
-            //w=ancho (en qué unidad?)
-            if(source)this.printText(`<img></img>`);
+            this.printText(`<img>${hex}</img>`);
+        },
+        getImageTag(source, w, h) 
+        {
+            return new Promise((resolve, reject) => 
+            {
+                if (!source) return resolve("");
+
+                const cbName = "printImageHex";
+                window.printImageHex = function(hex)
+                {
+                    try 
+                    {
+                        resolve(`<img>${hex}</img>`);
+                    } catch (e) {
+                        console.log("error: ",e);
+                        resolve("");
+                    }
+                };
+                dsEscPrn.printImage(source, cbName, w, h);
+            });
+        },
+        async printImage(source, h, w) 
+        {
+            const imgTag = await this.getImageTag(source, w, h);
+            console.log(imgTag)
+            if(imgTag)this.printText(imgTag);
         },
         cut:async function(txt="")
         {
+            // dsEscPrn.printFormattedText(this.buffer);
+
             await this.formatOutPrintText(txt);
-            dsEscPrn.printFormattedTextAndCut("[L]\n"+this.buffer);
+            dsEscPrn.printFormattedTextAndCut(this.buffer); //"[L]\n"+
             this.buffer="";
         },
         openCashDrawer:async function(txt="")
         {
             await this.formatOutPrintText(txt);
-            dsEscPrn.printFormattedTextAndOpenCashBox("[L]\n"+this.buffer,0);
+            dsEscPrn.printFormattedTextAndOpenCashBox(this.buffer,0);//"[L]\n"+
             this.buffer="";
         }
     };

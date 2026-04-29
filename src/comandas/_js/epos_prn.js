@@ -55,6 +55,10 @@ const eposprn={
         //size=0-Normal, 1-2x, 2-3x
         this.driver.setFontSize(size);
     },
+    setCharsetEncoding(_encoding)
+    {
+        this.driver.setCharsetEncoding(_encoding);
+    },
     printText:function(txt)
     {
         //txt=Cadena de texto a imprimir
