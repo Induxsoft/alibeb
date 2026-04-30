@@ -1576,7 +1576,7 @@ var controller=
         views.ActiveAnimation(false);
       },"PATCH",false);
     },
-    actionAccount(id_table,action,id_form="")
+    actionAccount(id_table, action, id_form="", okmsg=true)
     {
       var uri=`${url}pos/dinner/tables/${id_table}/`;
 
@@ -1591,7 +1591,7 @@ var controller=
       {
         var data={action:action}
       }
-      if(!confirm("¿Está seguro de realizar el proceso?"))return;
+      if(okmsg && !confirm("¿Está seguro de realizar el proceso?"))return;
 
       views.ActiveAnimation(true);
 

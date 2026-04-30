@@ -30,7 +30,6 @@ module "index.dkl"
 	_entity=@@(params,"$entity")
 	if isanyword(_entity,"clientes,repartidores") 
 	{
-		
 		ref db=dbr.open(@@(@config,"$connection"))
 
 		switch _entity
@@ -47,6 +46,12 @@ module "index.dkl"
 				do setResponse(to.json(repartidores))
 				break
 			}
+			// case "destino"
+			// {
+			// 	ref data = GetDestinationByPhone(db,params)
+			// 	do setResponse(to.json(data))
+			// 	break
+			// }
 		}
 		
 		exception
@@ -199,6 +204,11 @@ module "index.dkl"
 					{
 						ref response=get.clientes(db,params)
 						return
+					}
+					case "destino"
+					{
+						ref data = GetDestinationByPhone(db,params)
+						break
 					}
 				}
 			}

@@ -216,35 +216,38 @@ div(class="modal fade " id="modal-home-delivery" tabindex="-1" "data-bs-backdrop
             }
             div(class="modal-body py-0 px-2 pt-2" )
             {
-                h5{"Buscar cliente:"}
-                "input-key"(
-                    name="cliente_ds" 
-                    id="cliente_ds" 
-                    "data-key"="sys_pk" 
-                    "data-search"="codigo" 
-                    "data-text"="nombre" 
-                    "data-source"="/dmcm/pos/dinner/clientes/?admin=1&s=@search" 
-                    "data-value"="{}" 
-                    columns="codigo,nombre,telefono,direccion,notas" 
-                    colcaptions="Código,Nombre,Telefono,Dirección,Notas"){$""}
-                hr{}
+                // h5{"Buscar cliente:"}
+                // "input-key"(
+                //     name="cliente_ds" 
+                //     id="cliente_ds" 
+                //     "data-key"="sys_pk" 
+                //     "data-search"="codigo" 
+                //     "data-text"="nombre" 
+                //     "data-source"="/dmcm/pos/dinner/clientes/?admin=1&s=@search" 
+                //     "data-value"="{}" 
+                //     columns="codigo,nombre,telefono,direccion,notas" 
+                //     colcaptions="Código,Nombre,Telefono,Dirección,Notas"){$""}
+                // hr{}
                 form(action="." method="POST" id="form_home_delivery")
                 {
                     input(type="hidden" name="sys_pk" id="sys_pk")
 
                     div(class="row")
                     {
-                        div(class="col-md-6")
+                        div(class="col-md-12")
+                        {
+                            label(class="fw-bold" "for"=""){"Teléfono:"}
+                            div(class="d-flex gap-1")
+                            {
+                                input(class="input-login" type="tel" name="telefono" required="")
+                                button(class="blue_button" type="button" onclick="views.getDestinationByPhone()"){"OK"}
+                            }
+                        }
+                        div(class="col-md-12")
                         {
                             label(class="fw-bold" "for"=""){"Nombre completo:"}
                             input(class="input-login" type="" name="nombre" required="")
                         }
-                        div(class="col-md-6")
-                        {
-                            label(class="fw-bold" "for"=""){"Teléfono:"}
-                            input(class="input-login" type="tel" name="telefono" required="")
-                        }
-
                         div(class="col-md-12")
                         {
                             label(class="fw-bold" "for"=""){"Dirección:"}
@@ -383,7 +386,43 @@ div(id="modal-cortesia" class="show_modal_center open-table hidde_control modal-
     }
 }
 
- //*******************modal seleccionar repartidor****************************************
+#!
+
+function base_url(withPort)
+{
+    prot = ifstr(parse.bool(@@(@http_context,"$request/headers/HTTPS")),"https","http")
+    host = @@(@http_context, "$request/headers/HTTP_HOST")
+    port = @@(@http_context, "$request/headers/SERVER_PORT")
+
+    if parse.bool(withPort) { return prot+"://"+host+":"+port }
+    return prot+"://"+host
+}
+
+function printDeliveriDrivers()
+{
+    url_repartidores = path.concat(base_url(@false), "/dmcm/pos/dinner/repartidores/?admin=1&s=%")
+    repartidores_json = http.get(url_repartidores)
+    
+    ref repartidores = list.create()
+    codeblock "Parsear respuesta"
+    {
+        ref repartidores:from.json(repartidores_json)
+        exception{ do pop_exception() }
+    }
+
+    for i = 0; i < list.count(repartidores)
+    {
+        ref item = list.obj(repartidores,i)
+        nombre = @@(item,"$nombre")
+
+        #$
+        button(class="btn border" type="button" onclick="views.changeDeliveryDriver(#<to.json(item)>)"){"#<nombre>"}        
+        #!
+    }
+}
+
+#$
+//*******************modal seleccionar repartidor****************************************
 div(id="modal-select-repartidor" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
 {
     div(class="d-flex" onclick="controller.hide_modal(\'#modal-select-repartidor\');")
@@ -406,27 +445,45 @@ div(id="modal-select-repartidor" class="show_modal_center open-table hidde_contr
             {
                 form(action="." method="POST" id="frm_repartidor")
                 {
-                    label(class="" "for"=""){"Reapartidor:"}
+                    // label(class="fw-bold" "for"="repartidor"){"Repartidor:"}
+                    div(class="d-flex")
+                    {
+                        "input-key"(
+                            name="repartidor" 
+                            id="repartidor" 
+                            "data-key"="sys_pk" 
+                            "data-search"="codigo" 
+                            "data-text"="nombre" 
+                            "data-source"="/dmcm/pos/dinner/repartidores/?admin=1&s=@search" 
+                            "data-value"="{}" 
+                            required="true"
+                            columns="codigo,nombre" 
+                            colcaptions="Código,Nombre"
+                        ){$""}
+                        
+                        button(class="blue_button" type="button" id="btn-repartidor" onclick=""){"Aceptar"}
+                        button(class="white_button" type="reset" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
+                    }
 
-                    "input-key"(
-                    name="repartidor" 
-                    id="repartidor" 
-                    "data-key"="sys_pk" 
-                    "data-search"="codigo" 
-                    "data-text"="nombre" 
-                    "data-source"="/dmcm/pos/dinner/repartidores/?admin=1&s=@search" 
-                    "data-value"="{}" 
-                    required="true"
-                    columns="codigo,nombre" 
-                    colcaptions="Código,Nombre"){$""}
+                    fieldset(class="mt-3" id="delivery-driver-buttons")
+                    {
+                        legend{"Repartidores"}
+
+                        div(class="d-flex flex-wrap gap-3")
+                        {""
+                            ##
+                            do printDeliveriDrivers()
+                            ##
+                        }
+                    }
                 }
             }
         }
     }
-    div(class="footer text-end")
-    {
-        button(class="blue_button" id="btn-repartidor" onclick=""){"Aceptar"}
-        button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
-    }
+    // div(class="footer text-end")
+    // {
+    //     button(class="blue_button" id="btn-repartidor" onclick=""){"Aceptar"}
+    //     button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
+    // }
 }
 

@@ -443,6 +443,19 @@ module "lib.dk"
     
     
     //#region OBTENER DATOS
+    GetDestinationByPhone :: &db, &params
+    {
+        return dbr.rec(db,"
+        SELECT
+            telefono,
+            nombre,
+            direccion,
+            notas
+        FROM dmns_destino
+        WHERE telefono = @telefono
+        ",params)
+    }
+
     getRepartidores::&db,&params
     {
         return dbr.list(db," SELECT sys_pk,codigo,nombre FROM repartidor ;",params)

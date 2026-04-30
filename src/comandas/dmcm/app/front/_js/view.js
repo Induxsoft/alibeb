@@ -47,6 +47,9 @@ var views=
             this.tarjeta_btncancelar=document.getElementById("tarjeta_btncancelar");
             this.cobro_lblimporte_tarjeta=document.getElementById("cobro_lblimporte_tarjeta");
             this.modal_tarjeta=document.getElementById("modal_tarjeta");
+            this.modal_home_delivery = document.getElementById('modal-home-delivery');
+
+            const home_delivery_phone = document.querySelector('#modal-home-delivery input[name="telefono"]');
             
             if(this.modal_tarjeta)
             {
@@ -63,6 +66,12 @@ var views=
                         form?.reset();
                   });
             }
+            if (this.modal_home_delivery) this.modal_home_delivery.addEventListener('shown.bs.modal', (e) => {
+                home_delivery_phone.focus();
+            });
+            if (home_delivery_phone) home_delivery_phone.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.getDestinationByPhone(e.target.value);
+            });
             if(this.tarjeta_importe)this.tarjeta_importe.addEventListener("keydown",(event)=>{if(event.key=="Enter")this.tarjeta_btncobrar.focus();});
             if(this.propina)this.propina.addEventListener("keyup",()=>{controller.SetTotal();});
             if(this.tarjeta_btncancelar)this.tarjeta_btncancelar.addEventListener("click",()=>{controller.tarjeta.Cancelar();})
@@ -1089,7 +1098,7 @@ var views=
                   if(id==ACTION_BUTTONS_DS.ENVIAR || id==ACTION_BUTTONS_DS.CAMBIAR_REPARTIDOR)
                   {
                         let btn_repartidor=document.getElementById("btn-repartidor");
-                        btn_repartidor.setAttribute("onclick",`controller.actionAccount(${data.sys_pk},"${id.replace("btn-","")}","frm_repartidor")`);
+                        btn_repartidor.setAttribute("onclick",`controller.actionAccount(${data.sys_pk}, "${id.replace("btn-","")}", "frm_repartidor", false)`);
                         btn.setAttribute("onclick",`controller.show_modal("#modal-select-repartidor")`);
                   }
                   else btn.setAttribute("onclick",`controller.actionAccount(${data.sys_pk},"${id.replace("btn-","")}")`);
@@ -1270,7 +1279,35 @@ var views=
             if(!percentaje_cortesia)return;
 
             percentaje_cortesia.value=percentaje;
-      }
+      },
+    changeDeliveryDriver(o)
+    {
+        const repartidor = document.querySelector('#modal-select-repartidor #repartidor');
+        const submit = document.querySelector('#modal-select-repartidor #btn-repartidor');
+
+        if (repartidor)
+        {
+            repartidor.setValue(o);
+            submit.click();
+        }
+    },
+    getDestinationByPhone(phone="")
+    {
+        if (!phone) {
+            const telefono = document.querySelector('#modal-home-delivery input[name="telefono"]');
+            phone = telefono.value;
+        }
+        let url = "/dmcm/pos/dinner/destino/?telefono="+phone;
+
+        model.invoke_service(url, null,
+            function(data) {
+                views.setDataDS(data);
+            },
+            function(err) { alert(err.message) },
+            "GET",
+            false
+        );
+    }
 };
 
 const ACTION_BUTTONS_PROCESADO=
@@ -1529,13 +1566,18 @@ function cargarGrupo(data_grupo)
 //     if (!seleccion[grupo]) seleccion[grupo] = {};
 
     const cont = document.getElementById("productos");
+    cont.className = "d-flex flex-wrap gap-3";
     cont.innerHTML = "";
 
-    data_grupo.productos.forEach(prod => 
-      {
+    data_grupo.productos.forEach(prod => {
         const btn = document.createElement("div");
-        btn.className = "btn mb-2";
-        btn.style.cssText="border: 1px solid gray !important;";
+        btn.className = "btn";
+        btn.style.cssText = `
+        padding: 1rem !important;
+        font-size: 1.25rem !important;
+        border-radius: .3rem !important;
+        border: 1px solid gray !important;
+        `;
         btn.innerText = prod.description;
 
         btn.onclick = () => agregarProducto(prod);
