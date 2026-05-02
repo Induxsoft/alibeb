@@ -228,60 +228,65 @@ div(class="modal fade " id="modal-home-delivery" tabindex="-1" "data-bs-backdrop
                 //     columns="codigo,nombre,telefono,direccion,notas" 
                 //     colcaptions="Código,Nombre,Telefono,Dirección,Notas"){$""}
                 // hr{}
-                form(action="." method="POST" id="form_home_delivery")
+                form(class="px-2" action="." method="POST" id="form_home_delivery")
                 {
                     input(type="hidden" name="sys_pk" id="sys_pk")
 
-                    div(class="row")
+                    div
                     {
-                        div(class="col-md-12")
+                        label(class="fw-bold" "for"=""){"Teléfono:"}
+                        div(class="d-flex gap-1")
                         {
-                            label(class="fw-bold" "for"=""){"Teléfono:"}
-                            div(class="d-flex gap-1")
-                            {
-                                input(class="input-login" type="tel" name="telefono" required="")
-                                button(class="blue_button" type="button" onclick="views.getDestinationByPhone()"){"OK"}
-                            }
+                            input(class="form-control rounded-0" type="tel" name="telefono" required="")
+                            button(class="" type="button" id="btn-delivery-phone-ok"){"OK"}
                         }
-                        div(class="col-md-12")
+                    }
+
+                    fieldset(id="div-dmns-destino")
+                    {
+                        div
                         {
                             label(class="fw-bold" "for"=""){"Nombre completo:"}
-                            input(class="input-login" type="" name="nombre" required="")
+                            input(class="form-control rounded-0" type="" name="nombre" required="")
                         }
-                        div(class="col-md-12")
+                        div
                         {
                             label(class="fw-bold" "for"=""){"Dirección:"}
-                            textarea(class="input-login" name="direccion" id="direccion" rows="3"){""}
+                            textarea(class="form-control rounded-0" name="direccion" id="direccion" rows="3"){""}
                         }
-                        div(class="col-md-12")
+                        div
                         {
                             label(class="fw-bold" "for"=""){"Notas:"}
-                            textarea(class="input-login" name="notas" id="notas" rows="3"){""}
+                            textarea(class="form-control rounded-0" name="notas" id="notas" rows="3"){""}
                         }
                     }
                 }
             }
             div(class="modal-footer")
             {
-                button(class="btn-admin" type="button" onclick="controller.homeDelivery()"){$"Aceptar"}
+                button(class="" type="button" id="btn-home-delivery-ok" onclick="controller.homeDelivery()"){$"Aceptar"}
             }
         }
     }
 }
 
- //*******************modal indicaciones****************************************
+//******************* modal recetas variables ****************************************
 div(id="modal-recetas-variables" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
 {
     div(class="d-flex" id="btn_close_mdl_prods_vars" )//onclick="controller.hide_modal(\'#modal-recetas-variables\');"
     {
         div(class="just-cont-center d-flex flex-grow-1" )
         {
-            h4(id=""){$"Variables"}br{}br{}
+            h4(id=""){$"Variables"}
         }
         svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
         {
             path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
         }
+    }
+    div(class="text-center")
+    {
+        button(class="blue_button py-2 px-5" id="btn_acept_prods_vars" onclick=""){"Aceptar"}
     }
     
     div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
@@ -322,8 +327,8 @@ div(id="modal-recetas-variables" class="show_modal_center open-table hidde_contr
         }
     }
     div(class="footer text-end")
-    {
-        button(class="blue_button" id="btn_acept_prods_vars" onclick=""){"Aceptar"}
+    {""
+        // button(class="blue_button" id="btn_acept_prods_vars" onclick=""){"Aceptar"}
         // button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-recetas-variables\')"){"Cancelar"}
     }
 }
@@ -416,7 +421,17 @@ function printDeliveriDrivers()
         nombre = @@(item,"$nombre")
 
         #$
-        button(class="btn border" type="button" onclick="views.changeDeliveryDriver(#<to.json(item)>)"){"#<nombre>"}        
+        button(
+            class="btn"
+            type="button"
+            onclick="views.changeDeliveryDriver(#<to.json(item)>)"
+            style="
+            padding: 1rem .5rem !important;
+            font-size: 1.25rem !important;
+            border-radius: .3rem !important;
+            border: 1px solid gray !important;
+            "
+        ){"#<nombre>"}        
         #!
     }
 }
@@ -439,14 +454,14 @@ div(id="modal-select-repartidor" class="show_modal_center open-table hidde_contr
     
     div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
     {
-        div(class="card")
+        div(class="card p-0")
         {
             div(class="card-body")
             {
                 form(action="." method="POST" id="frm_repartidor")
                 {
                     // label(class="fw-bold" "for"="repartidor"){"Repartidor:"}
-                    div(class="d-flex")
+                    div(class="d-flex flex-wrap flex-sm-nowrap gap-2")
                     {
                         "input-key"(
                             name="repartidor" 
@@ -459,10 +474,15 @@ div(id="modal-select-repartidor" class="show_modal_center open-table hidde_contr
                             required="true"
                             columns="codigo,nombre" 
                             colcaptions="Código,Nombre"
+                            "control-styles"="
+                            #search_container, #description_container {
+                                padding: 0 !important;
+                            }
+                            "
                         ){$""}
                         
-                        button(class="blue_button" type="button" id="btn-repartidor" onclick=""){"Aceptar"}
-                        button(class="white_button" type="reset" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
+                        button(class="blue_button m-0 flex-fill" type="button" id="btn-repartidor" onclick=""){"Aceptar"}
+                        button(class="white_button m-0 flex-fill" type="reset" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
                     }
 
                     fieldset(class="mt-3" id="delivery-driver-buttons")

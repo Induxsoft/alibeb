@@ -447,6 +447,7 @@ module "lib.dk"
     {
         return dbr.rec(db,"
         SELECT
+            sys_pk,
             telefono,
             nombre,
             direccion,

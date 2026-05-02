@@ -50,7 +50,47 @@ var views=
             this.modal_home_delivery = document.getElementById('modal-home-delivery');
 
             const home_delivery_phone = document.querySelector('#modal-home-delivery input[name="telefono"]');
+            const dmns_destino = document.getElementById('div-dmns-destino');
+            const btn_delivery_phone_ok = document.getElementById('btn-delivery-phone-ok');
+            const btn_home_delivery_ok = document.getElementById('btn-home-delivery-ok');
             
+            if (this.modal_home_delivery) this.modal_home_delivery.addEventListener('shown.bs.modal', (e) => {
+                home_delivery_phone.readOnly = false;
+                dmns_destino.disabled = true;
+                btn_home_delivery_ok.disabled = true;
+                home_delivery_phone.focus();
+            });
+            if (btn_delivery_phone_ok) btn_delivery_phone_ok.addEventListener('click', (e) => {
+                let phone = home_delivery_phone.value;
+                
+                if (e.target.dataset.mode == "edit")
+                {
+                    this.setDataDS({
+                        sys_pk: "",
+                        telefono: phone,
+                        nombre: "",
+                        direccion: "",
+                        notas: ""
+                    });
+                    btn_delivery_phone_ok.dataset.mode = "confirm";
+                    btn_delivery_phone_ok.textContent = "OK";
+                    home_delivery_phone.readOnly = false;
+                    dmns_destino.disabled = true;
+                    btn_home_delivery_ok.disabled = true;
+                    home_delivery_phone.select();
+                }
+                else
+                {
+                    this.getDestinationByPhone(phone);
+                }
+            });
+            if (home_delivery_phone) home_delivery_phone.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') btn_delivery_phone_ok.click();
+            });
+            if (home_delivery_phone) home_delivery_phone.addEventListener('input', (e) => {
+                dmns_destino.disabled = true;
+                btn_home_delivery_ok.disabled = true;
+            });
             if(this.modal_tarjeta)
             {
                   this.modal_tarjeta.addEventListener("shown.bs.modal", (e) => {
@@ -66,12 +106,6 @@ var views=
                         form?.reset();
                   });
             }
-            if (this.modal_home_delivery) this.modal_home_delivery.addEventListener('shown.bs.modal', (e) => {
-                home_delivery_phone.focus();
-            });
-            if (home_delivery_phone) home_delivery_phone.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') this.getDestinationByPhone(e.target.value);
-            });
             if(this.tarjeta_importe)this.tarjeta_importe.addEventListener("keydown",(event)=>{if(event.key=="Enter")this.tarjeta_btncobrar.focus();});
             if(this.propina)this.propina.addEventListener("keyup",()=>{controller.SetTotal();});
             if(this.tarjeta_btncancelar)this.tarjeta_btncancelar.addEventListener("click",()=>{controller.tarjeta.Cancelar();})
@@ -1291,17 +1325,32 @@ var views=
             submit.click();
         }
     },
-    getDestinationByPhone(phone="")
+    getDestinationByPhone(phone)
     {
+        const home_delivery_phone = document.querySelector('#modal-home-delivery input[name="telefono"]');
+        if (!phone) phone = home_delivery_phone.value;
         if (!phone) {
-            const telefono = document.querySelector('#modal-home-delivery input[name="telefono"]');
-            phone = telefono.value;
+            home_delivery_phone.focus();
+            return
         }
         let url = "/dmcm/pos/dinner/destino/?telefono="+phone;
 
         model.invoke_service(url, null,
             function(data) {
+                const dmns_destino = document.getElementById('div-dmns-destino');
+                const btn_delivery_phone_ok = document.getElementById('btn-delivery-phone-ok');
+                const btn_home_delivery_ok = document.getElementById('btn-home-delivery-ok');
+
+                btn_delivery_phone_ok.dataset.mode = "edit";
+                btn_delivery_phone_ok.innerHTML = "&nbsp;X&nbsp;";
+                home_delivery_phone.readOnly = true;
+                dmns_destino.disabled = false;
+                btn_home_delivery_ok.disabled = false;
                 views.setDataDS(data);
+
+                if (!data) {
+                    document.querySelector('#modal-home-delivery input[name="nombre"]')?.focus();
+                }
             },
             function(err) { alert(err.message) },
             "GET",
@@ -1573,7 +1622,7 @@ function cargarGrupo(data_grupo)
         const btn = document.createElement("div");
         btn.className = "btn";
         btn.style.cssText = `
-        padding: 1rem !important;
+        padding: 1rem .5rem !important;
         font-size: 1.25rem !important;
         border-radius: .3rem !important;
         border: 1px solid gray !important;

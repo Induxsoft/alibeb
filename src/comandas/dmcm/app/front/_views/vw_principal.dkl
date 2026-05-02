@@ -218,11 +218,8 @@ module "terminal de mesero"
 				#$
 			}
 		}
-
-		
-
 	}
-	script(src="/_js/induxsoft.controls.js"){""}
+	
 	script
 	{
 		$'
@@ -235,6 +232,5 @@ module "terminal de mesero"
 		});
 		'
 	}
-	
 }
 

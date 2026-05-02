@@ -72,7 +72,7 @@ var prn_ticket=
         if(data.entrega)
         {
             eposprn.printText("Cliente: "+data.entrega.nombre);
-            printer.printText("Tel.: "+data.entrega.telefono);
+            eposprn.printText("Tel.: "+data.entrega.telefono);
             if(data.entrega.direccion)eposprn.printText("Dirección: "+data.entrega.direccion);
             if(data.entrega.referencia)eposprn.printText("Referencia: "+data.entrega.referencia);
         }
