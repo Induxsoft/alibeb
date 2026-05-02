@@ -5,7 +5,25 @@
     {
         $""
     }
+    // modal login
+    dialog(id="miDialogoLogin" class="border shadow-sm")
+    {
+        form(method="post" id="formLogin" onsubmit="return false")
+        {
+            h3{"Iniciar sesión"}
+            label( "for"=""){"Usuario:"}
+            input(class="input-login" type="text" id="usuario" name="usuario" required="" placeholder="...."){""}
 
+            label( "for"=""){"Contraseña:"}
+            input(class="input-login" type="password" id="clave" name="clave" placeholder="...")
+
+            div(class="d-flex justify-content-end gap-2 mt-2")
+            {
+                button(class="btn-admin" type="button" onclick="views.CloseDialog()"){"Cerrar"}
+                button(class="btn-admin" type="submit" id="btn_login_config" "data-url"="#<preserveQSParams('./?view=config-prn')>"){$"Acceder"}
+            }
+        }
+    }
     //***************** modals abrir mesa*********************
     div(id="open-table" class="show_modal_center open-table hidde_control modal-responsive")
     {
