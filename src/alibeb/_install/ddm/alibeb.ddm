@@ -181,6 +181,8 @@ model "alibeb"
         @"icproduccion" ref:"cproduccion" required //Indica el centro de producción en que se ejecuta
         @"idivisa" ref:"divisa"
         @"iventa" ref:"venta"
+        @"atendido" bool
+        @"fatendido" datetime
     }
     // Detalle de las ordenes de producción y ensamble.
     entity "dorden" : "TableModel"
