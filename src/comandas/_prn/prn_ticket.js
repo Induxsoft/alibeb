@@ -64,9 +64,9 @@ var prn_ticket=
         eposprn.printText("Ticket: "+data.referencia);
         eposprn.printText(data.fecha_actual??"");
         eposprn.printText("CC: "+cconsumo.description??"");
-        eposprn.printText("Mesa: "+data.mesa??"");
+        eposprn.printText("Cuenta: "+data.mesa??"");
 
-        eposprn.printText("Mesero: "+mesero.nombre);
+        eposprn.printText("Vendedor: "+mesero.nombre);
         eposprn.printText("Cajero: "+cajero.nombre);
         if(data.repartidor)eposprn.printText("Repartidor: "+data.repartidor);
         if(data.entrega)

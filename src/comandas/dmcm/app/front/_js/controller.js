@@ -966,10 +966,8 @@ var controller=
     },
     foodbev:function(elem,prodc="",line="",linedescrition="",sku="")
     {
-      if(prodc!="")
-        $prodc=prodc;
-      if(line!="")
-        $line=line;
+      if(prodc!="")$prodc=prodc;
+      if(line!="")$line=line;
       if(prodc=="" && line=="")
       {
         $prodc="";
@@ -1609,5 +1607,70 @@ var controller=
         alert(error.message);
         views.ActiveAnimation(false);
       },"PATCH",false);
+    },
+    async validarExistencia(producto)
+    {
+      let reserved=list_orders.filter(f=> f.sku.sys_pk == Number(producto)).length;
+      var uri=`${url}pos/dinner/validate_existence/?prod=${producto}&cc=${$cc}&reserved=${reserved}`;
+      //////////////////////////////////
+
+      return new Promise((resolve)=>
+      {
+        views.ActiveAnimation(true);
+        model.invoke_service(uri,null,function(data) 
+        {
+          views.ActiveAnimation(false);
+          resolve(true);
+        },
+        function(error) 
+        {
+          alert(error.message);
+          views.ActiveAnimation(false);
+          resolve(false);
+        },"GET",false);
+      });
+    },
+    SearchProd()
+    {
+      let search_prod=views.search_prod;
+      let modal=document.getElementById("modal-select-products");
+      if(!search_prod || search_prod.value.trim()=="" || !modal.classList.contains("hidde_control"))return;
+
+      var uri=`${url}pos/dinner/search_producto/?search=${search_prod.value.trim()}&cc=${$cc}`;
+      views.table_products_select.innerHTML="";
+
+      views.ActiveAnimation(true);
+        model.invoke_service(uri,null,function(data) 
+        {
+          views.ActiveAnimation(false);
+          let foodbev=data.foodbev??[];
+          data_foodbev=foodbev;
+          
+          if(foodbev.length>1)
+          {
+            views.table_products_select.innerHTML=views.createBody(foodbev);
+            controller.show_modal("#modal-select-products");
+            selectedMouse();
+          }
+          else if(foodbev.length == 1)
+          {
+            controller.select_foodbev(foodbev[0]);
+          }
+        },
+        function(error) 
+        {
+          alert(error.message);
+          views.ActiveAnimation(false);
+        },"GET",false);
+    },
+    select_foodbev(row)
+    {
+      if(!row)return;
+      
+      controller.data_foodbev(row.sys_pk);
+      controller.hide_modal("#modal-select-products");
+      views.search_prod.value="";
+      views.search_prod.focus();
+      data_foodbev=[];
     }
 }

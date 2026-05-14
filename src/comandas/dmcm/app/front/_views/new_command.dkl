@@ -48,7 +48,14 @@ module "nueva commanda"
 				div(class="content-grid"){
 					div(class="column-content"){$""}
 				}
-				
+				div(class="input-group footer-fixed" style="width: 69% !important;left:30%;")
+				{
+					input(class="form-control border no-shadow h-100 m-0" style="background-color:white;" autofocus="true" name="search_prod" value="" id="search_prod" placeholder="Buscar por código, Código de barras y descripción...")
+					div(class="input-group-prepend border")
+					{
+						button(class="input-group-text btn btn-sm" type="button" onclick="controller.SearchProd()"){$"OK"}
+					}
+				}
 			}
 		}
 	}
@@ -80,46 +87,5 @@ module "nueva commanda"
 		'
 	}
 
-	// style
-	// {
-	// 	$'
-	// 		@media (max-width:660px)
-	// 		{
-	// 			table 
-	// 			{
-	// 				overflow-x: hidden;
-					
-	// 				& .table-responsive { all: revert; }
-	// 			}
-	// 			table thead { display: none; }
-	// 			table tbody tr {
-	// 				display: block;
-	// 				transition: .3s;
-	// 				border: 1px solid #DDD;
-	// 				border-radius: 8px;
-	// 				margin-bottom: .5rem;
-	// 			}
-	// 			table tbody tr:hover { box-shadow: 3px 3px 9px 0 #DDD; }
-	// 			table tbody tr td {
-	// 				display: flex;
-	// 				flex-wrap: wrap;
-	// 				gap: .25rem;
-	// 				padding: .3rem;
-	// 				border: none;
-	// 			}
-	// 			table tbody tr td * {
-	// 				/* white-space: pre-wrap; */      /* Mantiene saltos de línea y permite ajustar texto */
-	// 				overflow-wrap: break-word;  /* Rompe palabras largas si exceden el ancho */
-	// 				word-break: break-word;     /* Compatibilidad adicional con navegadores antiguos */
-	// 				max-width: 100%;            /* Evita que el texto crezca más allá de la burbuja */
-	// 				box-sizing: border-box;     /* Asegura que los márgenes y bordes no inflen el ancho real */
-	// 			}
-	// 			table tbody tr td::before {
-	// 				content: attr(data-label) ": ";
-	// 				font-weight: bold;
-	// 				width: 100%;
-	// 			}
-	// 		}
-	// 	'
-	// }
+	
 }

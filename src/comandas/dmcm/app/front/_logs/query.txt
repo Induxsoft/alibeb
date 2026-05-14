@@ -1,0 +1,68 @@
+select
+            cc.codigo cod_cc,
+            cp.codigo cod_cp,
+            cc.descripcion desc_cc,
+            cp.descripcion desc_cp,
+            p.codigo as sku,
+            p.sys_pk as pkprod,
+            q.sys_pk as sys_pk,
+            q.descripcion as 'description',
+            q.precio1,
+            q.precio2,
+            q.precio3,
+            q.precio4,
+            q.precio5,
+            q.i1venta,
+            q.i2venta,
+            q.i3venta,
+            q.i4venta,
+            q.unidad as unit,
+            q.ilinea as line,
+            ifnull(e.existencia,0) existencia,
+            p.iclase,
+            p.itipo,
+            (p.iclase in(4,5) and p.itipo = 2) validar_existencia
+        from
+            (
+                select
+                    `qproddmns`.`Sys_PK` AS `Sys_PK`,
+                    `qproddmns`.`Descripcion` AS `Descripcion`,
+                    `qproddmns`.`Precio1` AS `Precio1`,
+                    `qproddmns`.`Precio2` AS `Precio2`,
+                    `qproddmns`.`Precio3` AS `Precio3`,
+                    `qproddmns`.`Precio4` AS `Precio4`,
+                    `qproddmns`.`Precio5` AS `Precio5`,
+                    `qproddmns`.`Color` AS `Color`,
+                    `qproddmns`.`Data1` AS `Data1`,
+                    `qproddmns`.`VincularData` AS `VincularData`,
+                    `qproddmns`.`IClase` AS `IClase`,
+                    `qproddmns`.`ITipo` AS `ITipo`,
+                    `qproddmns`.`ILinea` AS `ILinea`,
+                    `qproddmns`.`IDivisa` AS `IDivisa`,
+                    `qproddmns`.`TCambio` AS `TCambio`,
+                    `qproddmns`.`I1Venta` AS `I1Venta`,
+                    `qproddmns`.`I2Venta` AS `I2Venta`,
+                    `qproddmns`.`I3Venta` AS `I3Venta`,
+                    `qproddmns`.`I4Venta` AS `I4Venta`,
+                    `qproddmns`.`Nombre` AS `Nombre`,
+                    `qproddmns`.`Variables` AS `Variables`,
+                    `qproddmns`.`Lim2` AS `Lim2`,
+                    `qproddmns`.`Lim3` AS `Lim3`,
+                    `qproddmns`.`Lim4` AS `Lim4`,
+                    `qproddmns`.`Lim5` AS `Lim5`,
+                    `qproddmns`.`flagLimites` AS `flagLimites`,
+                    `qproddmns`.`Unidad` AS `Unidad`,
+                    `qproddmns`.`FactorB` AS `FactorB`,
+                    `cproduccion_producto_`.`icentrosproduccion` AS `ICentrosProduccion`
+                FROM
+                    qproddmns 
+                    LEFT JOIN cproduccion_producto_ ON `cproduccion_producto_`.`iproductos` = `qproddmns`.`Sys_PK`
+            ) q
+            inner join producto p on q.sys_pk = p.sys_pk
+            LEFT join cconsumo_cproduccion_ cccp on cccp.icproduccion = q.icentrosproduccion
+            LEFT join cconsumo cc on cc.sys_pk = cccp.iconsumo
+            LEFT join cproduccion cp on cp.sys_pk = cccp.icproduccion
+
+            LEFT JOIN existencias e on cc.ialmacen=e.ialmacen AND e.fk_producto_iexistencias=p.sys_pk
+        where
+            true and q.ILinea=@line

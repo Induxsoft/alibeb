@@ -2,6 +2,7 @@
 #!
 module "lib.dk"
 {
+    #include "inventario/movimientos.dkh"
     ref lib_numeros = _import_library("induxsoft_dkl_NumeroAletrasCorregido.dll")
 
     do _map_function(lib_numeros,"induxsoft_dkl_NumeroAletrasCorregido.NumerosEnLetras","ParteEntera","Int2Ltr","System.Decimal","$")
@@ -15,6 +16,17 @@ module "lib.dk"
     do _map_function(lib_precfdi, "precfdi4lib.proc", "VentaXml", "ticket.xml", "System.Int32", "$")
 
     //#region PRCESOS
+    //validar existencia
+    validar.existencia::&db,&params
+    {
+        ref dt= token.data.validate(db,@true)
+
+        params<"almacen">:dbr.num(db,"SELECT ialmacen FROM cconsumo WHERE sys_pk=@cc",params)
+        existencia=dbr.num(db,"SELECT IFNULL(SUM(IFNULL(e.existencia,0)),0) from existencias e WHERE e.fk_producto_iexistencias=@prod AND e.ialmacen=@almacen;",params)
+        if (existencia - @@(params,"#reserved")) < 1{do rise_error(500,"El producto no cuenta con existencia en el almacén del centro de consumo")}
+
+        return @true
+    }
     //ingreso y egreso
     pos.ingreso::&db,&params,&postData
     {
@@ -244,14 +256,75 @@ module "lib.dk"
             dtarjeta<"fk_movcaja_detalletarjetas">:idmovcaja
             do dbr.insert(db,"dtarjeta",dtarjeta)
         }
+        //realizar salida de existencias
+        //==============================================
+        ref dventas=list.create()
+        if parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
+        {
+            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,dv.cantidad,p.costopromedio,p.costoultimo
+            FROM dventa dv 
+            INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+            INNER JOIN producto p ON dv.iproducto=p.sys_pk
+            WHERE
+            (p.iclase in(4,5) and p.itipo = 2)
+            AND v.sys_guid=@sys_guid;",rsource)
+        }
+
+        if @count(dventas) > 0
+        {
+            ref @LAST_DCARDEX=@null
+            code_cat=dbr.vars.get(db,"v12.ventas.salida")
+            code_cat >> _p
+            categoria=dbr.num(db,"SELECT ifnull(sys_pk,0) FROM categoria where codigo=@code_cat",_p)
+
+            if categoria < 1{do rise_error(500,"No ha configurado una categoría:  v12.ventas.salida")}
+            
+            new cardex
+            {
+                @"sys_guid":uuid()
+                @"sys_dtcreated*":dbr.sql("now()")
+                @"sys_timestamp*":dbr.sql("now()")
+                @"sys_info":"flex-pos"
+                @"sys_recver": 0
+                @"descripcion":"Aplicado por venta con referencia: "+@@(rsource,"$reference")
+                @"icategoria":categoria
+                @"referencia":@@(rsource,"$reference")
+                @"fecha*":dbr.sql("now()")
+            }
+            do dbr.insert(db,"cardex",cardex)
+            cardex<"sys_pk">:dbr.num(db,"SELECT sys_pk FROM cardex WHERE sys_guid=@sys_guid",cardex)
+
+            for i = 0; i < @count(dventas)
+            {
+                ref dv=@item(dventas,i)
+                cantidad=@@(dv,"#cantidad")
+                new dcardex
+                {
+                    @"sys_guid":uuid()
+                    @"sys_dtcreated*":dbr.sql("now()")
+                    @"sys_timestamp*":dbr.sql("now()")
+                    @"sys_info":"flex-pos"
+                    @"sys_recver": 0
+                    @"ialmacen":@@(dv,"#ialmacen")
+                    @"iproducto":@@(dv,"#iproducto")
+                    @"referencia":cut(uuid(),30)
+                    @"entradas": 0
+                    @"salidas":cantidad
+                    @"rventa":@@(rsource,"#sys_pk")
+                    @"fk_cardex_movimientos":@@(cardex,"#sys_pk")
+                }
+
+                if @@(dv,"#costopromedio") > 0{dcardex<"abonos">:@@(dv,"#costopromedio") * cantidad}
+                else{dcardex<"abonos">:@@(dv,"#costoultimo") * cantidad }
+
+                do dbr.insert(db,"dcardex",dcardex)
+            }
+            do erp.inventario.aplicar_mov(db,@@(cardex,"#sys_pk"),@false)
+        }
+        //=========================================================
         //cargar datos del ticket antes de actualizar el estado de la venta
         params<"id_table">:@@(postData,"#venta")
         ref response=data.ticket(db,params)
-        // new response
-        // {
-        //     @"totales*":totales
-        // }
-        // do DataTicket(db,@@(postData,"#venta"),response)
 
         statusentrega=dbr.num(db,"SELECT statusentrega from venta where sys_pk=@venta",postData)
         sta_entrega= 3
@@ -443,6 +516,10 @@ module "lib.dk"
     
     
     //#region OBTENER DATOS
+    get.productos::&db,&params
+    {
+        return get.foodbev(db,params)
+    }
     GetDestinationByPhone :: &db, &params
     {
         return dbr.rec(db,"
@@ -1325,7 +1402,6 @@ module "lib.dk"
     //#region VENTA/ORDEN
     get.mesas::&db,&params
     {
-        
         //obtener variables globales
         pos_url_img_mesa=dbr.vars.get(db,"pos_url_img_mesa")
         pos_url_img_mesa_ff=dbr.vars.get(db,"pos_url_img_mesa_ff")
@@ -1949,27 +2025,44 @@ module "lib.dk"
     //line diferente a vacío se filtra
     get.foodbev::&db,&params
     {
-        // do rise_error(99,"akii")
         query=@foodbev
         prodc=@@(params,"$prodc")
         line=@@(params,"$line")
-
-        if trim(@@(params,"$cc"))==""{params<"cc">:dbr.num(db,"SELECT v.icconsumo FROM venta v WHERE v.sys_pk=@idt",params)}
         
-        if @@(params,"prodc")!=""
+        ref linea=record.create()
+        if trim(@@(params,"$search")) == ""
         {
-            query=query +" and q.ICentrosProduccion=@prodc"
+            ref linea=dbr.rec(db,@line,params)
+            if isnull(linea){do rise_error(500,"No se encontró datos de la línea")}
+
+            if trim(@@(params,"$cc"))==""{params<"cc">:dbr.num(db,"SELECT v.icconsumo FROM venta v WHERE v.sys_pk=@idt",params)}
+
+            params<"almacen">:dbr.num(db,"SELECT ialmacen FROM cconsumo WHERE sys_pk=@cc",params)
+
+            if @@(linea,"#clase") == @clase_prod_receta
+            {
+                query=query + " AND cc.sys_pk = @cc "
+                if @@(params,"prodc")!=""{query=query +" and q.ICentrosProduccion=@prodc"}
+            }
+            
+            if line!=""{query=query + " and q.ILinea=@line"}
+            
+            ref foodbev=dbr.list(db,query,params)
         }
-        if line!=""
+        else //buscar productos con coincidencia
         {
-            query=query + ifstr(prodc!=""," and q.ILinea=@line"," and q.ILinea=@line")
+            params<"almacen">:dbr.num(db,"SELECT ialmacen FROM cconsumo WHERE sys_pk=@cc",params)
+            query=@foodbev + " AND p.codigo=@search OR p.codbar1=@search OR p.codbar2=@search OR p.codbar3=@search"
+            ref foodbev=dbr.list(db,query,params)
+
+            if @count(foodbev) < 1
+            {
+                query=@foodbev + " AND p.descripcion like CONCAT('%',@search,'%')"
+                ref foodbev=dbr.list(db,query,params)
+            }
         }
-        ref foodbev=dbr.list(db,query,params)
 
         ref list_foodbev=list.create()
-
-        ref linea=dbr.rec(db,@line,params)
-        if isnull(linea){do rise_error(500,"No se encontró datos de la línea")}
 
         for i=0;i<@count(foodbev)
         {
@@ -2017,6 +2110,8 @@ module "lib.dk"
                 @"cod_cc":@@(item,"cod_cc")
                 @"data_img*":CreateHost(db,tolower(@@(item,"$sku")),"")
                 @"grupos*":getGroupProducts(db,@@(item,"#sys_pk"))
+                @"existencia":@@(item,"#existencia")
+                @"validar_existencia":@@(item,"#validar_existencia")
             }
             do list.add(list_foodbev,data_foodbev)
         }
@@ -2067,8 +2162,10 @@ module "lib.dk"
     }
     get.lines::&db,&params
     {
-        if trim(@@(params,"prodc"))!=""{ref lines= dbr.list(db,@lines_x_prodc,params)}
-        else{ref lines=dbr.list(db,@all_lines,params)}
+        do getVarsConfig()
+
+        if trim(@@(params,"prodc"))!=""{ref lines= dbr.list(db,ftext(@lines_x_prodc),params)}
+        else{ref lines=dbr.list(db,ftext(@all_lines),params)}
         
         for i = 0; i < @count(lines)
         {
@@ -2138,20 +2235,28 @@ module "lib.dk"
     {
         ref dt= token.data.validate(db,@false)
         if trim(@@(postData,"$waiter"))=="" && @@(dt,"$waiter")!=""{postData<"waiter">:@@(dt,"$waiter")}
-
+        
         ref details=@@(postData,"&details")
         postData<"id_table">:@@(params,"$id_table")
 
         ref dic_orders=record.create()
+
         for i=0;i<@count(details)
         {
             ref itm_details=@item(details,i)
             ref prodcenter=@@(itm_details,"&prodcenter")
-            clave=trim(@@(prodcenter,"code"))+"|"+str(@@(itm_details,"#time"))//+"|"+md5(@@(itm_details,"$notes"))
             
-            dic_orders<clave+"*">:get.Details(db,clave,itm_details,dic_orders,postData)
+            code_prodcer=trim(@@(prodcenter,"$code"))
+            if code_prodcer == ""{code_prodcer=md5(@@(itm_details,"$sku/sku"))}
+
+            clave=code_prodcer+"|"+str(@@(itm_details,"#time"))//+"|"+md5(@@(itm_details,"$notes"))
+            ref ord_details=get.Details(db,clave,itm_details,dic_orders,postData)
+
+            if not(isnull(ord_details)){dic_orders<clave+"*">:ord_details}
         }
-        
+
+        do addVentas(postData)
+
         do dbr.begin(db)
             do insert.ordenDorden(db,details,dic_orders)
             do updateinsert.ventaDventa(db,postData)
@@ -2170,12 +2275,19 @@ module "lib.dk"
     
     get.Details::&db,clave,&itm_details,&dic_orders,&postData
     {
-
         ref sku=@@(itm_details,"&sku")
         ref order=record.create()
         ref list_dorden=list.create()
 
+        @isventa=@false
         ref dorden=table.dorden(db,itm_details,postData)
+        if isnull(dorden)
+        {
+            @isventa=@true
+            ref dic_orders=@@(postData,"&lventas")
+            ref dorden=table.dventa(db,itm_details,postData)
+        }
+        
         campo=campoPrecioR5(@PrecioVenta)
         dorden<"precio">:dbr.num(db,ftext("select #<campo> from producto where sys_pk=@sys_pk"),sku)
         if not(isnull(@@(dic_orders,"&"+clave)))
@@ -2199,21 +2311,47 @@ module "lib.dk"
                 }
                 do list.add(list_dorden,or)
             }
-            if not(flag)
-            {
-                do list.add(list_dorden,dorden)
-            }
             
+            if not(flag){do list.add(list_dorden,dorden)}
         }
         else
         {
             do list.add(list_dorden,dorden)
         }
-        order<"orden*">:table.order(db,itm_details,postData)
-        order<"dorden*">:list_dorden
-        return order
+
+        if not(@isventa)
+        {
+            order<"orden*">:table.order(db,itm_details,postData)
+            order<"dorden*">:list_dorden
+            return order
+        }
+        //si es venta
+        postData<"lventas*">:record.create()
+        postData<"lventas/"+clave+"*">:record.create()
+        postData<"lventas/"+clave+"/dorden*">:list_dorden
+
+        return @null
+    }
+    arrayAdd::lo,&ld
+    {
+        for i = 0; i < @count(lo)
+        {
+            do list.add(ld,@item(lo,i))
+        }
     }
 
+    addVentas::&postData
+    {
+        postData<"dventas*">:list.create()
+
+        ref klventas=list.create_from_fields(ifnull(@@(postData,"&lventas"),record.create()))
+        for i = 0; i < @count(klventas)
+        {
+            k=list.str(klventas,i)
+            ref lventas=@@(postData,"&lventas/"+k+"/dorden")
+            do arrayAdd(lventas,@@(postData,"&dventas"))
+        }
+    }
     
     table.order::&db,&itm_details,&postData
     {
@@ -2275,11 +2413,11 @@ module "lib.dk"
     table.dorden::&db,&itm_details,&postData
     {
         // do rise_error(0,to.json(@@(itm_details,"&variables")))
-        ref list_dorders=list.create()
         ref sku=@@(itm_details,"&sku")
         new p{@"sys_pk":@@(sku,"#sys_pk")}
 
         ref product=dbr.rec(db,@prod,p)
+        if @@(product,"#clase") != @clase_prod_receta{return @null}
 
         ref now=now()
         
@@ -2310,7 +2448,28 @@ module "lib.dk"
         dorden<"adds*">:adds
         return dorden
     }
-    
+    table.dventa::&db,&itm_details,&postData
+    {
+        ref sku=@@(itm_details,"&sku")
+        new p{@"sys_pk":@@(sku,"#sys_pk")}
+
+        ref product=dbr.rec(db,"select * from producto where sys_pk=@sys_pk",p)
+        campo=campoPrecioR5(@PrecioVenta)
+
+        if @@(product,"#clase") == @clase_prod_receta{return @null}
+
+        new dventa
+        {
+            @"cantidad":@@(itm_details,"#quantity")
+            @"d1": 0
+            @"d2": 0
+            @"precio": @@(product,"#"+campo)
+            @"tipocambio": dbr.num(db,"select tcambio from divisa where sys_pk=@idivisa",product)
+            @"iproducto":@@(product,"#sys_pk")
+        }
+
+        return dventa
+    }
 
     //subtotal con impuesto //ismp define si retorna el impuesto
     get.subtotalImpuesto::subtotal,isImp
@@ -2440,7 +2599,7 @@ module "lib.dk"
     //inserta datos correspondientes a la tabla orden y de dorden
     insert.ordenDorden::&db,&params,&data
     {
-        ref listcvs=list.create_from_fields(data)
+        ref listcvs=list.create_from_fields(ifnull(data,record.create()))
         for i=0;i<list.count(listcvs)
         {
             clv=list.str(listcvs,i)
@@ -2510,6 +2669,8 @@ module "lib.dk"
         //eliminar todos datos de dventa de acuerdo a la mesa(venta) clase=2
         do dbr.execute(db,@deletedventa,dataVenta)
 
+        ialmacen=dbr.num(db,"SELECT cc.ialmacen FROM cconsumo cc WHERE cc.sys_pk=@cc;",postData)
+        if ialmacen < 1{ialmacen= 1 }
         new dventa
         {
             @"Sys_TimeStamp*":now
@@ -2521,30 +2682,41 @@ module "lib.dk"
             @"Impuesto4":0
             @"Status":1
             @"TipoCambio":1
-            @"IAlmacen":1
+            @"IAlmacen":ialmacen
             @"FK_Venta_Detalle":@@(dataVenta,"#sys_pk")
         }
+        
         ref dtventa=dbr.list(db,@getdorden,dataVenta)
+        do insert.dventa(db,record.copy(dventa,"*"),dtventa)
+        do insert.dventa(db,record.copy(dventa,"*"),@@(postData,"&dventas"))
+
+        ref totales=dbr.rec(db,@totaldventa,dataVenta)
+        totales<"sys_pk">:@@(dataVenta,"#sys_pk")
+        //se va a actualizar con sql directo primero meterlo en dventa ,despues actualizar los totales
+        do dbr.execute(db,@updateventa,totales)
+    }
+    insert.dventa::&db,&dventa,dtventa
+    {
         for i=0;i<list.count(dtventa)
         {
             ref dv=@item(dtventa,i)
         
             using dventa
             {
-                @"Sys_GUID":toupper(cut(uuid(),30))
+                @"Sys_GUID":toupper(uuid())
                 @"cantidad":@@(dv,"#cantidad")
                 @"precio":@@(dv,"#precio")
                 @"iproducto":@@(dv,"iproducto")
                 @"XFacturar":@@(dv,"#cantidad")
                 @"XSalir":@@(dv,"#cantidad")
-                @"unidad":"PZA"
+                @"unidad":dbr.str(db,"SELECT unidad FROM producto p WHERE p.sys_pk=@iproducto;",dv)
                 @"Descuento1":@@(dv,"#d1")
                 @"Descuento2":@@(dv,"#d2")
             }
             _impuesto=dbr.num(db,"select impuestos from producto where sys_pk=@iproducto",dventa)
             // dventa<@campo_iva>:get.subtotalImpuesto(@@(dv,"#precio"),@true) * @@(dv,"#cantidad")
             ref dt_imp= GetDataImpuestos(db,@@(dv,"#precio"),@@(dv,"#cantidad"),@@(dv,"#d1"),@@(dv,"#d2"),_impuesto)
-
+            
             dventa<"impuesto1">:@@(dt_imp,"#impuesto1")
             dventa<"impuesto2">:@@(dt_imp,"#impuesto2")
             dventa<"impuesto3">:@@(dt_imp,"#impuesto3")
@@ -2552,13 +2724,7 @@ module "lib.dk"
 
             do dbr.insert(db,"dventa",dventa)
         }
-
-        ref totales=dbr.rec(db,@totaldventa,dataVenta)
-        totales<"sys_pk">:@@(dataVenta,"#sys_pk")
-        //se va a actualizar con sql directo primero meterlo en dventa ,despues actualizar los totales
-        do dbr.execute(db,@updateventa,totales)
     }
-
     
     update.order::&db,&postData
     {

@@ -18,17 +18,17 @@ module "impuestos"
 	aplImpuestos:: p, i1, i2, i3, i4
 	{
 		p=round( p, @DecimalesEnImportes)
-
+		
 		x=round( if(i1>0,(p*i1/100),0), @DecimalesEnImportes)
 		y=round( if(i2>0,(p*i2/100),0), @DecimalesEnImportes)
-
+		
 		p=p+x+y
-
+		
 		x=round( if(i3>0,(p*i3/100),0), @DecimalesEnImportes)
 		y=round( if(i4>0,(p*i4/100),0), @DecimalesEnImportes)
-
+		
 		p=p+x+y
-
+		
 		return round(p, @DecimalesEnImportes)
 	}
 
@@ -71,7 +71,7 @@ module "impuestos"
     {
 		descuentos=d1 + d2
         subtotal=precio *  cantidad
-        sub_desc=subtotal - descuentos
+        sub_desc=round(subtotal - descuentos,@DecimalesEnImportes)
 
         ref imp=TasaImpuesto(db,pkimpuesto)
 		
@@ -80,13 +80,13 @@ module "impuestos"
         i3_tasa = @@(imp,"#i3_tasa")
         i4_tasa = @@(imp,"#i4_tasa")
 
-        impuesto1 = (sub_desc * i1_tasa)
-        impuesto2 = (sub_desc * i2_tasa)
-
+        impuesto1 = round(sub_desc * i1_tasa,@DecimalesEnImportes)
+        impuesto2 = round(sub_desc * i2_tasa,@DecimalesEnImportes)
+		
         i1_i2 = (impuesto1 + impuesto2)
         sub_desc_i1_i2 = (sub_desc + i1_i2)
-        impuesto3 = (sub_desc_i1_i2 * i3_tasa)
-        impuesto4 = (sub_desc_i1_i2 * i4_tasa)
+        impuesto3 = round(sub_desc_i1_i2 * i3_tasa,@DecimalesEnImportes)
+        impuesto4 = round(sub_desc_i1_i2 * i4_tasa,@DecimalesEnImportes)
 
         i3_i4 = (impuesto3 + impuesto4)
         impuestos = (i1_i2 + i3_i4)

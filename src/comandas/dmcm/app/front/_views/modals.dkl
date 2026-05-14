@@ -37,7 +37,7 @@
         }
         div(class="just-cont-center" style="display:flex;")
         {
-            h4(id=""){$"Abrir mesa"}br{}br{}
+            h4(id=""){$"Abrir cuenta"}br{}br{}
         }
         div(class="d-flex mt-2 just-itm-center just-cont-center" id="div-modal" style="display:flex;")
         {
@@ -46,13 +46,13 @@
            {
 	           	div(class="form-group")
 	           	{
-	           		small{"Mesa: "}
+	           		small{"Cuenta: "}
 		            input(type="text" id="txttable" class="form-control" autofocus="true" ){""}
 	           	}
 	           	div(class="form-group")
 	           	{
 	           		small{"Personas:"}
-	           		input(type="number" min="1" value="2" id="txtnumpeople" class="form-control")
+	           		input(type="number" min="1" value="1" id="txtnumpeople" class="form-control")
 	           	}
            		div(class="form-group" style="grid-column:1/3;")
            		{
@@ -523,5 +523,40 @@ div(id="modal-select-repartidor" class="show_modal_center open-table hidde_contr
     //     button(class="blue_button" id="btn-repartidor" onclick=""){"Aceptar"}
     //     button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-select-repartidor\')"){"Cancelar"}
     // }
+}
+
+//seleccionar productos
+div(id="modal-select-products" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+{
+    div(class="d-flex" onclick="controller.hide_modal(\'#modal-select-products\');")
+    {
+        div(class="just-cont-center d-flex flex-grow-1" )
+        {
+            h4(id=""){$"Productos"}br{}br{}
+        }
+        svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        {
+            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        }
+    }
+    
+    div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;overflow: auto;height: 50vh;")
+    {
+        table(class="table table-bordered table-hover table-selectable" id="table-products-selected")
+        {
+            thead(class="table-dark")
+            {
+                th{"SKU"}
+                th{"Descripción"}
+                th{"Precio"}
+                th{"Existencia"}
+                // th{""}
+            }
+            tbody(id="tbody-products-selected")
+            {$""
+
+            }
+        }
+    }
 }
 

@@ -92,31 +92,47 @@ var controller={
         break;
     }
   },
-  startTime:function(sec,min,hr,idclock)
+  startTime: function(sec, min, hr, idclock,days=0)
   {
-    var elem=document.getElementById(idclock);
-    if(elem)
-    {
-      sec++;
-      if(sec>=60){
-        min++;
-        sec=0;
-      }
-      if(min>=60){
-        hr++;
-        min=0;
-      }
-      if(hr>=24)
-        hr=1;
-      //Add a zero in front of numbers<10
-      hr = controller.checkTime(Number(hr));
-      min = controller.checkTime(Number(min));
-      sec = controller.checkTime(Number(sec));
-      elem.innerHTML = hr + " : " + min + " : " + sec;
-    }
+      const elem = document.getElementById(idclock);
+      
+      // Convertir a número
+      if (elem)
+      {
+        sec = Number(sec);
+        min = Number(min);
+        hr  = Number(hr);
 
-     
-    var time = setTimeout(function(){ controller.startTime(sec,min,hr,idclock) }, 1000);
+        if (sec >= 60) {
+            sec = 0;
+            min++;
+        }
+
+        if (min >= 60) {
+            min = 0;
+            hr++;
+        }
+
+        if (hr >= 24) {
+            hr = 0;
+            days++;
+        }
+
+        elem.innerHTML =(days>0?days+"D ":"")+
+            String(hr).padStart(2, '0') + ' : ' +
+            String(min).padStart(2, '0') + ' : ' +
+            String(sec).padStart(2, '0');
+      }
+      
+
+      // Mostrar valor inicial
+
+      // Intervalo
+      return setTimeout(function () 
+      {
+        sec++;
+        controller.startTime(sec,min,hr,idclock,days)
+      }, 1000);
   },
   checkTime:function(i)
   {

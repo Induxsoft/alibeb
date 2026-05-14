@@ -75,7 +75,6 @@ module "index.dkl"
 		dm_token=""
 		module "Authorization"
 		{
-			// do rise_error(00,)
 			admin=@@(@http_context,"request/headers/HTTP_ADMIN")
 			workspace=""
 			
@@ -131,11 +130,13 @@ module "index.dkl"
 		using postData{@"dm_token":dm_token}
 
 		ref data=@null
+		@DecimalesEnImportes=parse.num(dbr.vars.get(db,"FXCA001"))
+		
 		switch method
 		{
 			case "GET"
 			{
-				
+				// do rise_error(0,@@(params,"$entity"))
 				if field.exist(params,"prodc") && field.exist(params,"line") || @@(params,"entity")==@idfooddbev{ref data=get.foodbev(db,params)}
 				else if field.exist(params,"prodc") || @@(params,"$entity")==@idlines{ref data=get.lines(db,params)}
 				else if field.exist(params,"cc") && not(field.exist(params,"zone")){ref data=get.prodc_x_cc(db,params)}
@@ -208,6 +209,16 @@ module "index.dkl"
 					case "destino"
 					{
 						ref data = GetDestinationByPhone(db,params)
+						break
+					}
+					case "validate_existence"
+					{
+						do validar.existencia(db,params)
+						break
+					}
+					case "search_producto"
+					{
+						ref data=get.productos(db,params)
 						break
 					}
 				}

@@ -38,9 +38,9 @@ program
 
 	 ref data_detalle=dbr.rec(db,query_detalle,t)
 	 mm=""
-	 if @@(data_detalle,"$Mesa")=="" && @@(data_detalle,"#EstadoA")==1{mm="Comida Rapida"}
+	 if @@(data_detalle,"$Mesa")=="" && @@(data_detalle,"#EstadoA")==1{mm="Venta Rápida"}
 	 if @@(data_detalle,"$Mesa")=="" && @@(data_detalle,"#EstadoA")==4{mm="Servicio a Domicilio"}
-	 if @@(data_detalle,"$Mesa")!="" && @@(data_detalle,"#EstadoA")==1{mm="Servicio a Mesa"}
+	 if @@(data_detalle,"$Mesa")!="" && @@(data_detalle,"#EstadoA")==1{mm="Servicio a la cuenta"}
 
 	do escpos.centeralign()
 	do escpos.set.styles(128)
@@ -55,8 +55,8 @@ program
 	do escpos.PrintLine("CP: "+@@(data_detalle,"$cpdescripcion"))
 	do escpos.PrintLine(mm)
 	do escpos.PrintLine("Orden: " +@@(data_detalle,"$orde"))
-	do escpos.PrintLine("Mesa: " +@@(data_detalle,"$Mesa"))
-	do escpos.PrintLine("Mesero: "+@@(data_detalle,"$mesero") )
+	do escpos.PrintLine("Cuenta: " +@@(data_detalle,"$Mesa"))
+	do escpos.PrintLine("Vendedor: "+@@(data_detalle,"$mesero") )
 	do escpos.PrintLine("Ticket: "+@@(data_detalle,"$Refti"))
 	do escpos.printline("================================================")
 	

@@ -20,13 +20,78 @@ module "lista de consultas"
 
 	@lifespan="select hour(v.sys_dtcreated)as hours,minute(v.sys_dtcreated)as minutes,second(v.sys_dtcreated) as seconds from venta v where v.sys_pk=@sys_pk"
 
-	@foodbev="select cc.codigo cod_cc,cp.codigo cod_cp,cc.descripcion desc_cc,cp.descripcion desc_cp, p.codigo as sku,p.sys_pk as pkprod,q.sys_pk as sys_pk,q.descripcion as 'description',q.precio1,q.precio2,q.precio3,q.precio4,
-				q.precio5,q.i1venta,q.i2venta,q.i3venta,q.i4venta,q.unidad as unit,q.ilinea as line 
-				from qproddmnsxcprod q inner join producto p on q.sys_pk=p.sys_pk inner join cconsumo_cproduccion_ cccp on cccp.icproduccion=q.icentrosproduccion 
-				inner join cconsumo cc on cc.sys_pk=cccp.iconsumo inner join cproduccion cp on cp.sys_pk=cccp.icproduccion 
-                where cc.sys_pk=@cc"//select p.codigo as sku,q.sys_pk as sys_pk,q.descripcion as 'description',q.precio1,q.precio2,q.precio3,q.precio4,q.precio5,q.i1venta,q.i2venta,q.i3venta,q.i4venta,q.unidad as unit,q.ilinea as line from qproddmnsxcprod q inner join producto p on q.sys_pk=p.sys_pk
+	@foodbev="select
+            cc.codigo cod_cc,
+            cp.codigo cod_cp,
+            cc.descripcion desc_cc,
+            cp.descripcion desc_cp,
+            p.codigo as sku,
+            p.sys_pk as pkprod,
+            q.sys_pk as sys_pk,
+            q.descripcion as 'description',
+            q.precio1,
+            q.precio2,
+            q.precio3,
+            q.precio4,
+            q.precio5,
+            q.i1venta,
+            q.i2venta,
+            q.i3venta,
+            q.i4venta,
+            q.unidad as unit,
+            q.ilinea as line,
+            @validar_existencia := (p.iclase in(4,5) and p.itipo = 2) validar_existencia,
+            if(@validar_existencia,(
+                SELECT sum(ifnull(w.existencia,0)) FROM existencias w WHERE w.ialmacen=@almacen AND w.fk_producto_iexistencias=p.sys_pk
+            ),0) existencia,
+            p.iclase,
+            p.itipo
+        from
+            (
+                select
+                    `qproddmns`.`Sys_PK` AS `Sys_PK`,
+                    `qproddmns`.`Descripcion` AS `Descripcion`,
+                    `qproddmns`.`Precio1` AS `Precio1`,
+                    `qproddmns`.`Precio2` AS `Precio2`,
+                    `qproddmns`.`Precio3` AS `Precio3`,
+                    `qproddmns`.`Precio4` AS `Precio4`,
+                    `qproddmns`.`Precio5` AS `Precio5`,
+                    `qproddmns`.`Color` AS `Color`,
+                    `qproddmns`.`Data1` AS `Data1`,
+                    `qproddmns`.`VincularData` AS `VincularData`,
+                    `qproddmns`.`IClase` AS `IClase`,
+                    `qproddmns`.`ITipo` AS `ITipo`,
+                    `qproddmns`.`ILinea` AS `ILinea`,
+                    `qproddmns`.`IDivisa` AS `IDivisa`,
+                    `qproddmns`.`TCambio` AS `TCambio`,
+                    `qproddmns`.`I1Venta` AS `I1Venta`,
+                    `qproddmns`.`I2Venta` AS `I2Venta`,
+                    `qproddmns`.`I3Venta` AS `I3Venta`,
+                    `qproddmns`.`I4Venta` AS `I4Venta`,
+                    `qproddmns`.`Nombre` AS `Nombre`,
+                    `qproddmns`.`Variables` AS `Variables`,
+                    `qproddmns`.`Lim2` AS `Lim2`,
+                    `qproddmns`.`Lim3` AS `Lim3`,
+                    `qproddmns`.`Lim4` AS `Lim4`,
+                    `qproddmns`.`Lim5` AS `Lim5`,
+                    `qproddmns`.`flagLimites` AS `flagLimites`,
+                    `qproddmns`.`Unidad` AS `Unidad`,
+                    `qproddmns`.`FactorB` AS `FactorB`,
+                    `cproduccion_producto_`.`icentrosproduccion` AS `ICentrosProduccion`
+                FROM
+                    qproddmns 
+                    LEFT JOIN cproduccion_producto_ ON `cproduccion_producto_`.`iproductos` = `qproddmns`.`Sys_PK`
+            ) q
+            inner join producto p on q.sys_pk = p.sys_pk
+            LEFT join cconsumo_cproduccion_ cccp on cccp.icproduccion = q.icentrosproduccion
+            LEFT join cconsumo cc on cc.sys_pk = cccp.iconsumo
+            LEFT join cproduccion cp on cp.sys_pk = cccp.icproduccion
 
-	@prod="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad from producto p where p.sys_pk=@sys_pk"
+            LEFT JOIN existencias e on cc.ialmacen=e.ialmacen AND e.fk_producto_iexistencias=p.sys_pk
+        where
+            true"//select p.codigo as sku,q.sys_pk as sys_pk,q.descripcion as 'description',q.precio1,q.precio2,q.precio3,q.precio4,q.precio5,q.i1venta,q.i2venta,q.i3venta,q.i4venta,q.unidad as unit,q.ilinea as line from qproddmnsxcprod q inner join producto p on q.sys_pk=p.sys_pk
+
+	@prod="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.iclase clase from producto p where p.sys_pk=@sys_pk"
     
     @prodc="select cp.sys_pk,cp.codigo from cproduccion cp where cp.codigo=@code"
 
@@ -55,7 +120,7 @@ module "lista de consultas"
                 group by d.iproducto, d.precio;"
 
     @totaldventa="select ifnull(sum(dv.precio*dv.cantidad),0) subtotal, ifnull(sum(dv.descuento1),0)d1,ifnull(sum(dv.descuento2),0)d2,ifnull(sum(dv.impuesto1),0)i1,ifnull(sum(dv.impuesto2),0)i2,
-                ifnull(sum(dv.impuesto3),0)i3,ifnull(sum(dv.impuesto4),0)i4 from dventa dv inner join producto p on dv.iproducto=p.sys_pk where dv.fk_venta_detalle=@sys_pk" // and p.iclase=2;
+                ifnull(sum(dv.impuesto3),0)i3,ifnull(sum(dv.impuesto4),0)i4 from dventa dv inner join producto p on dv.iproducto=p.sys_pk where dv.fk_venta_detalle=@sys_pk" 
 
 	@updateventa="update venta v set v.sys_timestamp=now(),v.subtotal=@subtotal,v.descuento1=@d1,
     v.descuento2=@d2,v.impuesto1=@i1,v.impuesto2=@i2,v.impuesto3=@i3,v.impuesto4=@i4 where v.sys_pk=@sys_pk"
@@ -322,9 +387,34 @@ module "lista de consultas"
                 cproduccion.almacenmp as 'storemp',cproduccion.almacenpt as 'storept' from cproduccion inner join cconsumo_cproduccion_ on cproduccion.sys_pk=cconsumo_cproduccion_.icproduccion
                 where cconsumo_cproduccion_.iconsumo=@cc order by cproduccion.codigo"
 
-    @lines_x_prodc="select q.sys_pk as 'sys_pk',q.codigo as sku,q.descripcion as 'description',q.icproduccion,q.color,q.visible from qlineasxcprod q where visible<>0 and icproduccion=@prodc"
-    @all_lines="select sys_pk as 'sys_pk',codigo,descripcion as 'description', color as 'color' from linea where visible<>0 and clase=2 order by linea.codigo;"
-    @line="select sys_pk,codigo as code,descripcion as description,uf_indicaciones as indicaciones from linea where sys_pk=@line"
+    @lines_x_prodc="select q.sys_pk as 'sys_pk',q.codigo as sku,q.descripcion as 'description',q.icproduccion,q.color,q.visible from (
+        select
+            distinct `linea`.`sys_pk` AS `Sys_PK`,
+            `linea`.`codigo` AS `Codigo`,
+            `linea`.`descripcion` AS `Descripcion`,
+            `linea`.`color` AS `Color`,
+            `cproduccion_producto_`.`icentrosproduccion` AS `ICProduccion`,
+            `linea`.`visible` AS `Visible`
+        from
+            (
+                (
+                    `linea`
+                    join `producto` on((`linea`.`sys_pk` = `producto`.`ilinea`))
+                )
+                join `cproduccion_producto_` on(
+                    (
+                        `producto`.`sys_pk` = `cproduccion_producto_`.`iproductos`
+                    )
+                )
+            )
+        where
+            (`linea`.`clase` IN(#<@@(@config_default,'$class_prod')>))
+        order by
+            `linea`.`codigo`
+    ) q where visible<>0 and icproduccion=@prodc" // inyeccion sql con funcion In para definir las clases a mostrar
+
+    @all_lines="select sys_pk as 'sys_pk',codigo,descripcion as 'description', color as 'color' from linea where visible<>0 and clase IN(#<@@(@config_default,'$class_prod')>) order by linea.codigo;"
+    @line="select sys_pk,codigo as code,descripcion as description,uf_indicaciones as indicaciones,clase from linea where sys_pk=@line"
 
     @bars_prod="select db.nombre as 'name',if(db.tipo=0,'single','multiple')as 'type',ds.auto as 'required',
                 db.opciones as 'values'
@@ -370,11 +460,33 @@ module "lista de consultas"
     @updatedatatoken="update ut_dn_dmm_token set revocado=1 where sys_pk=@sys_pk"
 
     // **********************************************query kds**********************************************
-    @kdf_tables_orders="select distinct qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
-                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'cc',qv.iagente as 'ag',o.sys_pk pkorden
-                            from qventasserviciomesa qv INNER JOIN orden o ON o.IVenta=qv.Sys_PK 
-                            INNER JOIN cproduccion cp ON o.ICProduccion=cp.Sys_PK
-                            WHERE cp.Codigo=@cprod and (o.`status`=0 OR o.`status`=1 OR o.`status`=2) #<@where> GROUP BY qv.sys_guid "
+    @kdf_tables_orders="select
+    distinct qv.dmnsmesa as 'code',
+    qv.sys_pk as 'sys_pk',
+    qv.sys_guid as 'sys_guid',
+    qv.referencia as 'reference',
+    qv.statusadministrativo as 'status',
+    qv.dmnspersonas as 'occupied_seats',
+    qv.notas,
+    qv.total as 'balance',
+    '' as 'owner',
+    0 as is_birthday,
+    0 as is_celebration,
+    qv.icliente as 'cliente',
+    qv.icconsumo as 'cc',
+    qv.iagente as 'ag',
+    o.sys_pk pkorden,
+    o.referencia id_orden,
+    trim(o.sys_dtcreated)created
+from
+    qventasserviciomesa qv
+    INNER JOIN orden o ON o.IVenta = qv.Sys_PK
+    INNER JOIN cproduccion cp ON o.ICProduccion = cp.Sys_PK
+WHERE
+    cp.Codigo = @cprod
+    and (
+        ifnull(o.atendido,0) = 0
+    ) #<@where> GROUP BY qv.sys_guid "
 
 
     @kdf_last_order="select count(o.sys_pk) from orden o
@@ -387,20 +499,47 @@ module "lista de consultas"
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
-                        where orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`status`=0 OR orden.`status`=1 OR orden.`status`=2)"
+                        where orden.iventa=@iventa AND cp.codigo=@cprod and ifnull(orden.`atendido`,0)=0"
    
    @kds.updateventa="update venta set StatusAdministrativo=@StatusAdministrativo where sys_pk=@idkdf"
 
    @kds.updateorder="update orden o inner join cproduccion cp on o.icproduccion=cp.sys_pk
                     inner join qventasserviciomesa v on o.iventa=v.sys_pk 
-                    SET o.`status`=@status,o.sys_timestamp=@sys_timestamp,o.hproduccion=@hproduccion,o.fproduccion=@fproduccion
+                    SET o.`atendido`=@status,o.sys_timestamp=@sys_timestamp,o.hproduccion=@hproduccion,o.fproduccion=@fproduccion,o.fatendido=now()
                      where v.sys_pk=@idkdf and cp.codigo=@cprod"
 
-    @kdf_tables_orders_history="select distinct qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
-                            qv.notas,qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'cc',qv.iagente as 'ag'
-                            from qventasserviciomesa qv INNER JOIN orden o ON o.IVenta=qv.Sys_PK 
-                            INNER JOIN cproduccion cp ON o.ICProduccion=cp.Sys_PK
-                            WHERE cp.Codigo=@cprod and (o.`status`=3) AND DATE(NOW())=DATE(o.sys_timestamp)  AND HOUR(NOW())=HOUR(o.sys_timestamp) order BY o.sys_timestamp DESC  LIMIT  10 "
+    @kdf_tables_orders_history="select
+        distinct qv.dmnsmesa as 'code',
+        qv.sys_pk as 'sys_pk',
+        qv.sys_guid as 'sys_guid',
+        qv.referencia as 'reference',
+        qv.statusadministrativo as 'status',
+        qv.dmnspersonas as 'occupied_seats',
+        qv.notas,
+        qv.total as 'balance',
+        '' as 'owner',
+        0 as is_birthday,
+        0 as is_celebration,
+        qv.icliente as 'cliente',
+        qv.icconsumo as 'cc',
+        qv.iagente as 'ag',
+        o.sys_pk pkorden,
+        o.sys_guid as id_orden,
+        trim(o.sys_dtcreated)created,
+        trim(o.fatendido)served
+    from
+        qventasserviciomesa qv
+        INNER JOIN orden o ON o.IVenta = qv.Sys_PK
+        INNER JOIN cproduccion cp ON o.ICProduccion = cp.Sys_PK
+    WHERE
+        cp.Codigo = @cprod
+        and (o.`atendido`)
+        AND DATE(NOW()) = DATE(o.sys_timestamp)
+        AND HOUR(NOW()) = HOUR(o.sys_timestamp)
+    order BY
+        o.sys_timestamp DESC
+    LIMIT
+        10"
                             
     @kds_orders_history="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 
                         dorden.cantidad 'quantity',producto.descripcion 'description',ifnull(dorden.especificaciones,'') 'notes',dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
@@ -408,7 +547,7 @@ module "lista de consultas"
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
-                        where orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`status`=3) AND DATE(NOW())=DATE(orden.sys_timestamp)  AND HOUR(NOW())=HOUR(orden.sys_timestamp) order BY orden.sys_timestamp DESC  LIMIT  10 "
+                        where orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`atendido`) AND DATE(NOW())=DATE(orden.sys_timestamp)  AND HOUR(NOW())=HOUR(orden.sys_timestamp) order BY orden.sys_timestamp DESC  LIMIT  10 "
     // *************************************************************************************************************
 
     // ******************************************************kds admin***********************************************

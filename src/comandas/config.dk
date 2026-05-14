@@ -18,6 +18,7 @@ module "config.dkl"
 	//statdus del ticket
 	@_status_admin_abierto= 1
 
+	@clase_prod_receta= 2
 	@documento_venta= 6 //ticket
 	@formapago= 1//contado
 	@divisa= 1 //peso mexicano

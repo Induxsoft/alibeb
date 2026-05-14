@@ -43,8 +43,8 @@ program
 	do escpos.leftalign()
 	do escpos.printline("CC: "+@@(cconsumo,"$description"))
 	
-	do escpos.printline("Mesa: "+@@(ticket,"$mesa"))
-	do escpos.printline("Mesero: "+@@(mesero,"$nombre"))
+	do escpos.printline("Cuenta: "+@@(ticket,"$mesa"))
+	do escpos.printline("Vendedor: "+@@(mesero,"$nombre"))
 	do escpos.printline("Cajero: "+@@(cajero,"$nombre"))
 	do escpos.printline("Cliente: "+@@(cliente,"$name"))
 	do escpos.printline(divider_full)

@@ -41,8 +41,10 @@ var views={
 			Hecho
 			</button>`;
 			//var uuid=controller.guid();
-			var hour=`<h3 id="clock${itm.reference.replace(/ /g,"")}">00 : 00 : 00</h3>`;
+			let h=obtenerTiempoTranscurrido(itm.created);
 
+			var hour=`<h3 id="clock${itm.reference.replace(/ /g,"")}">${(h.dias>0?h.dias+"D ":"")}${h.horas} : ${h.minutos} : ${h.segundos}</h3>`;
+			
 			if(ishistory){
 				btn=`<button class="btn-kds "  onclick="controller.return_command(${itm.sys_pk})">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
@@ -55,9 +57,12 @@ var views={
 			hour="";
 			}
 			html+=`<div class="c-command c-command_${itm.sys_pk}" id="c-command_${itm.sys_pk}">
-			<div class="cmmd-table">Mesa: ${itm.code}</div>
+			<div class="cmmd-table">Referencia: ${itm.id_orden??""}</div>
+			<div class="cmmd-table">Cuenta: ${itm.code}</div>
 			<div class="cmmd-ticket">Ticket: ${itm.reference}</div>
 			<div class="cmmd-numorder">Num. Orden: ${itm.pkorden}</div>
+			<div class="cmmd-ticket">${itm.created}</div>
+			<div class="cmmd-ticket">${itm.served?itm.served:""}</div>
 				<div class="ctn-h">
 				<div class="order-hours">
 					${hour}
@@ -73,7 +78,7 @@ var views={
 		</div>`;
 			
 			if(!tmr)
-				controller.startTime(0,0,0,`clock${itm.reference.replace(/ /g,"")}`);
+				controller.startTime(h.segundos,h.minutos,h.horas,`clock${itm.reference.replace(/ /g,"")}`,h.dias);
 		}
 		if(auto)
 			element.innerHTML+=html;
@@ -117,4 +122,60 @@ var views={
 		if(select && html!="")
 			select.innerHTML=html;
 	}
+}
+
+/**
+ * Recibe una fecha de creación en cadena
+ * y calcula el tiempo transcurrido hasta ahora.
+ *
+ * Formatos soportados:
+ * 2026-05-13 10:30:00
+ * 2026/05/13 10:30:00
+ * 2026-05-13T10:30:00
+ */
+/**
+ * Devuelve el tiempo transcurrido desde una fecha dada
+ * hasta la fecha actual.
+ *
+ * @param {String} fechaCreacionStr
+ * @returns {Object}
+ */
+function obtenerTiempoTranscurrido(fechaCreacionStr) 
+{
+
+    // Normalizar fecha
+    const fechaNormalizada = fechaCreacionStr
+        .replace(/-/g, '/')
+        .replace('T', ' ');
+
+    const fechaCreacion = new Date(fechaNormalizada);
+
+    if (isNaN(fechaCreacion.getTime())) {
+        return null;
+    }
+
+    const ahora = Date.now();
+
+    let diferencia = ahora - fechaCreacion.getTime();
+
+    if (diferencia < 0) {
+        diferencia = 0;
+    }
+
+    const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diferencia / (1000 * 60 * 60)) % 24);
+    const minutos = Math.floor((diferencia / (1000 * 60)) % 60);
+    const segundos = Math.floor((diferencia / 1000) % 60);
+
+    return {
+        dias,
+        horas:String(horas).padStart(2, '0'),
+        minutos:String(minutos).padStart(2, '0'),
+        segundos:String(segundos).padStart(2, '0'),
+        texto:
+            `${dias}d ` +
+            `${String(horas).padStart(2, '0')}:` +
+            `${String(minutos).padStart(2, '0')}:` +
+            `${String(segundos).padStart(2, '0')}`
+    };
 }

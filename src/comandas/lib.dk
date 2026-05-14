@@ -181,4 +181,68 @@ module "lib.dk"
 
 		return from.json(@@(config,"$data"))
 	}
+	showActions::action
+	{
+		if action{return ""}
+
+		return "d-none"
+	}
+	ref @config_default=@null
+	getVarsConfig::
+	{
+		if not(isnull(@config_default)){return @config_default}
+
+		pos_color_encabezado=GetVars("pos_color_encabezado")
+		pos_mostrar_cuentas=parse.bool(GetVars("pos_mostrar_cuentas"))
+		pos_mostrar_comida_rapida=parse.bool(GetVars("pos_mostrar_comida_rapida"))
+		pos_mostrar_servicio_domicilio=parse.bool(GetVars("pos_mostrar_servicio_domicilio"))
+		pos_titulo_encabezado=GetVars("pos_titulo_encabezado")
+		pos_subtitulo_encabezado=GetVars("pos_subtitulo_encabezado")
+		pos_mostrar_recetas=parse.bool(GetVars("pos_mostrar_recetas"))
+		pos_mostrar_servicios=parse.bool(GetVars("pos_mostrar_servicios"))
+		pos_mostrar_articulos=parse.bool(GetVars("pos_mostrar_articulos"))
+		pos_mostrar_control_propina=parse.bool(GetVars("pos_mostrar_control_propina"))
+
+		new @config_default
+		{
+			@"pos_color_encabezado":ifstr(trim(pos_color_encabezado)!="",pos_color_encabezado,"#540883")
+			@"pos_mostrar_cuentas":pos_mostrar_cuentas
+			@"pos_mostrar_comida_rapida":pos_mostrar_comida_rapida
+			@"pos_mostrar_servicio_domicilio":pos_mostrar_servicio_domicilio
+			@"pos_titulo_encabezado":ifstr(trim(pos_titulo_encabezado)!="",pos_titulo_encabezado,"Induxsoft")
+			@"pos_subtitulo_encabezado":ifstr(trim(pos_subtitulo_encabezado)!="",pos_subtitulo_encabezado,"")
+			@"pos_mostrar_recetas":pos_mostrar_recetas
+			@"pos_mostrar_servicios":pos_mostrar_servicios
+			@"pos_mostrar_articulos":pos_mostrar_articulos
+			@"show_cuentas":showActions(pos_mostrar_cuentas)
+			@"show_foodfast":showActions(pos_mostrar_comida_rapida)
+			@"show_foofhome":showActions(pos_mostrar_servicio_domicilio)
+			@"show_propina":showActions(pos_mostrar_control_propina)
+			@"pos_mostrar_control_propina":pos_mostrar_control_propina
+			@"pos_porcentaje_propina":parse.num(GetVars("pos_porcentaje_propina"))
+		}
+
+		@config_default<"show_filter">:ifstr(showFilter(@config_default),"","d-none")
+		@config_default<"class_prod">:ClassProd(@config_default)
+
+		return @config_default
+	}
+	showFilter::&config
+	{
+		if (@@(config,"#pos_mostrar_cuentas") && @@(config,"#pos_mostrar_comida_rapida")) || (@@(config,"#pos_mostrar_cuentas") && @@(config,"#pos_mostrar_servicio_domicilio")){return @true}
+		else if @@(config,"#pos_mostrar_comida_rapida") && @@(config,"#pos_mostrar_servicio_domicilio"){return @true}
+		else if @@(config,"#pos_mostrar_servicio_domicilio"){return @true}
+
+		return @false
+	}
+	ClassProd::&config
+	{
+		class_prod="-1"
+
+		if @@(config,"#pos_mostrar_recetas"){class_prod=class_prod + ",2"}
+		if @@(config,"#pos_mostrar_servicios"){class_prod=class_prod + ",3"}
+		if @@(config,"#pos_mostrar_articulos"){class_prod=class_prod + ",4"}
+
+		return class_prod
+	}
 }

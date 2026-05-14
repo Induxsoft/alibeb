@@ -60,7 +60,7 @@ module ""
     
     
 
-    pos_porcentaje_propina=parse.num(dbr.vars.get(db,"pos_porcentaje_propina"))
+    pos_porcentaje_propina=@@(@config_default,"#pos_porcentaje_propina")
 
     #$
 	div(style="height: 100%;")
@@ -121,7 +121,7 @@ module ""
                     }
                 }
                 
-                div(class="d-flex gap-2 flex-wrap my-2")
+                div(class="d-flex gap-2 flex-wrap my-2 #<@@(@config_default,'$show_propina')>")
                 {
                     div(class="d-flex gap-2 align-items-center")
                     {

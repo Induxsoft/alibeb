@@ -19,7 +19,7 @@ module "login"
 					label(class="d-flex gap-1" "for"="rdomesero")
 					{
 						input(class="form-check-input" type="radio" name="opt" value="" id="rdomesero" checked="" onclick="views.ShowFormulario('container-mesero')")
-						"Mesero"
+						"Vendedor"
 					}
 
 					label(class="d-flex gap-1" "for"="rdocajero")
@@ -43,7 +43,7 @@ module "login"
 				
 				div(id="container-mesero")
 				{
-					label("for"="selectwaiter" class="fw-bold"){"Mesero:"}
+					label("for"="selectwaiter" class="fw-bold"){"Vendedor:"}
 					select(class="select-apparence-login" id="selectwaiter" name="waiter"){$""}br{}
 
 					label("for"="pwd"){"Contraseña:"}

@@ -1,0 +1,57 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dprod/dprod.dk"
+    #include "inventario/movimientos.dkh"
+    do errordet(@false)
+
+    if isset("@context")
+    {
+        ref config=@context
+        ref db=@@(config,"&db")
+    }
+    else
+    {
+        ref args=commandline("=")
+        ref config=file.rtext(@@(args,"$file"))
+        ref db=dbr.open(@@(args,"$qname"))
+    }
+
+    ref orders=@@(config,"&orders")
+    @erp.dprod.NP_SUBRECETAS=@true
+    for i = 0; i < @count(orders)
+    {
+        ref order=@item(orders,i)
+        referencia=uuid()//@@(order,"$sys_guid")
+        using config
+        {
+            @"ref_salida":"s"+referencia
+            @"ref_entrada":"e"+referencia
+            @"orden":@@(order,"#sys_pk")
+            @"descripcion_salida":replace(@@(config,"$descripcion_salida"),"@referencia",referencia)
+            @"descripcion_entrada":replace(@@(config,"$descripcion_entrada"),"@referencia",referencia)
+            @"almacen":@@(order,"#ialmacen")
+        }
+        
+        do erp.dprod.producir(db,config)
+    }
+    
+    do file.wtext("/usr/dkl_mxcvxii/_data/c.json",to.json(config))
+
+    exception
+    {
+        error=last_error()
+
+        if isset("@LAST_DCARDEX") && not(isnull(@LAST_DCARDEX)) && not(contains(trim(error),trim(@@(@LAST_DCARDEX,"$cod_prod"))))
+        {
+            error=error + "\r\nProducto: "+@@(@LAST_DCARDEX,"$cod_prod")+" - "+@@(@LAST_DCARDEX,"$desc_prod")
+        }
+        do print("Error: "+error)
+        do file.wtext("/usr/dkl_mxcvxii/_data/t.txt",error)
+        do rise_error(99,error)
+    }
+}

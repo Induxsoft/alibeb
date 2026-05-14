@@ -5,6 +5,7 @@ module "index.dkl"
 	#include "functions.dkh"
 	#include "serialize.dkh"
 	#include "dbr.dkh"
+	#include "dbr.vars.dkl"
 	
 	@SITE_INCLUDES="config.dk,lib.dk,list_query.dk,impuesto.dk"
 	#include "website.dkl"

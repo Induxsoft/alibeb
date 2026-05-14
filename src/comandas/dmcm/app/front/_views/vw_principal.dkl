@@ -14,12 +14,12 @@ module "terminal de mesero"
 				{
 					div(class="card-header d-sm-flex d-block " style="align-items: center;" id="card_header_actions")
 					{
-						buttom(class="btn img mr-2 " onclick="controller.show_modal(\'#open-table\');")
+						buttom(class="btn img mr-2 #<@@(@config_default,'$show_cuentas')>" onclick="controller.show_modal(\'#open-table\');")
 						{
 							svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"){path("fill-rule"="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z")}
-							span(class="vb m-width"){"Abrir mesa"}
+							span(class="vb m-width"){"Abrir cuenta"}
 						}
-						button(class="btn btn-admin img mr-2 " onclick="controller.fastFoot();")
+						button(class="btn btn-admin img mr-2 #<@@(@config_default,'$show_foodfast')>" onclick="controller.fastFoot();")
 						{
 							// img(src="/$/img/comida-rapida.png" width="20" height="20" style="display: inline !important;")
 							$'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
@@ -55,9 +55,9 @@ module "terminal de mesero"
 								<!-- Marca curva -->
 								<path d="M260 240 A80 80 0 0 0 380 260"/>
 								</svg>'
-							span(class="vb m-width"){"Comida rápida"}
+							span(class="vb m-width"){"Venta rápida"}
 						}
-						button(class="btn img mr-2 " onclick="controller.showDialogDS();")
+						button(class="btn img mr-2 #<@@(@config_default,'$show_foofhome')>" onclick="controller.showDialogDS();")
 						{
 							// img(src="/$/img/servicio-a-domicilio.png" width="20" height="20" style="display: inline !important;")
 							$'<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
@@ -139,17 +139,24 @@ module "terminal de mesero"
 						}
 						span(class="flex-grow-1"){""}
 
-						div(class="input-group w-auto")
+						
+						#$
+						div(class="input-group w-auto #<@@(@config_default,'$show_filter')>")
 						{
 							select(class="form-select form-select-sm" name="cuentas" id="cuentas" onchange="controller.resfresh_tables()")
 							{
 								option(value="*"){"Todas las cuentas"}
-								option(value="sm"){"Servicio a la mesa"}
-								option(value="ff"){"Comida rápida"}
-								option(value="ds"){"A domicilio — todas"}
-								option(value="ds-enviar"){"A domicilio — por enviar"}
-								option(value="ds-reparto"){"A domicilio — en reparto"}
-								option(value="ds-entregada"){"A domicilio — entregadas"}
+								#! if @@(@config_default,'$show_cuentas') == ""{#$ option(value="sm"){"Servicio a la cuenta"}}
+								#! if @@(@config_default,'$show_foodfast') == ""{#$ option(value="ff"){"Venta rápida"}}
+								#! if @@(@config_default,'$show_foofhome') == ""
+								{
+									#$
+									option(value="ds"){"A domicilio — todas"}
+									option(value="ds-enviar"){"A domicilio — por enviar"}
+									option(value="ds-reparto"){"A domicilio — en reparto"}
+									option(value="ds-entregada"){"A domicilio — entregadas"}
+								}
+								#$
 							}
 							button(class="input-group-text p-2 border" onclick="controller.resfresh_tables()")
 							{

@@ -100,9 +100,9 @@ var prn_generic=
 
         printer.printText(data.fecha_actual??"");
         printer.printText("CC: "+cconsumo.description??"");
-        printer.printText("Mesa: "+data.mesa??"");
+        printer.printText("Cuenta: "+data.mesa??"");
 
-        printer.printText("Mesero: "+mesero.nombre);
+        printer.printText("Vendedor: "+mesero.nombre);
         printer.printText("Cajero: "+cajero.nombre);
 
         if(data.repartidor)printer.printText("Repartidor: "+data.repartidor);

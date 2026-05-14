@@ -2,7 +2,6 @@
 #!
 module "lib.dk"
 {
-
     // *****************************functions de kds***********************************
     #!
     kds.get.ordenes_adcs::&db,&params
@@ -32,11 +31,81 @@ module "lib.dk"
         }
         return list_commands
     }
+    pds.prepareGlobalVars::&db
+    {
+        cat=dbr.vars.get(db,"v12.ventas.salida")
+        cat >> p
+        cventa=dbr.num(db,"select sys_pk from categoria where codigo=@cat",p)
+        if parse.num(cventa)<1{do rise_error(500,"No ha configurado una categoria Salidas por ventas `v12.ventas.salida` ")}
 
+        new args
+        {
+            @"c-venta":cventa
+        }
+        @erp.dprod.CLASES="2,4,5,6" 
+        @erp.dprod.TIPOS_PRODUCTOS_SALIDA_VENTAS="2"
+        @dias_ventas=field.dnum(args,"dias-ventas",7) //dias-ventas=n. Cantidad de días atrás (n) a tomar en cuenta como máximo de la lista de ventas pendientes.
+        @limit_ventas=field.dnum(args,"limit-ventas",100)//limit-ventas=l. Cantidad de filas (l) a tomar en cuenta como máximo de la lista de ventas pendientes.
+        @cat_prod_ventas=field.dnum(args,"c-venta",8) //Clave primaria de la categoría para salida por ventas
+        @pre_errors=@true //preservar-errores. Guarda los errores de producción o salida por ventas en la tabla 'dprod_log'.
+        @f_inicio=@@(args,"$f_inicio")//f_inicio=f. Fecha de inicio del rango de fechas, en donde f es una expresada con el formato yyyy-mm-dd.
+        @f_final=@@(args,"$f_final") //f_final=f. Fecha final del rango de fechas, en donde f es una expresada con el formato yyyy-mm-dd.
+        @kventa=field.dnum(args,"k-venta",0)//k-venta=pk. La clave primaria (pk) de una venta en particular que será la única en ser procesada
+        @rventa=field.dstr(args,"venta","")//venta=r. La referencia (r) de una venta en particular que será la única en ser procesada
+
+        return args
+    }
     #!
     kdf.close.table::&db,&params
     {
-       return kds.updata.status(db,params,3)
+        pds_action=parse.num(GetVars("pds_btn_mode"))
+        
+        if pds_action < 1
+        {
+            return kds.updata.status(db,params,1)//stattus = 3 
+        }
+        ref orden=dbr.rec(db,"SELECT o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa,o.iventa FROM orden o WHERE o.iventa=@idkdf;",params)
+        if isnull(orden){do rise_error(500,"No se encontró la orden indicada")}
+
+        params<"code_cat_sal">:GetVars("dprod_output_cat")
+        params<"code_cat_ent">:GetVars("dprod_input_cat")
+        
+        new context
+        {
+            @"db*":db
+            @"np_subrecetas":@true
+            // @"orden":@@(params,"#idkdf")
+            // @"ref_salida":@@(orden,"$referencia")
+            // @"ref_entrada":@@(orden,"$referencia")
+            @"descripcion_salida":GetVars("dprod_output_description")
+            @"descripcion_entrada":GetVars("dprod_input_description")
+            @"cat_salida":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_sal",params)
+            @"cat_entrada":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_ent",params)
+            @"venta":@@(params,"#idkdf")
+            @"metodo":1//@erp.dprod.PROD_COMPLETA
+            @"orders*":dbr.list(db,"SELECT o.sys_pk,o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa ,o.icconsumo,cc.ialmacen
+                        FROM orden o 
+                        INNER JOIN cconsumo cc ON o.icconsumo=cc.sys_pk
+                        WHERE o.iventa=@idkdf AND IFNULL(o.atendido,0)=0;",params)
+        }
+        
+        if pds_action == 1 //ejecucion estricta
+        {
+            do runscript("comandas/kds/app/svc/producir.dkl","context",context)
+        }
+        else if pds_action == 2 //ejecucion flexible
+        {
+            dir_temp="_data/pds/"
+            do dir.create(dir_temp)
+
+            path_file=path.concat(dir_temp,uuid()+".json")
+            do file.wtext(path_file,to.json(context))
+            
+            qname=dbr.full_qname(db)
+            args="file='#<path_file>' qname='#<qname>'"
+            do exec("./dkl",args,@false)
+        }
+        return kds.updata.status(db,params,1)//stattus = 3 
     }
     kds.updata.status::&db,&params,status
     {
@@ -48,8 +117,9 @@ module "lib.dk"
             @"idkdf":@@(params,"idkdf")
             @"cprod":@@(params,"cprod")
             @"sys_timestamp*":now
-            @"hproduccion*":now
-            @"fproduccion*":dbr.sql("date(now())")
+            // @"hproduccion*":now
+            @"fatendido*":dbr.sql("date(now())")
+            // @"fproduccion*":dbr.sql("date(now())")
         }
         do dbr.execute(db,@kds.updateorder,table)
         return table

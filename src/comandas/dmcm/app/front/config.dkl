@@ -9,6 +9,7 @@ module "config.dkl"
 	@path_absolute=path.concat("comandas","dmcm/app/front")
 	
 	@path_view=path.concat(@path_absolute,"_views")
+	@path_css=path.concat(@path_absolute,"_css")
 	@path_view_admin=path.concat(@path_absolute,"admin")
 	@path_include=path.concat(@path_absolute,"_include")
 

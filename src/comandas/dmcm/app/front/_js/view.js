@@ -166,6 +166,14 @@ var views=
                   this.login_action="cancelar";
                   this.ShowDialog();
             });
+
+            this.search_prod=document.getElementById("search_prod");
+            if(this.search_prod)this.search_prod.addEventListener("keydown",(e)=>
+            {
+                  if (e.key === 'Enter')controller.SearchProd();
+            })
+
+            this.table_products_select=document.getElementById("tbody-products-selected");
       },
       ShowDialog(iddialog="")
       {
@@ -558,6 +566,12 @@ var views=
                         adds:0,
                         total:0,
                         _priceProd_:views.format(itm.price * 1,2,".",","),
+                  }
+                  //validar existencias
+                  if(itm.validar_existencia)
+                  {
+                        let r=await controller.validarExistencia(sys_pk);
+                        if(!r)return;
                   }
 
                   if(other){
@@ -1356,6 +1370,23 @@ var views=
             "GET",
             false
         );
+    },
+    createBody(data)
+    {
+      let html="";
+      for (let i = 0; i < data.length; i++) 
+      {
+            const dt = data[i];
+            html+=`<tr>`;
+            html+=`<td>${dt.sku}</td>`;
+            html+=`<td>${dt.description}</td>`;
+            html+=`<td>${dt.price}</td>`;
+            html+=`<td>${(dt.validar_existencia ? dt.existencia : "A producir")}</td>`;
+            // html+=`<td><button class="btn border" onclick="selectRow(${i})">Seleccionar</button></td>`;
+            html+=`</tr>`;
+      }
+
+      return html;
     }
 };
 
@@ -1789,8 +1820,6 @@ function totalCantidad(seleccion, grupoActual = null,validatebygroup=false)
 // Configuración en segundos
 views.interval_refresh_data_tables = 0; // 3 minutos = 180 segundos
 
-
-
 // Guardamos el último momento de actividad
 views.lastActivity = Date.now();
 
@@ -1853,4 +1882,89 @@ if(btnToggle)btnToggle.addEventListener("click", () => {
         btnToggle.innerText = "⬅ Ocultar";
     }
 });
+//tabla para productos seleccionable
+let selectedIndex = -1;
+// data_foodbev=[];
+// Seleccionar primera fila
+// selectRow(selectedIndex);
+
+function selectRow(index) 
+{
+      var rows = document.querySelectorAll('#table-products-selected tbody tr');
+      rows.forEach(row => {
+            row.classList.remove('selected');
+      });
+
+      rows[index].classList.add('selected');
+      // Scroll automático
+      rows[index].scrollIntoView({
+            block: 'nearest'
+      });
+}
+
+document.addEventListener('keydown', function(event) 
+{
+      var rows = document.querySelectorAll('#table-products-selected tbody tr');
+      if(!rows || rows.length < 1)return;
+      
+      // Flecha abajo
+      if (event.key === 'ArrowDown') {
+
+            if (selectedIndex < rows.length - 1) {
+                  selectedIndex++;
+                  selectRow(selectedIndex);
+            }
+
+      }
+
+      // Flecha arriba
+      if (event.key === 'ArrowUp') 
+      {
+            if (selectedIndex > 0) 
+            {
+                  selectedIndex--;
+                  selectRow(selectedIndex);
+            }
+      }
+
+      // Enter
+      if (event.key === 'Enter') 
+      {
+            const row = rows[selectedIndex];
+
+            const id = row.cells[0].innerText;
+            const nombre = row.cells[1].innerText;
+            
+            let _row=data_foodbev[selectedIndex];
+            controller.select_foodbev(_row);
+      }
+
+});
+
+// Selección con mouse
+function selectedMouse()
+{
+      var rows = document.querySelectorAll('#table-products-selected tbody tr');
+      if(rows)rows.forEach((row, index) => 
+      {
+
+            row.addEventListener('click', function() {
+
+                  selectedIndex = index;
+
+                  // selectRow(selectedIndex);
+                  let _row=data_foodbev[index];
+                  controller.select_foodbev(_row);
+
+            });
+
+            // Doble click
+            row.addEventListener('dblclick', function() 
+            {
+                  let _row=data_foodbev[index];
+                  controller.select_foodbev(_row);
+            });
+      });
+}
+
 

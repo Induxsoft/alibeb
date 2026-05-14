@@ -21,9 +21,9 @@ div(class="nabvar" style="z-index:100;margin-bottom: 4.5rem;")
 			{
 				a(href="/" style="color: white;text-decoration: none;")
 				{
-					h3{$"#<@name_company>"}
+					h3(class="p-0 m-0"){$"#<@name_company>"}
 				}
-				span{"#<@as_company> "}
+				small(style="font-size: small;color: lightgray;" class="d-flex"){"#<@as_company> "}
 				#!
 				if isset("@waiter")
 				{

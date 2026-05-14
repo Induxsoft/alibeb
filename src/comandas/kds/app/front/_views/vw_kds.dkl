@@ -51,6 +51,7 @@ module "view-dkf"
 				    overflow: hidden;
 				    transition-duration: .3s;
 			    background-color: #FFF !important;
+				padding:10px;
 			}
 			.cmmd-header
 			{
