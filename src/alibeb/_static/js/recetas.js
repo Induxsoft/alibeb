@@ -275,11 +275,17 @@ var recetas =
     calcsRecCon()
     {
         const cantidad_total = this.table_rec_cons.DataArray.reduce((total,obj) => Math.add(total,Number(obj.cantidad??0)), 0);
+        const _importe_total=this.table_rec_cons.DataArray.reduce((total,obj) => Math.add(total,Math.mul(Number(obj.cantidad??0),Number(obj.costoultimo??0))), 0);
+
         let importe_total = 0;
-        this.table_rec_cons.DataArray.forEach((producto,index)=>{
-            if (producto.elemento != undefined) {
-                producto['representacion'] = Math.mul(Math.div(Number(producto.cantidad??0),cantidad_total),100);
-                producto['importe'] = Math.mul(Number(producto.cantidad??0),Number(producto.costoultimo??0));
+        this.table_rec_cons.DataArray.forEach((producto,index)=>
+        {
+            if (producto.elemento != undefined) 
+            {
+                let importe=Math.mul(Number(producto.cantidad??0),Number(producto.costoultimo??0));
+                let representacion=Math.mul(Math.div(Number(importe??0),_importe_total),100);
+                producto['representacion'] = representacion;
+                producto['importe'] =importe ;
                 importe_total += Number(producto.importe);
                 this.table_rec_cons.UpdateRow(index);
             }
