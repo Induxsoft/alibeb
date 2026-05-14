@@ -259,9 +259,10 @@ module "lib.dk"
         //realizar salida de existencias
         //==============================================
         ref dventas=list.create()
-        if parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
+        pos_afectar_existencias=parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
+        if pos_afectar_existencias
         {
-            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,dv.cantidad,p.costopromedio,p.costoultimo
+            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo
             FROM dventa dv 
             INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
             INNER JOIN producto p ON dv.iproducto=p.sys_pk
@@ -324,6 +325,8 @@ module "lib.dk"
         //=========================================================
         //cargar datos del ticket antes de actualizar el estado de la venta
         params<"id_table">:@@(postData,"#venta")
+        params<"venta">:@@(postData,"#venta")
+
         ref response=data.ticket(db,params)
 
         statusentrega=dbr.num(db,"SELECT statusentrega from venta where sys_pk=@venta",postData)
@@ -343,9 +346,27 @@ module "lib.dk"
         if toupper(@@(rsource,"$service")) == "DS"{do field.remove(venta,"statusentrega")}
         do dbr.update(db,"venta",venta,"sys_pk=@venta",postData)
 
+        //órdenes pendientes
+        ref ordenes=dbr.list(db,"SELECT o.*
+                        FROM orden o 
+                        INNER JOIN cconsumo cc ON o.icconsumo=cc.sys_pk
+                        WHERE o.iventa=@venta AND IFNULL(o.`status`,0)=0;",postData)
+        //producir orden     
+        params<"trans">:@false
+        params<"ordenes*">:ordenes
+
+        pos_produccion_al_cobrar=parse.num(GetVars("pos_produccion_al_cobrar"))
+        // configuracion pos_produccion_al_cobrar total estricta
+        if pos_afectar_existencias && pos_produccion_al_cobrar == 1{do producir.x_ventas(db,params)}
         //ACTULIZAR ORDEN
-        new orden{@"status":3}
-        do dbr.update(db,"orden",orden,"iventa=@venta",postData)
+        
+        new orden
+        {
+            // @"status":3
+            @"atendido":1
+            @"fatendido*":dbr.sql("now()")
+        }
+        do dbr.update(db,"orden",orden,"iventa=@venta AND ifnull(atendido,0)=0",postData)
         
         //obetner datos del ticket
         //folio de la venta
@@ -365,6 +386,8 @@ module "lib.dk"
         }
         
         do dbr.commit(db)
+
+        if pos_afectar_existencias && pos_produccion_al_cobrar == 2{do producir.x_ventas(db,params)}
 
         postData<"data_ticket*">:response
 

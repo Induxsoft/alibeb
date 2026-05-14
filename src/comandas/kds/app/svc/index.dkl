@@ -75,7 +75,7 @@ module "index.dkl"
 
 		exception
 		{
-			// if dbr.is_open(db){do dbr.close(db)}
+			if isset("db"){if dbr.is_open(db){do dbr.close(db)}}
 			using response
 			{
 				@"success":@false

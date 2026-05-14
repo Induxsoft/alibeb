@@ -2,6 +2,10 @@
 #!
 module "lib.dk"
 {
+	ref @lib_async = _import_library("dkl.async.dll")
+    do _map_function(@lib_async, "dkl.async.Tasks", "AsyncRunScript", "async.runscript","System.String, System.String, *System.Object","*")
+    do _map_function(@lib_async, "dkl.async.Tasks", "Wait", "async.wait","*System.Object, System.Int32","void")
+
 	DocumentRoot::
 	{
 		return @@(@http_context,"$request/headers/DOCUMENT_ROOT")
@@ -244,5 +248,90 @@ module "lib.dk"
 		if @@(config,"#pos_mostrar_articulos"){class_prod=class_prod + ",4"}
 
 		return class_prod
+	}
+	producirOrdenes::&db,&params
+	{
+		ref orden=dbr.rec(db,"SELECT o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa,o.iventa FROM orden o WHERE o.iventa=@idkdf;",params)
+        if isnull(orden){do rise_error(500,"No se encontró la orden indicada")}
+
+        params<"code_cat_sal">:GetVars("dprod_output_cat")
+        params<"code_cat_ent">:GetVars("dprod_input_cat")
+        
+        new context
+        {
+            @"db*":db
+            // @"np_subrecetas":@true
+            @"metodo":parse.num(GetVars("pos_metodo_produccion"))
+            // @"orden":@@(params,"#idkdf")
+            // @"ref_salida":@@(orden,"$referencia")
+            // @"ref_entrada":@@(orden,"$referencia")
+            @"descripcion_salida":GetVars("dprod_output_description")
+            @"descripcion_entrada":GetVars("dprod_input_description")
+            @"cat_salida":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_sal",params)
+            @"cat_entrada":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_ent",params)
+            @"venta":@@(params,"#idkdf")
+            @"orders*":dbr.list(db,"SELECT o.sys_pk,o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa ,o.icconsumo,cc.ialmacen
+                        FROM orden o 
+                        INNER JOIN cconsumo cc ON o.icconsumo=cc.sys_pk
+                        WHERE o.iventa=@idkdf AND IFNULL(o.atendido,0)=0;",params)
+        }
+        
+        if pds_action == 1 //ejecucion estricta
+        {
+            do runscript("comandas/kds/app/svc/producir.dkl","context",context)
+        }
+        else if pds_action == 2 //ejecucion flexible
+        {
+            ref tasks = list.create()
+            do list.add(tasks, async.runscript("comandas/kds/app/svc/producir.dkl", "context", context))
+            do async.wait(tasks, 300000)
+            // exception{}
+            // dir_temp="_data/pds/"
+            // do dir.create(dir_temp)
+
+            // path_file=path.concat(dir_temp,uuid()+".json")
+            // do file.wtext(path_file,to.json(context))
+            
+            // qname=dbr.full_qname(db)
+            // args="file='#<path_file>' qname='#<qname>'"
+
+            // do exec("./dkl",args,@false)
+        }
+	}
+	producir.x_ventas::&db,&params
+	{
+		pos_produccion_al_cobrar=parse.num(GetVars("pos_produccion_al_cobrar"))
+		
+		if pos_produccion_al_cobrar < 1 || @count(@@(params,"&ordenes")) < 1{return}
+
+		params<"code_cat_sal">:GetVars("dprod_output_cat")
+        params<"code_cat_ent">:GetVars("dprod_input_cat")
+		params<"code_sal_venta">:GetVars("v12.ventas.salida")
+
+        new context
+        {
+            @"db*":db
+			@"action":"producir_ventas"
+            @"metodo":parse.num(GetVars("pos_metodo_produccion"))
+            @"descripcion_salida":GetVars("dprod_output_description")
+            @"descripcion_entrada":GetVars("dprod_input_description")
+            @"cat_salida":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_sal",params)
+            @"cat_entrada":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_ent",params)
+			@"cat_venta":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_sal_venta",params)
+            @"kventa":@@(params,"#venta")
+			@"trans":@@(params,"#trans")
+			@"gen_error":@true
+        }
+        
+        if pos_produccion_al_cobrar == 1 //ejecucion estricta
+        {
+            do runscript("comandas/kds/app/svc/producir.dkl","context",context)
+        }
+        else if pos_produccion_al_cobrar == 2 //ejecucion flexible
+        {
+            ref tasks = list.create()
+            do list.add(tasks, async.runscript("comandas/kds/app/svc/producir.dkl", "context", context))
+            do async.wait(tasks, 300000)
+        }
 	}
 }
