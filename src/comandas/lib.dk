@@ -308,11 +308,12 @@ module "lib.dk"
         params<"code_cat_ent">:GetVars("dprod_input_cat")
 		params<"code_sal_venta">:GetVars("v12.ventas.salida")
 
+		pos_metodo_produccion=parse.num(GetVars("pos_metodo_produccion"))
         new context
         {
             @"db*":db
 			@"action":"producir_ventas"
-            @"metodo":parse.num(GetVars("pos_metodo_produccion"))
+            @"metodo":pos_metodo_produccion
             @"descripcion_salida":GetVars("dprod_output_description")
             @"descripcion_entrada":GetVars("dprod_input_description")
             @"cat_salida":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_sal",params)
@@ -322,6 +323,9 @@ module "lib.dk"
 			@"trans":@@(params,"#trans")
 			@"gen_error":@true
         }
+		
+		if pos_metodo_produccion == 0{context<"forze">:@true}
+		if pos_metodo_produccion == 20{context<"cancel">:@true}
         
         if pos_produccion_al_cobrar == 1 //ejecucion estricta
         {
