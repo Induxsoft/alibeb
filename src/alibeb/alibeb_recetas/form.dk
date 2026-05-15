@@ -59,7 +59,7 @@ module "form.dk"
 
     new nav_config
     {
-        @"title": ifstr(@isNewEnt,'Agregar','Editar') + ' receta'
+        @"title": ifstr(@isNewEnt,'Agregar','Editar') + ' receta' + ifstr(@isNewEnt,""," - "+@@(producto,'$descripcion'))
         @"buttons*": general_act
         @"urlexit": @ALIBEB_RECETAS
         member @"hidden"

@@ -11,7 +11,7 @@ module "view_admin"
 			{
 				div(class="row-waiter-headers d-block")
 				{
-					h3(class="text-center"){"Meseros"}
+					h3(class="text-center"){"Vendedores"}
 				}
 				
 				div(class="list-waiters-element" )
