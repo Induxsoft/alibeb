@@ -2070,18 +2070,18 @@ module "lib.dk"
             
             if line!=""{query=query + " and q.ILinea=@line"}
             
-            ref foodbev=dbr.list(db,query,params)
+            ref foodbev=dbr.list(db,ftext(query),params)
         }
         else //buscar productos con coincidencia
         {
             params<"almacen">:dbr.num(db,"SELECT ialmacen FROM cconsumo WHERE sys_pk=@cc",params)
             query=@foodbev + " AND p.codigo=@search OR p.codbar1=@search OR p.codbar2=@search OR p.codbar3=@search"
-            ref foodbev=dbr.list(db,query,params)
+            ref foodbev=dbr.list(db,ftext(query),params)
 
             if @count(foodbev) < 1
             {
                 query=@foodbev + " AND p.descripcion like CONCAT('%',@search,'%')"
-                ref foodbev=dbr.list(db,query,params)
+                ref foodbev=dbr.list(db,ftext(query),params)
             }
         }
 
@@ -2208,7 +2208,7 @@ module "lib.dk"
     data.foodbev::&db,&params
     {
         query=@foodbev +" where q.sys_pk=@_key"
-        ref item=dbr.rec(db,query,params)
+        ref item=dbr.rec(db,ftext(query),params)
         new data_foodbev
         {
             @"sku":@@(item,"sku")

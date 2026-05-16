@@ -6,7 +6,7 @@ module "infocuenta"
 	idt=@@(@http_context,"request/get/idt")
 	if idt!="" && id_table==""{id_table=idt}
 	#$
-	div(class="container")
+	div(class="container1")
 	{
 		div(class="card card-info" id="card-info" style="padding:0px;display:block;")
 		{

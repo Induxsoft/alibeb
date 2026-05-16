@@ -10,6 +10,7 @@ var controller=
 {
     pos_porcentaje_propina:0,
     decimals:2,
+    decimals_backend:2,
     ltimer:5,//intentos de conexión al imin printer
     init()
     {
@@ -106,7 +107,7 @@ var controller=
     {
       if(!views.propina)return;
 
-      views.propina.value=views.format((total * (percentaje / 100)),2,".",",");
+      views.propina.value=views.format((total * (percentaje / 100)),controller.decimals_backend,".",",");
       if(settotales)this.SetTotal();
     },
     Cobrar(venta,btn)
@@ -405,7 +406,7 @@ var controller=
         {
           const row = this.Transactions[i];
           this.SetValueDefault(row);
-          options+=`<option data-row="${row.transid??row.trans_id}">$ ${views.format(row._importe,2,".",",")} |${row._divisa}|${row._tipo}|${row._numaut}|${row._cvv}|${row._cardname} </option>`;
+          options+=`<option data-row="${row.transid??row.trans_id}">$ ${views.format(row._importe,controller.decimals,".",",")} |${row._divisa}|${row._tipo}|${row._numaut}|${row._cvv}|${row._cardname} </option>`;
         }
         views.tarjeta_transacciones.innerHTML=options;
       },
@@ -725,14 +726,17 @@ var controller=
     },
     get_tables:function() 
     {
+      views.toggle(document.body,false,"","Cargando, poe favor espere...");
       let cuentas=document.getElementById("cuentas");
       var uri=`${url}pos/dinner/tables/?waiter=${waiter_key}&cc=${$cc}&zone=${zone}&cuentas=${cuentas?.value??""}`;
       model.invoke_service(uri,null,function(data) 
       {
         views.print_mesas(data);
+        views.toggle(document.body,true);
       },
       function(error) {
         alert(error.message);
+        views.toggle(document.body,true);
       },"GET",false);
     },
     ismobile:function()
@@ -887,7 +891,7 @@ var controller=
         format:"#<@cadenaformato>"
       }
       model.invoke_service(uri,data,function(data) {
-        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,2,".",","));
+        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,controller.decimals_backend,".",","));
         controller.get_tables();
         controller.hide_modal("#open-table");
         mesa.value="";
@@ -973,7 +977,9 @@ var controller=
         $prodc="";
         $line="";
       }
-      
+
+      views.toggle(document.body,false,"","Cargando, poe favor espere...");
+
       var uri=`${url}pos/dinner/foodbev/?prodc=${$prodc}&line=${$line}&cc=${$cc}&idt=${controller.getData?.idt??0}`;
       model.invoke_service(uri,null,function(data) 
       {
@@ -981,9 +987,11 @@ var controller=
         views.print_foodbev(data.foodbev,data.line.description);
         var food=document.querySelector("#foodbev_"+sku);
         if(food)food.click();
+        views.toggle(document.body,true);
       },
       function(error) {
         alert(error.message);
+        views.toggle(document.body,true);
       },"GET",false);
     },
     send_data_orders:function()
@@ -1048,12 +1056,17 @@ var controller=
     },
     get_lines:function(prodc="")
     {
+      views.toggle(document.body,false,"display-in-process","Cargando, por favor espere...");
       var uri=`${url}pos/dinner/fblines/?prodc=${prodc}`;
-      model.invoke_service(uri,null,function(data) {
+      model.invoke_service(uri,null,function(data) 
+      {
         views.print_lines(data);
+        views.toggle(document.body,true);
       },
-      function(error) {
+      function(error) 
+      {
         alert(error.message);
+        views.toggle(document.body,true);
       },"GET",false);
     },
     get_adds_dmns:function()
@@ -1491,7 +1504,7 @@ var controller=
       }
       model.invoke_service(uri,data,function(data) 
       {
-        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,2,".",","));
+        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,controller.decimals_backend,".",","));
       },
       function(error) {
         alert(error.message);
@@ -1512,7 +1525,7 @@ var controller=
 
       model.invoke_service(uri,data,function(data) 
       {
-        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,2,".",","));
+        controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,views.format(data.balance,controller.decimals_backend,".",","));
       },
       function(error) 
       {
@@ -1638,7 +1651,7 @@ var controller=
 
       var uri=`${url}pos/dinner/search_producto/?search=${search_prod.value.trim()}&cc=${$cc}`;
       views.table_products_select.innerHTML="";
-
+      views.toggle(document.body,false,"","Cargando, por favor espere...");
       views.ActiveAnimation(true);
         model.invoke_service(uri,null,function(data) 
         {
@@ -1656,11 +1669,13 @@ var controller=
           {
             controller.select_foodbev(foodbev[0]);
           }
+          views.toggle(document.body,true);
         },
         function(error) 
         {
           alert(error.message);
           views.ActiveAnimation(false);
+          views.toggle(document.body,true);
         },"GET",false);
     },
     select_foodbev(row)

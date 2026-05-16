@@ -287,12 +287,25 @@ var views=
       {
             this.lista.classList.remove("d-none");
       },
-      toggle(container,quit=false,_class="display-in-process")
+      toggle(container,quit=false,_class="display-in-process",text=null)
       {
             if(!container)return;
+            if(!_class)_class="display-in-process";
 
-            if(quit)container.classList.remove(_class);
-            else container.classList.add(_class);
+            if(quit)
+            {
+                  container.classList.remove(_class);
+                  container.style.removeProperty('--display-text');
+            }
+            else
+            {
+                  container.classList.add(_class);
+
+                  if(text)
+                  {
+                        container.style.setProperty('--display-text', `"${text}"`);
+                  }
+            }
       },
       ValidateField(idfield,required=false,msg="")
       {
@@ -434,7 +447,7 @@ var views=
             for (var i =0; i <data.length; i++) 
             {
                   var itm=data[i];
-                  itm["fmt_price"]="$ "+views.format(itm.price,2,".",",");
+                  itm["fmt_price"]="$ "+views.format(itm.price,controller.decimals,".",",");
                   html+=this.htmlfoodbev(itm);
             }
             content.innerHTML=html;
@@ -447,24 +460,64 @@ var views=
             let img=(itm.data_img?.img??"")!="" ? itm.data_img?.img:"";
             let def_img=(itm.data_img?.def_img??"")!="" ? itm.data_img?.def_img:"";
             let precio=itm.fmt_price??"";
+            
+            // html+=`
+		// 		<div class="card product-card h-100 shadow" id="linea_${itm.sys_pk}" onclick="controller.foodbev(this,'',${itm.sys_pk},'${itm.description}')">
+            //                   <div class="product-image">
+            //                         <img 
+            //                               src="${img}" onerror="this.src='${def_img}'"
+            //                               class="card-img-top"
+            //                               alt="Producto"
+            //                         >
+            //                   </div>      
+            //                   <div class="card-body d-flex align-items-center justify-content-center">
+            //                         <h6 class="product-title text-center mb-0">
+            //                               ${itm.description}
+            //                         </h6>
+            //                   </div>
+            //             </div>`;
+            
 
             return `
-                  <div class="column-content-foodbev shadow" id="${id}${itm.sku}" onclick="${onclick}(${itm.sys_pk})">
-                        <div class="foodbev-img-container">
-                              <div class="foodbev-img">
-                                    <img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
-                              </div>							
+                  <div class="card product-card h-100 shadow" id="${id}${itm.sku}" onclick="${onclick}(${itm.sys_pk})">
+                        <div class="product-image">
+                              <img 
+                                    src="${img}" onerror="this.src='${def_img}'"
+                                    class="card-img-top"
+                                    alt="Producto"
+                              >							
                         </div>
-                        <div class="prod-center">
-                              <small>${itm.desc_cp??""}</small>
-                        </div>
-                        <div class="foodbev-btn foodbev-line" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500; flex-wrap:wrap;">
-                              ${itm.description}
-                              <div class="foodbev-price foodbev-price-line">
-                                    <small >${precio}</small>
+
+                        <div class="card-body" style="padding: 7px;">
+                              <div class="prod-center">
+                                    <small>${itm.desc_cp??""}</small>
+                              </div>
+                              <div class="product-title mb-0" _style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500; flex-wrap:wrap;">
+                                    ${itm.description}
+                              </div>
+                              <div class="text-center color-cfg">
+                                    <small>${precio}</small>
                               </div>
                         </div>
                 	</div>`;
+
+                  // return `
+            //       <div class="column-content-foodbev shadow" id="${id}${itm.sku}" onclick="${onclick}(${itm.sys_pk})">
+            //             <div class="foodbev-img-container">
+            //                   <div class="foodbev-img">
+            //                         <img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
+            //                   </div>							
+            //             </div>
+            //             <div class="prod-center">
+            //                   <small>${itm.desc_cp??""}</small>
+            //             </div>
+            //             <div class="foodbev-btn foodbev-line" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500; flex-wrap:wrap;">
+            //                   ${itm.description}
+            //                   <div class="foodbev-price foodbev-price-line">
+            //                         <small >${precio}</small>
+            //                   </div>
+            //             </div>
+            //     	</div>`;
       },
       Print_Indicaciones(linea)
       {
@@ -562,10 +615,10 @@ var views=
                         uuid:uuid,
                         sku:itm,
                         quantity:1,
-                        price:views.format(itm.price * 1,2,".",","),
+                        price:views.format(itm.price * 1,controller.decimals_backend,".",","),
                         adds:0,
                         total:0,
-                        _priceProd_:views.format(itm.price * 1,2,".",","),
+                        _priceProd_:views.format(itm.price * 1,controller.decimals_backend,".",","),
                   }
                   //validar existencias
                   if(itm.validar_existencia)
@@ -608,7 +661,7 @@ var views=
                                           <h5>${itm.description}</h5>
                                     </div>
                                     <div class="div-price" id="div-price_${uuid}">
-                                          <h3>$ ${views.format(itm.price * 1,2,".",",")}</h3>
+                                          <h3>$ ${views.format(itm.price * 1,controller.decimals,".",",")}</h3>
                                     </div>
                                     <div class="" id="detail-indications_${uuid}"></div>
                                     <small>${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </small>
@@ -708,15 +761,25 @@ var views=
                   var ct=currenttotal.getAttribute("total");
                   var t=price + Number(ct.replace(",",""));
                   // currenttotal.setAttribute("total",views.format(t,2,".",","));
-                  currenttotal.innerHTML=`$ ${views.format(t,2,".",",")}`;
+                  currenttotal.innerHTML=`$ ${views.format(t,controller.decimals,".",",")}`;
             }
-            eprice.innerHTML=`<span>Total: $ </span>${views.format(price,2,".",",")}`;
+            eprice.innerHTML=`
+            <span class="c-none"></span>
+            <span>Total: $ ${views.format(price,controller.decimals,".",",")} </span>
+            <div class="c-none d-flex align-items-center fw-bold">
+                  <small style="">
+                  ${list_orders.length}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-cart4" viewBox="0 0 16 16">
+                        <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l.5 2H5V5zM6 5v2h2V5zm3 0v2h2V5zm3 0v2h1.36l.5-2zm1.11 3H12v2h.61zM11 8H9v2h2zM8 8H6v2h2zM5 8H3.89l.5 2H5zm0 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0"/>
+                  </svg>
+                  </small>
+            </div>`;
       },
       showSubTotal:function(uuid,price)
       {
             var subtotal=document.querySelector(`#div-price_${uuid}`);
             if(subtotal)
-                  subtotal.innerHTML=`<h3>$ ${views.format(price,2,".",",")}</h3>`;
+                  subtotal.innerHTML=`<h3>$ ${views.format(price,controller.decimals,".",",")}</h3>`;
       },
       show_indications:function(options,uuid,uuid_ant="")
       {
@@ -782,7 +845,7 @@ var views=
                                           sku=val.sku;
 
                                     html_val+=`<div class="div-check_${itm.name.replace(/ /g,"")}">
-                                                <input type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,2,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}">
+                                                <input type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}">
                                                 <label for="${val.text.replace(/ /g,"")}">${val.text}</label>
                                           </div>`;
                               }
@@ -842,7 +905,7 @@ var views=
                                     if(selected)selection="selected";
 
                                     selectoption+=`
-                                          <option ${selection}="true" amount="${views.format(valt.amount,2,".",",")}" value="${valt.text}">${valt.text}</option>
+                                          <option ${selection}="true" amount="${views.format(valt.amount,controller.decimals_backend,".",",")}" value="${valt.text}">${valt.text}</option>
                                     `;
                               }
                               selectoption+=`</select>`;
@@ -1064,13 +1127,13 @@ var views=
                               </div>                  
                         </td>
                         <td style="width:60%;padding-bottom: 16px;">${description}</td>
-                        <td class="text-end" style="padding-bottom: 16px; color:var(--purple);">$ ${views.format(itm.total,2,".",",")}</td>
+                        <td class="text-end" style="padding-bottom: 16px; color:var(--purple);">$ ${views.format(itm.total,controller.decimals,".",",")}</td>
                   </tr>`;
           }
             if(lblticket)
                   lblticket.innerHTML=data.reference;
             if(lbltotal)
-                  lbltotal.innerHTML="$ "+views.format(data.balance,2,".",",");
+                  lbltotal.innerHTML="$ "+views.format(data.balance,controller.decimals,".",",");
             if(table_ordenes)
             table_ordenes.innerHTML=html;
             if(name_table)
@@ -1110,7 +1173,7 @@ var views=
                   if(new_command)
                   {
                         new_command.classList.remove("disabled");
-                        new_command.setAttribute("onclick",`controller.new_command("${data.sys_guid}",${data.sys_pk},"${data.code}","${data.reference}","${views.format(data.balance,2,".",",")}");`); //newcommand
+                        new_command.setAttribute("onclick",`controller.new_command("${data.sys_guid}",${data.sys_pk},"${data.code}","${data.reference}","${views.format(data.balance,controller.decimals_backend,".",",")}");`); //newcommand
                   }
                   if(message)
                         message.classList.remove("disabled");
@@ -1212,20 +1275,35 @@ var views=
                   let img=(itm.data_img.img??"")!="" ? itm.data_img.img:"";
                   let def_img=(itm.data_img.def_img??"")!="" ? itm.data_img.def_img:"";
 
+                  // html+=`
+			// 	<div class="column-content-foodbev shadow" id="linea_${itm.sys_pk}" onclick="controller.foodbev(this,'',${itm.sys_pk},'${itm.description}')">
+			// 			<div class="foodbev-img-container">
+			// 				<div class="foodbev-img d-flex">
+			// 					<img src="${img}" onerror="this.src='${def_img}'" style="" />								
+			// 				</div>							
+			// 			</div>
+			// 			<div class="foodbev-btn" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500;">
+			// 				${itm.description}
+			// 			</div>
+			// 		</div>`;
+
                   html+=`
-					<div class="column-content-foodbev shadow" id="linea_${itm.sys_pk}" onclick="controller.foodbev(this,'',${itm.sys_pk},'${itm.description}')">
-						<div class="foodbev-img-container">
-							<div class="foodbev-img">
-								<img src="${img}" onerror="this.src='${def_img}'" style="width: inherit;" />								
-							</div>							
-						</div>
-						<div class="foodbev-btn" style="min-height:4.69rem;display:flex;align-items:center;line-height: 1.2rem;font-weight: 500;">
-							${itm.description}
-						</div>
-						<div class="foodbev-price">
-							<small ></small>
-						</div>
-					</div>`;
+				<div class="card product-card h-100 shadow" id="linea_${itm.sys_pk}" onclick="controller.foodbev(this,'',${itm.sys_pk},'${itm.description}')">
+                              <div class="product-image">
+                                    <img 
+                                          src="${img}" onerror="this.src='${def_img}'"
+                                          class="card-img-top"
+                                          alt="Producto"
+                                    >
+                              </div>      
+                              <div class="card-body d-flex align-items-center justify-content-center">
+                                    <h6 class="product-title text-center mb-0">
+                                          ${itm.description}
+                                    </h6>
+                              </div>
+                        </div>`;
+
+            
                  
             }
             line_display.innerHTML=html;
@@ -1380,7 +1458,7 @@ var views=
             html+=`<tr>`;
             html+=`<td>${dt.sku}</td>`;
             html+=`<td>${dt.description}</td>`;
-            html+=`<td>${dt.price}</td>`;
+            html+=`<td>$ ${views.format(dt.price,controller.decimals,".",",")}</td>`;
             html+=`<td>${(dt.validar_existencia ? dt.existencia : "A producir")}</td>`;
             // html+=`<td><button class="btn border" onclick="selectRow(${i})">Seleccionar</button></td>`;
             html+=`</tr>`;

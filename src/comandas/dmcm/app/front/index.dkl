@@ -164,6 +164,9 @@ module "index"
 
 			const css_class_mesa="mesas";
 
+			controller.decimals=#<@@(@config_default,"#decimal_visible_money")>;
+			controller.decimals_backend=#<@@(@config_default,"#decimal_money")>;
+
 			if(token!=""){controller.gettoken("#<@token>");}
 
 			controller.getData=#<to.json(@GET)>;

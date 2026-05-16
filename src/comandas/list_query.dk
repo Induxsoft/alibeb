@@ -40,7 +40,7 @@ module "lista de consultas"
             q.i4venta,
             q.unidad as unit,
             q.ilinea as line,
-            @validar_existencia := (p.iclase in(4,5) and p.itipo = 2) validar_existencia,
+            @validar_existencia := (p.iclase in(4,5) and p.itipo = 2 AND #<@validar_existencia>) validar_existencia,
             if(@validar_existencia,(
                 SELECT sum(ifnull(w.existencia,0)) FROM existencias w WHERE w.ialmacen=@almacen AND w.fk_producto_iexistencias=p.sys_pk
             ),0) existencia,
