@@ -1,0 +1,25 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #$
+    div(class="container")
+    {
+        h5{"Formas de pago"}
+
+        div(class="d-flex")
+        {
+            input(class="form-check" type="checkbox" name="" value="" id="")
+            label(class="" "for"=""){"Efectivo"}
+        }
+
+        div(class="d-flex")
+        {
+            input(class="form-check" type="checkbox" name="" value="" id="")
+            label(class="" "for"=""){"Tarjeta"}
+        }
+
+        label(class="" "for"=""){"Notas:"}
+        textarea(class="form-control" name="" id=""){""}
+    }
+}

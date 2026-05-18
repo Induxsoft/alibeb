@@ -35,6 +35,7 @@ body
   font-family: "Poppins",Arial, Helvetica, sans-serif !important;
 }
 
+
 /* datalist - select input */
 .datalist-container 
 {
@@ -389,8 +390,8 @@ body
 {
   width: 100%;
   /* margin-top: 4.63rem; */
-  padding-right: var(--bs-gutter-x,.75rem);
-  padding-left: var(--bs-gutter-x,.75rem);
+  /* padding-right: var(--bs-gutter-x,.75rem); */
+  /* padding-left: var(--bs-gutter-x,.75rem); */
   margin-right: auto;
   margin-left: auto;
   height: 90%;
@@ -808,10 +809,10 @@ html{scroll-behavior: smooth;}
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
-  padding: 4px 8px !important;
+  padding: 4px 8px ;
   font-size: 1rem !important;
   transition-duration: 0.4s;
-  border: none !important;
+  border: 1px solid lightgray ;
   /* display: flex; */
   align-items: center;
   justify-content: start;
@@ -1619,8 +1620,8 @@ select
 }
 
 .btn {
-    padding: 10px;
-    border: 1px solid #333;
+    /* padding: 10px; */
+    /* border: 1px solid #333; */
     cursor: pointer;
     background: #ddd;
 }
@@ -1707,6 +1708,7 @@ select
     box-shadow: 0 4px 12px rgba(0,0,0,.08);
     transition: .2s ease;
     background: #fff;
+    cursor: pointer;
 }
 
 .product-card:hover{

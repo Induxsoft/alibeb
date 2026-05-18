@@ -56,14 +56,14 @@ var controller=
         }
       }
       //propina
-      let importe=this.RoundTo(Number(views.propina?.getAttribute("data-importe")??0),this.decimals);
+      let importe=this.RoundTo(Number(views.propina?.getAttribute("data-importe")??0),controller.decimals_backend);
       //asignar propina cinfugurada
       if(setpropina){this.Propina(importe,this.pos_porcentaje_propina,null,false);}
       let propina=Number(views.propina.value);//obtener la propina indicada o configurada
 
       let total=this.RoundTo(importe + propina,6);
       if(!isefectivo)views.efectivo_importe.value=0;      
-      if((total - importe_tarjeta)>0 && !isefectivo)views.efectivo_importe.value=this.RoundTo(total - importe_tarjeta,this.decimals);
+      if((total - importe_tarjeta)>0 && !isefectivo)views.efectivo_importe.value=this.RoundTo(total - importe_tarjeta,controller.decimals_backend);
       //efectivo
       
       let efectivo=Number(views.efectivo_importe?.value??0);
@@ -78,13 +78,13 @@ var controller=
       
       var data=
       {
-        importe:importe,
-        propina:propina,
-        efectivo:efectivo,
-        importe_tarjeta:importe_tarjeta,
-        resto:resto,
-        total:total,
-        cambio:cambio
+        importe:this.RoundTo(importe,controller.decimals_backend),
+        propina:this.RoundTo(propina,controller.decimals_backend),
+        efectivo:this.RoundTo(efectivo,controller.decimals_backend),
+        importe_tarjeta:this.RoundTo(importe_tarjeta,controller.decimals_backend),
+        resto:this.RoundTo(resto,controller.decimals_backend),
+        total:this.RoundTo(total,controller.decimals_backend),
+        cambio:this.RoundTo(cambio,controller.decimals_backend)
       }
       return data
     },
@@ -726,7 +726,7 @@ var controller=
     },
     get_tables:function() 
     {
-      views.toggle(document.body,false,"","Cargando, poe favor espere...");
+      views.toggle(document.body,false,"","Cargando, por favor espere...");
       let cuentas=document.getElementById("cuentas");
       var uri=`${url}pos/dinner/tables/?waiter=${waiter_key}&cc=${$cc}&zone=${zone}&cuentas=${cuentas?.value??""}`;
       model.invoke_service(uri,null,function(data) 
@@ -978,7 +978,7 @@ var controller=
         $line="";
       }
 
-      views.toggle(document.body,false,"","Cargando, poe favor espere...");
+      views.toggle(document.body,false,"","Cargando, por favor espere...");
 
       var uri=`${url}pos/dinner/foodbev/?prodc=${$prodc}&line=${$line}&cc=${$cc}&idt=${controller.getData?.idt??0}`;
       model.invoke_service(uri,null,function(data) 
@@ -1687,5 +1687,18 @@ var controller=
       views.search_prod.value="";
       views.search_prod.focus();
       data_foodbev=[];
+    },
+    loadTickets()
+    {
+      views.toggle(document.body,false,"","Cargando, por favor espere...");
+        model.invoke_service(uri,null,function(data) 
+        {
+          views.toggle(document.body,true);
+        },
+        function(error) 
+        {
+          alert(error.message);
+          views.toggle(document.body,true);
+        },"GET",false);
     }
 }

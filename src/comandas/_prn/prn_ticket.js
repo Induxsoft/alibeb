@@ -93,7 +93,7 @@ var prn_ticket=
             let desc=model_prn.TextLength(row.description??"","desc",0);
             let cantidad=model_prn.TextLength(controller.RoundTo(row.quantity??0,controller.decimals),"cantidad");
             let unidad=model_prn.TextLength(row.unidad??"","unidad");
-            let importe=model_prn.TextLength("$ "+views.format(row.price??0,controller.decimals,".",","),"importe");
+            let importe=model_prn.TextLength("$ "+views.format(row.total??0,controller.decimals,".",","),"importe");
 
             eposprn.printText(`${desc}${cantidad}${unidad}${importe}`);
         }

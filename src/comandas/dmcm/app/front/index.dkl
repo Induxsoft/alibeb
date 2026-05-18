@@ -94,6 +94,18 @@ module "index"
 			file_include=path.concat(@path_view,"config-prn.dkl")
 			break
 		}
+		case "printer_tickets"
+		{
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"vw_tickets.dkl")
+			break
+		}
+		case "fpagos"
+		{
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"vw_fpagos.dkl")
+			break
+		}
 		default
 		{
 			@token=""
@@ -122,7 +134,7 @@ module "index"
 			'
 		}
 		//para test desde android
-		// script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
+		script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
 
 		div(class="container-all" style="overflow:auto")
 		{

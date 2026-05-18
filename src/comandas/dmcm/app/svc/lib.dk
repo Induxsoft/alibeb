@@ -20,7 +20,8 @@ module "lib.dk"
     validar.existencia::&db,&params
     {
         ref dt= token.data.validate(db,@true)
-
+        if not(@validar_existencia){return @null}
+        
         params<"almacen">:dbr.num(db,"SELECT ialmacen FROM cconsumo WHERE sys_pk=@cc",params)
         existencia=dbr.num(db,"SELECT IFNULL(SUM(IFNULL(e.existencia,0)),0) from existencias e WHERE e.fk_producto_iexistencias=@prod AND e.ialmacen=@almacen;",params)
         if (existencia - @@(params,"#reserved")) < 1{do rise_error(500,"El producto no cuenta con existencia en el almacén del centro de consumo")}
@@ -539,6 +540,13 @@ module "lib.dk"
     
     
     //#region OBTENER DATOS
+
+    get.tickets_procesados::&db,&params
+    {
+        ref caja=GetCaja(db)
+        params<"caja">:@@(caja,"#caja")
+        return dbr.list(db,ftext(@tickets_procesados),params)
+    }
     get.productos::&db,&params
     {
         return get.foodbev(db,params)
@@ -562,6 +570,32 @@ module "lib.dk"
         return dbr.list(db," SELECT sys_pk,codigo,nombre FROM repartidor ;",params)
     }
 
+    GetCaja::&db
+    {
+        new p{@"token":@dmtoken}
+        ref data=get.token(db,@null,p)
+        
+        ref dtjson=from.json(@@(data,"$datos"))
+        if trim(@@(dtjson,"$idcaja"))=="" //si idcaja es vació se trata de un mesero
+        {
+            corte=GetCorteMesero(db,dtjson,p)
+            p<"corte">:corte
+            caja=dbr.num(db,"select icaja from corte where sys_pk=@corte",p)
+        }
+        else
+        {
+            caja=dbr.num(db,"select sys_pk from caja where codigo=@idcaja",dtjson)
+            corte=@@(dtjson,"#corte")
+        }
+
+        using p
+        {
+            @"caja":caja
+            @"corte":corte
+        }
+
+        return p
+    }
     GetCajaCorte::&db
     {
         new p{@"token":@dmtoken}
@@ -571,7 +605,7 @@ module "lib.dk"
         if trim(@@(dtjson,"$idcaja"))=="" //si idcaja es vació se trata de un mesero
         {
             corte=GetCorteMesero(db,dtjson,p)
-            if corte < 1{do rise_error(500,"El mesero no tiene un corte abierta, en las cajas relacionado")}
+            if corte < 1{do rise_error(500,"El vendedor no tiene un corte abierta, en las cajas relacionado")}
             p<"corte">:corte
             caja=dbr.num(db,"select icaja from corte where sys_pk=@corte",p)
         }

@@ -440,6 +440,77 @@ module "lista de consultas"
     @getorden_xsys_guid="select o.sys_pk,o.sys_timestamp,c.sys_pk pkcp,c.codigo code from orden o inner join cproduccion c on o.icproduccion=c.sys_pk
                         where o.sys_guid=@sys_guid"
 
+    @tickets_procesados="select
+    v.`sys_pk` as `sys_pk`,
+    v.`sys_guid` as `sys_guid`,
+    v.`sys_info` as `sys_info`,
+    v.`auditado` as `auditado`,
+    v.`contabilizado` as `contabilizado`,
+    v.`descuento1` as `descuento1`,
+    v.`descuento2` as `descuento2`,
+    v.`dmnsmesa` as `dmnsmesa`,
+    v.`dmnsnota` as `dmnsnota`,
+    v.`dmnspersonas` as `dmnspersonas`,
+    v.`documento` as `documento`,
+    v.`domicilioentrega` as `domicilioentrega`,
+    v.`fecha` as `fecha`,
+    v.`fembarque` as `fembarque`,
+    v.`fentrega` as `fentrega`,
+    v.`fliquidacion` as `fliquidacion`,
+    v.`formapago` as `formapago`,
+    v.`fultimocobro` as `fultimocobro`,
+    v.`importeadicional` as `importeadicional`,
+    v.`impuesto1` as `impuesto1`,
+    v.`impuesto2` as `impuesto2`,
+    v.`impuesto3` as `impuesto3`,
+    v.`impuesto4` as `impuesto4`,
+    v.`notas` as `notas`,
+    v.`partida` as `partida`,
+    v.`pcomision` as `pcomision`,
+    v.`poliza` as `poliza`,
+    v.`referencia` as `referencia`,
+    v.`statusadministrativo` as `statusadministrativo`,
+    v.`statusentrega` as `statusentrega`,
+    v.`statusfacturacion` as `statusfacturacion`,
+    v.`statusfinanciero` as `statusfinanciero`,
+    v.`subtotal` as `subtotal`,
+    v.`tipocambio` as `tipocambio`,
+    v.`tipodomicilio` as `tipodomicilio`,
+    v.`txtguia` as `txtguia`,
+    v.`vencimiento` as `vencimiento`,
+    v.`aplicadoa` as `aplicadoa`,
+    v.`iagente` as `iagente`,
+    v.`icaja` as `icaja`,
+    v.`icconsumo` as `icconsumo`,
+    v.`icliente` as `icliente`,
+    v.`icorte` as `icorte`,
+    v.`idivisa` as `idivisa`,
+    v.`ifolio` as `ifolio`,
+    v.`iguia` as `iguia`,
+    v.`imovcaja` as `imovcaja`,
+    v.`iporteador` as `iporteador`,
+    v.`irepartidor` as `irepartidor`,
+    v.`uf_color` as `uf_color`,
+    v.`sys_recver` as `sys_recver`,
+    v.`sys_deleted` as `sys_deleted`,
+    v.`sys_lock` as `sys_lock`,
+    (
+            (
+                (
+                    (
+                        (
+                            (v.`subtotal` - v.`descuento1`) - v.`descuento2`
+                        ) + v.`impuesto1`
+                    ) + v.`impuesto2`
+                ) + v.`impuesto3`
+            ) + v.`impuesto4`
+        ) as `total`
+    from
+        venta as v 
+    where
+        v.`statusadministrativo` = 3
+        AND v.icaja=@caja
+        LIMIT 50;"
 
     // ****************************************query waiters*****************************************
     @getwaiters="select a.sys_pk,a.sys_timestamp,a.sys_guid,a.codigo,a.codnomina,a.email,a.nombre,a.notas,a.pcomision,a.telefono,

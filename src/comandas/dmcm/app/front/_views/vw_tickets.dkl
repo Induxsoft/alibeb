@@ -1,0 +1,22 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #$
+    div(class="container")
+    {
+        h5{"Tickets"}
+
+        table(class="table table-bordered table-hover table-selectable")
+        {
+            thead(class="table-dark")
+            {
+                th{"Venta"}
+                th{"Cantidad"}
+                th{"Total"}
+                th{""}
+            }
+            tbody(id="tbody-tickets"){$""}
+        }
+    }
+}

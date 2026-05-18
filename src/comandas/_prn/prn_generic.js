@@ -126,7 +126,7 @@ var prn_generic=
         for (let i = 0; i < list_dorden.length; i++) 
         {
             const row = list_dorden[i];
-            printer.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.price,controller.decimals,".",",")}`);
+            printer.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.total,controller.decimals,".",",")}`);
         }
 
         printer.printText(divider_full);
