@@ -110,7 +110,7 @@ model "alibeb"
         @"direccion" memo
         @"longitud" decimal(8,3)
         @"latitud" decimal(8,3)
-        @"Notas" memo
+        @"notas" memo
     }
 
     entity "dmns_entrega":"TableModel"

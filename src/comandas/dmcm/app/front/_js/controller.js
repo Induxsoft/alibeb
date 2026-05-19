@@ -1023,7 +1023,8 @@ var controller=
 
         if(data.servicio)
         {
-          if(data.servicio=="FF" || data.servicio=="DS")view="cobrar";
+          if(data.servicio=="FF")view="cobrar";
+          else if(data.servicio=="DS")view="fpagos";
         }
         //se comento para que despues de comandar se redirija a la vista de las mesas cuando sea en movil
         // if(controller.ismobile())
@@ -1690,15 +1691,81 @@ var controller=
     },
     loadTickets()
     {
+      var uri=`${url}pos/dinner/load-tickets/`;
+      let tbody_tickets=document.getElementById("tbody-tickets");
+      if(!tbody_tickets)return;
+
       views.toggle(document.body,false,"","Cargando, por favor espere...");
-        model.invoke_service(uri,null,function(data) 
+        model.invoke_service(uri,null,(data) =>
         {
           views.toggle(document.body,true);
+          let html="";
+          data.forEach(row => 
+          {
+            html+=`<tr>`;
+            html+=`<td>${row.referencia}</td>`;
+            html+=`<td>${row.creacion}</td>`;
+            html+=`<td>$ ${views.format(row.total,controller.decimals,".",",")}</td>`;
+            html+=`<td><button class="btn rounded-0" onclick="controller.reprint(${row.sys_pk})">Imprimir</button></td>`;
+            html+=`</tr>`;
+          });
+
+          tbody_tickets.innerHTML=html;
         },
         function(error) 
         {
           alert(error.message);
           views.toggle(document.body,true);
         },"GET",false);
+    },
+    SaveFPago(idtable,callback=null,reload=true)
+    {
+      var uri=`${url}pos/dinner/savenote/?id_table=${idtable}`;
+      views.toggle(document.body,false,"","Guardando, por favor espere...");
+
+      let fpefectivo=document.getElementById("fpefectivo");
+      let fptarjeta=document.getElementById("fptarjeta");
+      let fpnotas=document.getElementById("fpnotas");
+      if(!fpnotas)fpnotas=document.getElementById("lblnotavnt");
+      var data=
+      {
+        efectivo:fpefectivo?.checked??false,
+        tarjeta:fptarjeta?.checked??false,
+        nota:fpnotas?.value??"",
+        action:"savenote"
+      }
+
+      model.invoke_service(uri,data,(data) =>
+      {
+        if(callback)callback(data);
+        views.toggle(document.body,true);
+        if(reload)controller.close_view('vw_principal','&idt='+idtable,0);
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.toggle(document.body,true);
+      },"PATCH",false);
+    },
+    PrintCorte()
+    {
+      var uri=`${url}pos/dinner/print_corte/?id_table=printer`;
+      views.toggle(document.body,false,"","Procesando, por favor espere...");
+
+      var data=
+      {
+        action:"print_corte"
+      }
+
+      model.invoke_service(uri,data,(data) =>
+      {
+        views.toggle(document.body,true);
+        model_prn.print_arqueo(data,(_data)=>{}); 
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.toggle(document.body,true);
+      },"PATCH",false);
     }
 }

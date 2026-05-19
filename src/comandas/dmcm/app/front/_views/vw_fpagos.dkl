@@ -2,24 +2,66 @@
 #!
 module ""
 {
+    // @SITE_INCLUDES="config.dk,list_query.dk"
+    // #include "website.dkl"
+
+    ref db=getDatabase("")
+    ref getData=@@(@http_context,"&request/get")
+
+    sql="select qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.dmnspersonas as 'occupied_seats',
+                            qv.notas,qv.dmnsnota as 'notetable',qv.total as 'balance','' as 'owner',0 as is_birthday,0 as is_celebration,qv.icliente as 'cliente',qv.icconsumo as 'cc',qv.iagente as 'ag'
+                            from qventasserviciomesa qv where qv.sys_pk=@idt "
+
+    ref rsource=dbr.rec(db,sql,getData)
+
     #$
-    div(class="container")
+    div(class="container-sm pb-4 pt-4 border")
     {
-        h5{"Formas de pago"}
+        h3{"Formas de pago [#<@@(rsource,'$reference')>]"}
 
-        div(class="d-flex")
+        div(class="row")
         {
-            input(class="form-check" type="checkbox" name="" value="" id="")
-            label(class="" "for"=""){"Efectivo"}
+            div(class="col-md-12 d-flex gap-2")
+            {
+                input(class="form-check-input" type="checkbox" name="fpefectivo" id="fpefectivo")
+                label(class="" "for"="fpefectivo"){"Efectivo"}
+            }
+
+            div(class="col-md-12 d-flex gap-2")
+            {
+                input(class="form-check-input" type="checkbox" name="fptarjeta" id="fptarjeta")
+                label(class="" "for"="fptarjeta"){"Tarjeta"}
+            }
+
+            div(class="col-md-12")
+            {
+                label(class="" "for"=""){"Notas:"}
+                textarea(class="form-control w-100" name="fpnotas" id="fpnotas" rows="5"){"#<@@(rsource,'$notetable')>"}
+            }   
+            div(class="col-md-12 mt-2")
+            {
+                div(class="d-flex gap-2 justify-content-end")
+                {
+                    button(class="btn rounded-0" type="button" onclick="controller.SaveFPago(#<@@(rsource,'#sys_pk')>)"){$"Guardar"}
+                    button(class="btn rounded-0" type="button" onclick="controller.close_view('vw_principal','&idt=',0);"){$"Cerrar"}
+                }
+            }
         }
 
-        div(class="d-flex")
+        style
         {
-            input(class="form-check" type="checkbox" name="" value="" id="")
-            label(class="" "for"=""){"Tarjeta"}
-        }
+            $'
+            input[type="checkbox"]
+            {
+                width: 1.5rem;
+                height: 1.5rem;
+            }
 
-        label(class="" "for"=""){"Notas:"}
-        textarea(class="form-control" name="" id=""){""}
+            label
+            {
+                font-size: 1.5rem;
+            }
+            '
+        }
     }
 }

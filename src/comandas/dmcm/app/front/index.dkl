@@ -136,7 +136,7 @@ module "index"
 		//para test desde android
 		script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
 
-		div(class="container-all" style="overflow:auto")
+		div(class="container-all" style="overflow:auto" id="container-all")
 		{
 			#!
             include path.concat(@path_include,"navbar.dkl")
@@ -186,8 +186,7 @@ module "index"
 			views.interval_refresh_data_tables=#<pos_refrescar_mesas>;
 			views.InitInterval();
 			views.config_default=#<to.json(@config_default)>;
-			//para test desde android
-			// var vConsole = new VConsole();
+
 			'
 		}
 

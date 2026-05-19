@@ -16,6 +16,31 @@ module "lib.dk"
     do _map_function(lib_precfdi, "precfdi4lib.proc", "VentaXml", "ticket.xml", "System.Int32", "$")
 
     //#region PRCESOS
+    table.savenote::&db,&params,&postData
+    {
+        notas=trim(@@(postData,"$nota"))
+
+        efectivo=parse.bool(@@(postData,"$efectivo"))
+        tarjeta=parse.bool(@@(postData,"$tarjeta"))
+
+        if efectivo || tarjeta
+        {
+            notas=notas + "\n\nForma de pago\n"
+            notas=notas + ifstr(efectivo,"- Efectivo","")
+            notas=notas + ifstr(tarjeta,"- Tarjeta","")
+        }
+
+        params<"nota_full">:notas
+        params<"nota">:cut(notas,255)
+        
+        do dbr.execute(db,"UPDATE venta SET dmnsnota=@nota WHERE sys_pk=@id_table",params)
+        do dbr.execute(db,"UPDATE dmns_destino d 
+        INNER JOIN dmns_entrega e ON d.sys_pk=e.venta
+        SET d.notas=@nota_full
+        WHERE e.venta=@id_table",params)
+
+        return @null
+    }
     //validar existencia
     validar.existencia::&db,&params
     {
@@ -244,7 +269,7 @@ module "lib.dk"
 
         movcaja<"tarjetas">:@@(datarjeta,"#importetotal")
         pagos=@@(postData,"#efectivo") + @@(movcaja,"#tarjetas")
-
+        
         if pagos <  @@(rsource,"#balance") {do rise_error(500,"El importe acumulado no cubre con la totalidad de la venta")}
 
         do dbr.insert(db,"movcaja",movcaja)
@@ -540,7 +565,32 @@ module "lib.dk"
     
     
     //#region OBTENER DATOS
+    print.last_corte::&db,&params,&postData
+    {
+        do getVarsConfig()
 
+        ref caja=GetCaja(db)
+        params<"caja">:@@(caja,"#caja")
+        @time_last_corte=@@(@config_default,"#pos_tiempo_max_ult_corte")
+        if @time_last_corte < 1{@time_last_corte= 30}
+        //obetener el corte que se cerró anteriormente a 30minutos de la caja actual
+        corte=dbr.num(db,ftext("SELECT sys_pk FROM corte c WHERE c.icaja=@caja AND c.cerrado=1 
+            AND c.hcierre > DATE_ADD(NOW(),INTERVAL -#<@time_last_corte> minute)"),params)
+        
+        if corte < 1{do rise_error(500,"No hay un corte anterior")}
+        
+        module "imprimir arqueo"
+        {
+            ref arqueo=DataArqueo(db,corte)
+            arqueo<"_config_prn*">:@@(postData,"&_config_prn")
+            do PrintArqueo(db,arqueo)
+            // exception{}
+        }
+        
+        do field.remove(arqueo,"http")
+
+        return arqueo
+    }
     get.tickets_procesados::&db,&params
     {
         ref caja=GetCaja(db)
@@ -1790,6 +1840,7 @@ module "lib.dk"
         {
             data<"info">:"DS"
             data<"table">:cut("DS/"+referencia,45)
+            data<"notes">:@@(data,"$notas")
         }
         
         @divisa=GetDivisaPredet(db)
@@ -2752,7 +2803,7 @@ module "lib.dk"
         //se va a actualizar con sql directo primero meterlo en dventa ,despues actualizar los totales
         do dbr.execute(db,@updateventa,totales)
     }
-    insert.dventa::&db,&dventa,dtventa
+    insert.dventa::&db,&dventa,&dtventa
     {
         for i=0;i<list.count(dtventa)
         {
@@ -3355,7 +3406,8 @@ module "lib.dk"
         ticket<"corte*">:corte
         ticket<"cajero*">:dbr.rec(db,"select sys_pk,codigo,nombre from cajero where sys_pk=@icajero",corte)
 
-        ticket<"fpagos*">:ticket.fpagos(db,@@(params,"#id_table"),@@(ticket,"#imovcaja"))
+        ref movcaja=ticket.fpagos(db,@@(params,"#id_table"),@@(ticket,"#imovcaja"))
+        ticket<"fpagos*">:movcaja
 
         ticket<"comandas*">:ticket.comandas(db,@@(params,"#id_table"))
         ticket<"importe_letras">:Int2Ltr(@@(ticket,"#total"))+" "+Dec2Ltr(@@(ticket,"#total"))
@@ -3368,7 +3420,18 @@ module "lib.dk"
         WHERE e.venta=@iventa;",p)
 
         ticket<"entrega*">:entrega
-
+        
+        if @count(list.create_from_fields(movcaja)) > 0
+        {
+            folio_factura=ticket.encode_folio(@@(ticket,"&fecha"),@@(ticket,"&sys_dtcreated"),@@(ticket,"#sys_pk"))
+            using ticket
+            {
+                @"propina":@@(ticket,"#importeadicional")
+                @"efectivo":@@(movcaja,"#efectivo")
+                @"tarjeta":@@(movcaja,"#tarjetas")
+                @"folio_factura":folio_factura
+            }
+        }
         return ticket
     }
     ticket.fpagos::&db,venta,_movcaja
@@ -3400,7 +3463,11 @@ module "lib.dk"
             inner join corte ct on mc.icorte = ct.sys_pk
         WHERE mc.sys_pk=@_movcaja",p)
 
-        ref movcaja=ifnull(movcaja,record.create())
+        if isnull(movcaja)
+        {
+            return record.create()
+        }
+        
 
         movcaja<"tarjetas*">:dbr.list(db,"select 
         dt.sys_pk,dt.autorizacion,dt.cvv,dt.domicilio,

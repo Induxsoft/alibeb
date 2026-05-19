@@ -102,11 +102,12 @@ var model_prn=
 
         return suma;
     },
-    CreatePrinter(data)
+    CreatePrinter(data,printer=null)
     {
         for(let key in data)
         {
-            eposprn.printText(data[key]??"");
+            if(printer)printer.printText(data[key]??"");
+            else eposprn.printText(data[key]??"");
         }
     },
     PrinterException(url_redir,data,callbackinterval=null)
@@ -136,15 +137,22 @@ var model_prn=
             else if(interval)clearInterval(interval);
         }, 300);
     },
-    CreatePrinterSaldos(saldos)
+    CreatePrinterSaldos(saldos,printer=null)
     {
         for(let key in saldos)
         {
             if(key!="total" && !key.includes("str_"))
-                eposprn.printText(this.TextBetween(saldos[key]??"",saldos["str_"+key]));
+            {
+                if(printer)printer.printText(this.TextBetween(saldos[key]??"",saldos["str_"+key]))
+                else eposprn.printText(this.TextBetween(saldos[key]??"",saldos["str_"+key]));
+            }
         }
 
-        if((saldos.total??"")!="")eposprn.printText(this.TextBetween("TOTAL:",saldos.total));
+        if((saldos.total??"")!="")
+        {
+            if(printer)printer.printText(this.TextBetween("TOTAL:",saldos.total));
+            else eposprn.printText(this.TextBetween("TOTAL:",saldos.total));
+        }
     },
     Drivers()
     {
@@ -198,14 +206,37 @@ var model_prn=
     print_egreso(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
+        if(!config.data || config.printer=="server")
+        {
+            try
+            {
+                prn_generic.print_egreso(data,callbackinterval);
+                return;
+            }
+            catch{}
+
+            this.Redirec(data?.url_redir??"");
+            return;
+        }
 
         prn_egreso.Print(data,config.data,callbackinterval);
     },
     print_ingreso(data,callbackinterval=null)
     {
         let config=this.GetConfigPrinter();
-        if(!config.data || config.printer=="server"){this.Redirec(data?.url_redir??"");return;}
+        
+        if(!config.data || config.printer=="server")
+        {
+            try
+            {
+                prn_generic.print_ingreso(data,callbackinterval);
+                return;
+            }
+            catch{}
+
+            this.Redirec(data?.url_redir??"");
+            return;
+        }
 
         prn_ingreso.Print(data,config.data,callbackinterval);
     },

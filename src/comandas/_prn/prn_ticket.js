@@ -148,6 +148,14 @@ var prn_ticket=
             eposprn.printText("Folio de Facturación");
             eposprn.printText("# "+data.folio_factura);
         }
+        if(data.notetable)
+        {
+            eposprn.setAlign(0); //0 -> izquierda
+            eposprn.printText("\nNota:");
+            eposprn.printText(divider_full);
+            eposprn.printText(data.notetable);
+            eposprn.printText(divider_full);
+        }
         //******************************************
         eposprn.printText("\n");
         eposprn.printText("\n");

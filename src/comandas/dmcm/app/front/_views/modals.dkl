@@ -505,9 +505,9 @@ div(id="modal-select-repartidor" class="show_modal_center open-table hidde_contr
 
                     fieldset(class="mt-3" id="delivery-driver-buttons")
                     {
-                        legend{"Repartidores"}
+                        legend(class="fw-bold text-center"){"Repartidores"}
 
-                        div(class="d-flex flex-wrap gap-3")
+                        div(class="d-flex flex-wrap gap-3 justify-content-center")
                         {""
                             ##
                             do printDeliveriDrivers()
@@ -544,7 +544,7 @@ div(id="modal-select-products" class="show_modal_center open-table hidde_control
     {
         table(class="table table-bordered table-hover table-selectable" id="table-products-selected")
         {
-            thead(class="table-dark")
+            thead(class="table-dark sticky-top")
             {
                 th{"SKU"}
                 th{"Descripción"}
@@ -552,11 +552,35 @@ div(id="modal-select-products" class="show_modal_center open-table hidde_control
                 th{"Existencia"}
                 // th{""}
             }
-            tbody(id="tbody-products-selected")
-            {$""
-
-            }
+            tbody(id="tbody-products-selected"){$""}
         }
     }
 }
 
+// nota de cada cuenta
+div(id="modal-note-account" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+{
+    div(class="d-flex" onclick="controller.hide_modal(\'#modal-note-account\');")
+    {
+        div(class="just-cont-center d-flex flex-grow-1" )
+        {
+            h4(id="id_account"){$""}br{}br{}
+        }
+        svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        {
+            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        }
+    }
+    
+    div(class="mt-2" )
+    {
+        label(class="fw-bold" "for"=""){"Nota:"}
+        textarea(class="form-control w-100" name="lblnotavnt" id="lblnotavnt" rows="5"){""}
+
+        div(class="d-flex justify-content-end gap-2 mt-2")
+        {
+            button(class="btn rounded-0" type="button" id="btn_mdl_save_note"){$"Guardar"}
+            button(class="btn rounded-0" type="button" onclick="controller.hide_modal(\'#modal-note-account\');"){$"Cerrar"}
+        }
+    }
+}

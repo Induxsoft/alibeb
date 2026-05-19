@@ -30,7 +30,7 @@ module "index.dkl"
 	_entity=@@(params,"$entity")
 	if isanyword(_entity,"clientes,repartidores") 
 	{
-		ref db=dbr.open(@@(@config,"$connection"))
+		ref db=getDatabase(@@(@config,"$connection"))
 
 		switch _entity
 		{
@@ -63,10 +63,7 @@ module "index.dkl"
 			}
 			do setResponse(to.json(r))
 		}
-		if isset("db")
-		{
-			if dbr.is_open(db){do dbr.close(db)}
-		}
+		if isset("db"){if dbr.is_open(db){do dbr.close(db)}}
 		return
 	}
 	go api_base_service (responseJSONdata:response) 
@@ -108,7 +105,7 @@ module "index.dkl"
 			if @accept_qnames && contains(workspace,"@"){qname=workspace}
 			else{qname="Connections@Induxsoft/ws"+workspace+"@workspaces"}
 
-			ref db=open.db(qname)
+			ref db=getDatabase(qname)
 			
 			if not(isadmin) && not(parse.bool(@@(params,"access"))) && @@(params,"id_table")!=@idlogin
 			{
@@ -222,6 +219,11 @@ module "index.dkl"
 						ref data=get.productos(db,params)
 						break
 					}
+					case "load-tickets"
+					{
+						ref data=get.tickets_procesados(db,params)
+						break
+					}
 				}
 			}
 			case "POST"
@@ -271,6 +273,16 @@ module "index.dkl"
 						case "change-dealer"{ref data=table.setdealer(db,params,postData)}
 						case "entregada"{ref data=table.entregada(db,params,postData)}
 						case "enviada"{ref data=table.enviada(db,params,postData)}
+						case "savenote"
+						{
+							ref data=table.savenote(db,params,postData)
+							break
+						}
+						case "print_corte"
+						{
+							ref data=print.last_corte(db,params,postData)
+							break
+						}
 						default{do rise_error(99,"Acción no encontrada.")}
 					}
 				}

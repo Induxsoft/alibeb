@@ -444,6 +444,7 @@ module "lista de consultas"
     v.`sys_pk` as `sys_pk`,
     v.`sys_guid` as `sys_guid`,
     v.`sys_info` as `sys_info`,
+    trim(v.sys_dtcreated)creacion,
     v.`auditado` as `auditado`,
     v.`contabilizado` as `contabilizado`,
     v.`descuento1` as `descuento1`,
@@ -453,7 +454,7 @@ module "lista de consultas"
     v.`dmnspersonas` as `dmnspersonas`,
     v.`documento` as `documento`,
     v.`domicilioentrega` as `domicilioentrega`,
-    v.`fecha` as `fecha`,
+    trim(v.`fecha`) as `fecha`,
     v.`fembarque` as `fembarque`,
     v.`fentrega` as `fentrega`,
     v.`fliquidacion` as `fliquidacion`,
@@ -510,7 +511,8 @@ module "lista de consultas"
     where
         v.`statusadministrativo` = 3
         AND v.icaja=@caja
-        LIMIT 50;"
+    ORDER BY v.sys_dtcreated DESC
+    LIMIT 50;"
 
     // ****************************************query waiters*****************************************
     @getwaiters="select a.sys_pk,a.sys_timestamp,a.sys_guid,a.codigo,a.codnomina,a.email,a.nombre,a.notas,a.pcomision,a.telefono,

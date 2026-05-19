@@ -207,7 +207,8 @@ module "lib.dk"
 		pos_mostrar_articulos=parse.bool(GetVars("pos_mostrar_articulos"))
 		pos_mostrar_control_propina=parse.bool(GetVars("pos_mostrar_control_propina"))
 
-		new @config_default
+		ref @config_default=record.create()
+		using @config_default
 		{
 			@"pos_color_encabezado":ifstr(trim(pos_color_encabezado)!="",pos_color_encabezado,"#540883")
 			@"pos_mostrar_cuentas":pos_mostrar_cuentas
@@ -228,6 +229,7 @@ module "lib.dk"
 			@"decimal_volumen":parse.num(GetVars("FXCA002")) //decimal en volumen para redondear en el backend
 			@"decimal_visible_money":parse.num(GetVars("V12-0A-001")) //decimal visible en la interfaz del usuario
 			@"decimal_visible_volmen":parse.num(GetVars("V12-0A-002")) // decimal volumen visible en la interfaz del usuario
+			@"pos_tiempo_max_ult_corte":parse.num(GetVars("pos_tiempo_max_ult_corte"))
 		}
 
 		@config_default<"show_filter">:ifstr(showFilter(@config_default),"","d-none")

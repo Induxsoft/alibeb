@@ -4,7 +4,7 @@ module "terminal de mesero"
 {
 	ref getData=@@(@http_context,"&request/get")
 	#$
-	div(class="container-main d-lg-grid d-flex" id="")
+	div(class="container-main d-lg-grid d-flex" id="container-main")
 	{
 		div(class="column")
 		{
@@ -188,7 +188,8 @@ module "terminal de mesero"
 							ul(class="dropdown-menu p-2")
 							{
 								li{a(href="#<preserveQSParams('./?view=printer_tickets')>"){"Reimpresión de ticket"}}
-								li{a(href=""){"Imprimir el último corte de caja"}}
+								li{a(href="#" onclick="controller.PrintCorte()"){"Imprimir el último corte de caja"}}
+								li{a(href="#" onclick="toggleDebug()"){$"Activar / desactivar debug"}}
 							}
 						}
 					}
@@ -198,18 +199,9 @@ module "terminal de mesero"
 			// br{}
 			div(class="card card-mesas")
 			{
-				div(class="body-mesas")
+				div(class="container-tables")
 				{
-					$""
-					div(class="placeholder-glow")
-					{
-						a(class="mesas placeholder")
-						{
-							$""
-
-							p{$""}
-						}
-					}		
+					div(class="body-mesas"){$""}
 				}
 			}
 			
@@ -218,7 +210,7 @@ module "terminal de mesero"
 		
 		div(class="card card-info placeholder-glow d-none d-lg-block" id="card-info" style="padding:0px;pointer-events:none;opacity:.4;")
 		{
-			div(class="body-info")
+			div(class="body-info h-100" id="container-info-orders")
 			{
 				#!
 				#include "./vw_detail_infocuenta.dkl"

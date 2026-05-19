@@ -55,7 +55,7 @@ var prn_generic=
 
         printer.printText("\n");
 
-        // ... TODO TU CÓDIGO IGUAL (solo cambia eposprn → printer)
+        // ... TODO TU CÓDIGO IGUAL (solo cambia printer → printer)
 
         printer.printText("\n");
         printer.printText("\n");
@@ -177,13 +177,139 @@ var prn_generic=
             printer.printText("Folio de Facturación");
             printer.printText("# "+data.folio_factura);
         }
+        if(data.notetable)
+        {
+            printer.setAlign(0); //0 -> izquierda
+            printer.printText("\nNota:");
+            printer.printText(divider_full);
+            printer.printText(data.notetable);
+            printer.printText(divider_full);
+        }
         //******************************************
-
+        
         printer.printText("\n");
         printer.printText("\n");
         printer.cut();
         data.success=true;
 
+        // 👇 si NO es impresora real → mostrar modal
+        if(printer === PrinterBuffer)
+        {
+            let _action={}
+            if(data.url_redir)
+            {
+                _action["btnclose"]={
+                    onclick:()=>window.location.href=data.url_redir
+                }
+            }
+            showPrintModal(PrinterBuffer.getText(),_action);
+        }
+        else if(data.url_redir)window.location.href=data.url_redir;
+
+        if(callbackinterval)callbackinterval(data);
+    },
+    print_ingreso(data,callbackinterval=null)
+    {
+        let printer = getPrinter(); 
+        let TextBetween=(text,textleft)=>model_prn.TextBetween(text,textleft);
+        let CreatePrinter=(data)=>model_prn.CreatePrinter(data,printer);
+
+        let headers=data.headers??{};
+        let body=data.body??{};
+        let saldos=data.saldos??{};
+        let extras=data.extras??{};
+        let divider_full="".padEnd(model_prn.character_width,"=");
+        let spacing_left=TextBetween("","============");
+        
+        let CreatePrinterSaldos=(saldos)=>
+        {
+            printer.printText(spacing_left);
+            model_prn.CreatePrinterSaldos(saldos,printer);
+        }
+
+        printer.setAlign(1) //1 -> center
+        printer.printText(data.title);
+        printer.setAlign(0) //1 -> izquierda
+
+        // printer.printText("\n");
+
+        printer.printText(divider_full);
+        CreatePrinter(headers,printer);
+
+        printer.printText(divider_full);
+        CreatePrinter(body,printer);
+
+        //saldos
+        CreatePrinterSaldos(saldos,printer);
+
+        //adicionales
+        CreatePrinter(extras,printer);
+
+        printer.printText("\n");
+        printer.printText("\n");
+        printer.cut();
+
+        data.success=true;
+        
+        // 👇 si NO es impresora real → mostrar modal
+        if(printer === PrinterBuffer)
+        {
+            let _action={}
+            if(data.url_redir)
+            {
+                _action["btnclose"]={
+                    onclick:()=>window.location.href=data.url_redir
+                }
+            }
+            showPrintModal(PrinterBuffer.getText(),_action);
+        }
+        else if(data.url_redir)window.location.href=data.url_redir;
+
+        if(callbackinterval)callbackinterval(data);
+    },
+    print_egreso(data,callbackinterval=null)
+    {
+        let printer = getPrinter(); 
+        let TextBetween=(text,textleft)=>model_prn.TextBetween(text,textleft);
+        let CreatePrinter=(data)=>model_prn.CreatePrinter(data,printer);
+
+        let headers=data.headers??{};
+        let body=data.body??{};
+        let saldos=data.saldos??{};
+        let extras=data.extras??{};
+        let divider_full="".padEnd(model_prn.character_width,"=");
+        let spacing_left=TextBetween("","============");
+
+        let CreatePrinterSaldos=(saldos)=>
+        {
+            printer.printText(spacing_left);
+            model_prn.CreatePrinterSaldos(saldos,printer);
+        }
+
+        printer.setAlign(1) //1 -> center
+        printer.printText(data.title);
+        printer.setAlign(0) //1 -> izquierda
+
+        // printer.printText("\n");
+
+        printer.printText(divider_full);
+        CreatePrinter(headers,printer);
+
+        printer.printText(divider_full);
+        CreatePrinter(body,printer);
+
+        //saldos
+        CreatePrinterSaldos(saldos,printer);
+
+        //adicionales
+        CreatePrinter(extras,printer);
+
+        printer.printText("\n");
+        printer.printText("\n");
+        printer.cut();
+
+        data.success=true;
+        console.log(PrinterBuffer.getText())
         // 👇 si NO es impresora real → mostrar modal
         if(printer === PrinterBuffer)
         {
@@ -234,12 +360,8 @@ const PrinterBuffer =
     }
 };
 
-function getPrinter(){
-    // try{
-    //     if(eposprn && typeof eposprn.printText === "function"){
-    //         return eposprn;
-    //     }
-    // }catch(e){}
+function getPrinter()
+{
     PrinterBuffer.buffer=[];
     return PrinterBuffer;
 }

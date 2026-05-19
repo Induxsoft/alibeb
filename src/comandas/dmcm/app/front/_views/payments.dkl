@@ -16,10 +16,10 @@ module ""
                             from qventasserviciomesa qv where qv.sys_pk=@idt "
 
     ref rsource=dbr.rec(db,sql,getData)
-    importe_total= round(@@(rsource,"#balance"),2)
+    importe_total= round(@@(rsource,"#balance"),@@(@config_default,"#decimal_money"))
     
-    str_importe=format(importe_total,"$ #,0.00")
-
+    str_importe=format(importe_total,"$ #,0."+padleft("",@@(@config_default,"#decimal_visible_money"),"0"))
+    
     //obtener el caller de caja o cajero
     ref datatoken=dbr.rec(db,"select * from ut_dn_dmm_token where token=@dmtm_token",getData)
     datos=trim(@@(datatoken,"$datos"))

@@ -1062,6 +1062,8 @@ var views=
             let lbl_subtotal=document.getElementById("lbl_subtotal")
             let lbl_descuento=document.getElementById("lbl_descuento")
             let lbl_impuestos=document.getElementById("lbl_impuestos");
+            let id_account=document.getElementById("id_account");
+            let btn_mdl_save_note=document.getElementById("btn_mdl_save_note");
 
             lbl_subtotal.textContent="SubTotal: $ "+views.format(data.subtotal,controller.decimals,".",",")
             lbl_descuento.textContent="Descuento: $ "+views.format((data.d1??0) + (data.d2??0),controller.decimals,".",",")
@@ -1075,8 +1077,7 @@ var views=
             if(mesa)
                   if(mesa.classList.contains("table_opened"))
                         mesa.classList.remove("table_opened");
-            if(mesa)
-                  mesa.classList.add(this.color(data.status))
+            if(mesa)mesa.classList.add(this.color(data.status))
             // mesa_color.classList.add(this.flag_color(data.flag))
             if(card_info)
             {
@@ -1130,14 +1131,14 @@ var views=
                         <td class="text-end" style="padding-bottom: 16px; color:var(--purple);">$ ${views.format(itm.total,controller.decimals,".",",")}</td>
                   </tr>`;
           }
-            if(lblticket)
-                  lblticket.innerHTML=data.reference;
-            if(lbltotal)
-                  lbltotal.innerHTML="$ "+views.format(data.balance,controller.decimals,".",",");
-            if(table_ordenes)
-            table_ordenes.innerHTML=html;
-            if(name_table)
-            name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div>`;
+
+            if(id_account)id_account.textContent=data.reference;
+            if(lblticket)lblticket.innerHTML=data.reference;
+            if(lbltotal)lbltotal.innerHTML="$ "+views.format(data.balance,controller.decimals,".",",");
+            if(btn_mdl_save_note)btn_mdl_save_note.onclick=()=>controller.SaveFPago(data.sys_pk,(data)=>{controller.hide_modal("#modal-note-account");},false);
+
+            if(table_ordenes)table_ordenes.innerHTML=html;
+            if(name_table)name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div>`;
       
             var btncancel=document.getElementById("btn-cancelar");
             var btncortesia=document.getElementById("btn-cortesia");
@@ -1151,22 +1152,21 @@ var views=
             btncortesia.setAttribute("onclick",`controller.cortesia("${data.sys_pk}")`);
 
             if(re_print)re_print.classList.remove("disabled");
-            if(data.status==2)
-            {
+
             if(new_command)
             {
                   new_command.setAttribute("onclick",``);
                   new_command.classList.add("disabled");
             }
-            if(message)message.classList.add("disabled");
-            
-            if(imp_close)
+            if(data.status==2)
             {
-                  imp_close.innerHTML =`<div class="div-img"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-unlock-fill" viewBox="0 0 16 16"><path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2z" /></svg></div>Reabrir`;
-                  imp_close.setAttribute("onclick",`controller.reopen_table("${data.sys_pk}")`);
-            }
-            
-            
+                  if(message)message.classList.add("disabled");
+                  
+                  if(imp_close)
+                  {
+                        imp_close.innerHTML =`<div class="div-img"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-unlock-fill" viewBox="0 0 16 16"><path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2z" /></svg></div>Reabrir`;
+                        imp_close.setAttribute("onclick",`controller.reopen_table("${data.sys_pk}")`);
+                  }
             }
             else if (data.status==1)
             {
@@ -1194,6 +1194,7 @@ var views=
             }
             this.actionsDS(data);
             views.ActiveAnimation(false);
+            setRemainingHeight("container-info-orders","table_orders_details");
       },
       actionsDS(data)
       {
@@ -1922,7 +1923,7 @@ views.InitInterval=()=>
             {
                   const now = Date.now();
                   const inactiveTime = now - views.lastActivity;
-                        console.log("revisando...",inactiveTime)
+                        // console.log("revisando...",inactiveTime)
                   if (inactiveTime >= intervalMs) {
                         console.log("Ejecutar refresh porque el usuario está inactivo");
 
@@ -2045,4 +2046,138 @@ function selectedMouse()
       });
 }
 
+//activar vconsole
+// ======= para test desde android=============================
+// Inicializa vConsole
+const vConsole = new window.VConsole({
+      theme: "dark",
+
+      // Oculta el botón flotante verde
+      disableLogScrolling: false,
+
+      onReady() 
+      {
+            // Oculta el switch flotante
+            const switchBtn = document.querySelector("#__vconsole .vc-switch");
+            
+            if (switchBtn) {switchBtn.style.display = "none";}
+
+            // También puedes ocultar todo inicialmente
+            vConsole.hide();
+      }
+});
+
+// Función para mostrarlo
+// Nombre de la llave
+const DEBUG_KEY = "debug_enabled";
+let debugVisible =localStorage.getItem(DEBUG_KEY) === "true";
+// ABRIR DEBUG
+function abrirDebug(show_vconsole=true)
+{
+      // Mostrar panel
+      if(show_vconsole)vConsole.show();
+
+      // Mostrar botón verde
+      const btn = document.querySelector(".vc-switch");
+
+      if (btn) 
+      {
+            btn.style.display = "block";
+            btn.innerHTML = `
+                  <span style="font-size:20px;">🛠️</span>
+            `;
+      }
+}
+
+
+// CERRAR DEBUG
+function cerrarDebug()
+{
+      // Ocultar panel
+      vConsole.hide();
+
+      // Ocultar botón verde
+      const btn = document.querySelector(".vc-switch");
+
+      if (btn) {btn.style.display = "none";}
+}
+      // TOGGLE DEBUG
+function toggleDebug(show_vconsole=true)
+{
+      debugVisible = !debugVisible;
+
+      // Guardar estado
+      localStorage.setItem(DEBUG_KEY, debugVisible);
+
+      if (debugVisible)abrirDebug(show_vconsole);
+      else cerrarDebug();
+}
+
+/**
+ * Ajusta el alto de un elemento destino tomando en cuenta
+ * el espacio ocupado por los hijos directos de un contenedor padre.
+ *
+ * @param {string} parentId   ID del elemento padre
+ * @param {string} targetId   ID del elemento que tendrá el alto restante
+ */
+function setRemainingHeight(parentId, targetId)
+{
+    const parent = document.getElementById(parentId);
+    const target = document.getElementById(targetId);
+
+    if (!parent || !target)
+    {
+        return;
+    }
+
+    // Obtener hijos directos del padre
+    const children = Array.from(parent.children);
+
+    let usedHeight = 0;
+
+    children.forEach(child =>
+    {
+        // Ignorar el elemento destino
+        if (child.id === targetId) return;
+      
+        const rect = child.getBoundingClientRect();
+        // Altura total incluyendo márgenes
+        const style = window.getComputedStyle(child);
+
+        const marginTop = parseFloat(style.marginTop) || 0;
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+
+        usedHeight += rect.height + marginTop + marginBottom;
+    });
+
+    // Altura disponible del padre
+    const parentRect = parent.getBoundingClientRect();
+
+    const parentStyle = window.getComputedStyle(parent);
+
+    const paddingTop = parseFloat(parentStyle.paddingTop) || 0;
+    const paddingBottom = parseFloat(parentStyle.paddingBottom) || 0;
+
+    const availableHeight =
+        parentRect.height -
+        usedHeight -
+        paddingTop -
+        paddingBottom;
+
+    // Aplicar alto restante
+    target.style.height = `${Math.max(0, availableHeight)}px`;
+}
+
+setTimeout(()=>
+{
+      if(debugVisible)abrirDebug(false);
+      // setRemainingHeight("container-all","container-main");
+      setRemainingHeight("container-info-orders","table_orders_details");
+},800);
+
+// Opcional: recalcular al redimensionar
+window.addEventListener("resize", () =>
+{
+    setRemainingHeight("container-info-orders","table_orders_details");
+});
 
