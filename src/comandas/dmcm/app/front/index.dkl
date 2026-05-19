@@ -126,6 +126,8 @@ module "index"
 		script(src="#<@js_epos_imin_printer>"){""}
 		script(src="/_js/bootstrap.bundle.min.js"){""}
 		script(src="/_js/induxsoft.controls.js"){""}
+		//para test desde android
+		script(src="/_js/vconsole.min.js"){""}
 
 		style
 		{
@@ -133,8 +135,7 @@ module "index"
 			#<ftext(file.rtext(@file_css_principal))>
 			'
 		}
-		//para test desde android
-		script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"){""}
+		
 
 		div(class="container-all" style="overflow:auto" id="container-all")
 		{

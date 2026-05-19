@@ -12,6 +12,7 @@ CA21,Agregar receta,alibeb.recetas
 CA22,Editar receta,alibeb.recetas
 CA23,Eliminar receta,alibeb.recetas
 "CA24","Importar recetas",alibeb.recetas
+"CA25","Importar detalle de receta",alibeb.recetas
 alibeb.gestion_kds,Gestión de KDS,alibeb
 CA30,gestion de KDS,alibeb.gestion_kds
 alibeb.gestion_meseros,Gestión de meseros,alibeb
