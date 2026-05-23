@@ -4,3 +4,8 @@ El paquete Alibeb de V12 es el módulo especializado en la administración integ
 ## Manual del usuario
 
 El manual de usuario está disponible aquí: <https://docs.induxsoft.net/es/productos/v12/users/alibeb/>
+
+## Código fuente
+
+Todo el código está escrito en Go, disponible en la carpeta [src](https://github.com/Induxsoft/alibeb/tree/main/src) 
+
