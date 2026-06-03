@@ -5,7 +5,7 @@
         "type":{"default":"ethernet"},
         "address":"127.0.0.1",
         "port":8080,
-        "timeout":15,
+        "timeout":150,
         "dpi":203,
         "printWidth":60,
         "charsPerLine":46
@@ -16,7 +16,7 @@
         "type":{"default":"ethernet"},
         "address":"192.168.0.87",
         "port":9100,
-        "timeout":15,
+        "timeout":150,
         "dpi":203,
         "printWidth":60,
         "charsPerLine":46
