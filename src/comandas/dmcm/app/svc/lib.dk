@@ -368,6 +368,7 @@ module "lib.dk"
             @"icaja":dbr.num(db,"select icaja from corte where sys_pk=@icorte",movcaja)
             @"icorte":corte
             @"imovcaja":idmovcaja
+            @"statusfinanciero": 2
         }
         if toupper(@@(rsource,"$service")) == "DS"{do field.remove(venta,"statusentrega")}
         do dbr.update(db,"venta",venta,"sys_pk=@venta",postData)
