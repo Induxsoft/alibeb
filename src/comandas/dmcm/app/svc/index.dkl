@@ -14,7 +14,6 @@ module "index.dkl"
 	#include "website.dkl"
 	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
 	
-	
 	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
 	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
     @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
