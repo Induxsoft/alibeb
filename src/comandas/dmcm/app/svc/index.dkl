@@ -14,6 +14,7 @@ module "index.dkl"
 	#include "website.dkl"
 	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
 	
+	
 	@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
 	@http_context<"response/headers/Access-Control-Allow-Methods">:"*"//permite al servicio soportar todos los metodos http
     @http_context<"response/headers/Access-Control-Allow-Headers">:"*"//"Content-Type, Authorization, X-Requested-With"
@@ -223,6 +224,11 @@ module "index.dkl"
 						ref data=get.tickets_procesados(db,params)
 						break
 					}
+					case "precio-producto"
+					{
+						ref data=precio.producto(db,params)
+						break
+					}
 				}
 			}
 			case "POST"
@@ -253,7 +259,7 @@ module "index.dkl"
 			}
 			case "PATCH"
 			{
-				if @@(params,"id_table")==""{do rise_error(99,"Falta un identificador de la mesa")}
+				if @@(params,"id_table")==""{do rise_error(99,"Falta un identificador de la cuenta")}
 				else if @@(postData,"$action")!=""
 				{
 					switch tolower(@@(postData,"$action"))
@@ -280,6 +286,11 @@ module "index.dkl"
 						case "print_corte"
 						{
 							ref data=print.last_corte(db,params,postData)
+							break
+						}
+						case "change_client"
+						{
+							ref data=change.client(db,params,postData)
 							break
 						}
 						default{do rise_error(99,"Acción no encontrada.")}

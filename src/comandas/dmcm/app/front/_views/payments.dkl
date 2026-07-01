@@ -20,6 +20,18 @@ module ""
     
     str_importe=format(importe_total,"$ #,0."+padleft("",@@(@config_default,"#decimal_visible_money"),"0"))
     
+    ref cliente=ifnull(dbr.rec(db,"SELECT
+            c.sys_pk,
+            c.codigo,
+            c.nombre,
+            c.telefonos telefono,
+            CONCAT_WS(' ', d1.codpos, d1.colonia, d1.direccion) direccion,
+            '' notas,
+            ((IFNULL(limitecredito,0) = -1 OR IFNULL(limitecredito,0) > 0)) show_btn_credit
+        FROM
+            cliente c
+            LEFT JOIN domicilio d1 ON c.domicilio1 = d1.sys_pk
+        WHERE c.sys_pk=@cliente",rsource),record.create())
     //obtener el caller de caja o cajero
     ref datatoken=dbr.rec(db,"select * from ut_dn_dmm_token where token=@dmtm_token",getData)
     datos=trim(@@(datatoken,"$datos"))
@@ -58,16 +70,14 @@ module ""
         }
     }
     
-    
-
     pos_porcentaje_propina=@@(@config_default,"#pos_porcentaje_propina")
-
+    json_client=to.json(cliente)
     #$
 	div(style="height: 100%;")
     {
         div(class="container-md" id="pay-container-main")
         {
-            div(class="cantainer bg-white mt-4 p-4")
+            div(class="cantainer bg-white mt-4 p-2")
             {
                 div(class="d-flex gap-2")
                 {
@@ -93,11 +103,39 @@ module ""
                             </svg>'
                         }
                     }
-
-                    
                 }
                 div(class="row")
                 {
+                    div(class="col-md-12 pb-2")
+                    {
+                        div(class="d-flex w-100 align-items-center flex-wrap")
+                        {
+                            h6(class="m-0 p-0 me-2"){"Cliente:"}
+                            "input-key"(
+                                class="w-75 md-width-i"
+                                name="client_new" 
+                                id="client_new" 
+                                "data-key"="sys_pk" 
+                                "data-search"="codigo" 
+                                "data-text"="nombre" 
+                                "data-source"="/dmcm/pos/dinner/clientes/?admin=1&s=@search" 
+                                "data-value"="#<json_client>" 
+                                required="true"
+                                columns="codigo,nombre" 
+                                colcaptions="Código,Nombre"
+                                "hide-searcher"="false"
+                                "control-styles"="
+                                #input_search_container, #input_description_container,
+                                #button_search_container, #button_clear_container {
+                                    height: calc(1.5em + .5rem + 2px) !important;
+                                    padding: .25rem .5rem !important;
+                                    font-size: .875rem !important;
+                                }
+                                "
+                            ){$""}
+                        }
+                        // hr{}
+                    }
                     div(class="col-md-2 d-flex justify-content-between d-md-block")
                     {
                         h6(class="fw-bold"){"Cuenta: "}
@@ -139,43 +177,34 @@ module ""
                     
                 }
 
-                div(class="card p-0 border-0" id="")
+                div(class="card mb-3")
                 {
-                    // div(class="card-header")
-                    // {
-                    //     b{"Métodos de pago"}
-                    // }
-                    div(class="card-body p-0 p-sm-2 p-md-3")
+                    div(class="card-header")
                     {
-                        div(class="card mb-3")
+                        b{"Efectivo"}
+                    }
+                    div(class="card-body")
+                    {
+                        div(class="row")
                         {
-                            div(class="card-header")
+                            div(class="col-md-4")
                             {
-                                b{"Efectivo"}
-                            }
-                            div(class="card-body")
-                            {
-                                div(class="row")
+                                label(class="form-label" "for"=""){"Importe"}
+                                div(class="d-flex align-items-center")
                                 {
-                                    div(class="col-md-4")
-                                    {
-                                        label(class="form-label" "for"=""){"Importe"}
-                                        div(class="d-flex align-items-center")
-                                        {
-                                            input(class="input-login" type="number" name="efectivo_importe" value="#<importe_total>" id="efectivo_importe" onfocus="views.SelectAll(this)")
-                                            button(class="btn-admin" type="button" onclick="controller.ResetImporte();"){$"X"}
-                                            label(class="fw-bold ms-2" "for"=""){"#<@@(@__divisa,'$codigo')>"}
-                                        }
-                                    }
+                                    input(class="input-login" type="number" name="efectivo_importe" value="#<importe_total>" id="efectivo_importe" onfocus="views.SelectAll(this)")
+                                    button(class="btn-admin" type="button" onclick="controller.ResetImporte();"){$"X"}
+                                    label(class="fw-bold ms-2" "for"=""){"#<@@(@__divisa,'$codigo')>"}
                                 }
-                                
                             }
                         }
-                        #!
-                        #include "paycard.dkl"
-                        #$
                     }
                 }
+                #!
+                #include "paycard.dkl"
+                #$
+                br{}
+                button(class="btn btn-admin w-100 #<ifstr(@@(cliente,'#show_btn_credit'),'','d-none')>" type="button" id="btn_sale_credit" onclick="controller.Cobrar(#<@@(getData,'#idt')>,this,true)"){$"Venta a crédito"}
             }
             
         }
@@ -188,6 +217,7 @@ module ""
                 controller.tarjeta.config=#<to.json(@cobro_tarjeta)>;
                 controller.tarjeta.Transactions=#<to.json(ltransactions)>;
                 controller.pos_porcentaje_propina=#<pos_porcentaje_propina>;
+                controller.rsource=#<to.json(rsource)>;
             })
             
         '}

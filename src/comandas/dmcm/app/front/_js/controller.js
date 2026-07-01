@@ -19,6 +19,45 @@ var controller=
       controller.tarjeta.SetOptions();
       controller.SetTotal(true);
     },
+    precioProducto(iproducto,cantidad,unidad)
+    {
+        var uri=url+`pos/dinner/precio-producto/?access=true&iproducto=${Number(iproducto)}&icliente=0&icconsumo=${$cc}&cantidad=${Number(cantidad)}&unidad=${unidad}&cuenta=0`;
+        views.toggle(document.body);
+        // return new Promise((resolve,reject) => {
+        //     fetch(url).then(response => response.json())
+        //     .then(data => {
+        //         if (data.message) 
+        //         {
+        //             alert(data.message);
+        //             resolve(-1);
+        //             return
+        //         }
+        //         resolve(data.precio);
+        //     })
+        //     .catch(error => {
+        //         alert("Ocurrio un error al obtener el precio del producto, se tomará el 'Precio 1'.");
+        //         console.error(error);
+        //         resolve(-1);
+        //     });
+        // });
+
+      return new Promise((resolve,reject) =>
+      {
+        model.invoke_service(uri,data,
+        function(data)
+        {
+          resolve(data.precio);
+        }
+        ,function(error)
+        {
+          resolve(-1);
+          views.toggle(document.body,true);
+          alert(error.message);
+        }
+        ,"GET",false);
+      });
+      
+    },
     PrinTicket(data,callbackinterval=null){model_prn.print_ticket(data,callbackinterval);},
     ResetImporte()
     {
@@ -110,33 +149,55 @@ var controller=
       views.propina.value=views.format((total * (percentaje / 100)),controller.decimals_backend,".",",");
       if(settotales)this.SetTotal();
     },
-    Cobrar(venta,btn)
+    Cobrar(venta,btn,credito=false)
     {
-      let totales=this.GetTotales(true);
-      let efectivo_importe=totales.efectivo;
+      
+      let client=document.getElementById("client_new");
 
-      if(totales.total <= 0)
+      if(!client || Object.keys(client?.getValue()??{}).length < 1)
       {
-        alert("No existe un monto a cobrar");
+        alert("Debe indicar un cliente");
         return;
       }
-
-      if(totales.resto > 0 )
+      let totales={};
+      let nefectivo=0;
+      let propina=0;
+      if(!credito)
       {
-        alert("El importe acumulado no cubre la totalidad de la venta");
-        return;
-      }
+        totales=this.GetTotales(true);
+        let efectivo_importe=totales.efectivo;
+        if(totales.total <= 0)
+        {
+          alert("No existe un monto a cobrar");
+          return;
+        }
 
-      let nefectivo=Number(efectivo_importe) - totales.cambio;
-      if(nefectivo < 0)nefectivo=0;
+        if(totales.resto > 0 )
+        {
+          alert("El importe acumulado no cubre la totalidad de la venta");
+          return;
+        }
+
+        nefectivo=Number(efectivo_importe) - totales.cambio;
+        if(nefectivo < 0)nefectivo=0;
+        propina=Number(views.propina.value);
+      }
+      else
+      {
+        if(!views.ValidateCredit())return;
+        if(!confirm("¿Está seguro de realizar la venta a crédito de: $ "+views.format(controller?.rsource?.balance??0,controller.decimals,".",",")+" ?"))return;
+      }
+      
 
       var data=
       {
         efectivo:nefectivo,
         venta:venta,
-        propina:Number(views.propina.value),
+        propina:propina,
         totales:totales,
-        cambio:totales.cambio
+        cambio:totales?.cambio ?? 0,
+        client:client.getValue().sys_pk,
+        mpago:credito ? "credito" : "efectivo"
       };
       
       if(controller.tarjeta.tbl_tarjetas)data["data_array"]=controller.tarjeta.tbl_tarjetas.DataArray;
@@ -777,7 +838,7 @@ var controller=
         return;
       }
       views.ActiveAnimation(true);
-      controller.get_table(id_table,e=null);
+      controller.get_table(id_table);
     },
     get_table:function(id_table)
     {
@@ -1761,6 +1822,41 @@ var controller=
       {
         views.toggle(document.body,true);
         model_prn.print_arqueo(data,(_data)=>{}); 
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.toggle(document.body,true);
+      },"PATCH",false);
+    },
+    changeClient()
+    {
+      
+      let client=document.getElementById("client");
+      if(!client || Object.keys(client?.getValue()??{}).length  <1)
+      {
+        alert("Debe indicar un cliente");
+        return;
+      }
+      if(!views.account_selected || Object.keys(views.account_selected) < 1)
+      {
+        alert("No se encontró la cuenta indicado")
+      }
+      
+      views.toggle(document.body,false,"","Procesando, por favor espere...");
+      var uri=`${url}pos/dinner/change_client/?id_table=${views.account_selected.sys_pk}`;
+      var data=
+      {
+        action:"change_client",
+        client:client.getValue().sys_pk,
+        cuenta:views.account_selected.sys_pk
+      }
+
+      model.invoke_service(uri,data,(data) =>
+      {
+        controller.get_table(views.account_selected.sys_pk,null);
+        controller.hide_modal("#modal-change-client");
+        views.toggle(document.body,true);
       },
       function(error) 
       {

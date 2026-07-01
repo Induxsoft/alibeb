@@ -424,6 +424,7 @@ function base_url(withPort)
 function printDeliveriDrivers()
 {
     url_repartidores = path.concat(base_url(@false), "/dmcm/pos/dinner/repartidores/?admin=1&s=%")
+    
     repartidores_json = http.get(url_repartidores)
     
     ref repartidores = list.create()
@@ -581,6 +582,54 @@ div(id="modal-note-account" class="show_modal_center open-table hidde_control mo
         {
             button(class="btn rounded-0" type="button" id="btn_mdl_save_note"){$"Guardar"}
             button(class="btn rounded-0" type="button" onclick="controller.hide_modal(\'#modal-note-account\');"){$"Cerrar"}
+        }
+    }
+}
+
+// casignar cliente
+div(id="modal-change-client" class="show_modal_center open-table hidde_control modal-responsive modal-sm" style="top:15% !important")
+{
+    div(class="d-flex" onclick="controller.hide_modal(\'#modal-change-client\');")
+    {
+        div(class="just-cont-center d-flex flex-grow-1" )
+        {
+            h4(id="id_account"){$"Cambiar cliente"}br{}br{}
+        }
+        svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#ccc" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
+        {
+            path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+        }
+    }
+    
+    div(class="mt-2" )
+    {
+        label(class="fw-bold" "for"=""){"Cliente:"}
+        "input-key"(
+            class="d-flex w-100"
+            name="client" 
+            id="client" 
+            "data-key"="sys_pk" 
+            "data-search"="codigo" 
+            "data-text"="nombre" 
+            "data-source"="/dmcm/pos/dinner/clientes/?admin=1&s=@search" 
+            "data-value"="{}" 
+            required="true"
+            columns="codigo,nombre" 
+            colcaptions="Código,Nombre"
+            "hide-searcher"="true"
+            "control-styles"="
+            #container{width:100%;}
+            #search_container, #description_container {
+                padding: 0 !important;
+                width:100%;
+            }
+            "
+        ){$""}
+
+        div(class="d-flex justify-content-end gap-2 mt-2")
+        {
+            button(class="btn rounded-0" type="button" onclick="controller.changeClient()"){$"Aceptar"}
+            button(class="btn rounded-0" type="button" onclick="controller.hide_modal(\'#modal-change-client\');"){$"Cerrar"}
         }
     }
 }

@@ -259,10 +259,11 @@ module "lista de consultas"
 		  END) text_status_admin,
           qv.icorte,
           trim(qv.fecha) as str_fecha,
-          qv.fecha,
+          date(qv.fecha)fecha,
           qv.sys_dtcreated,
         ifnull(qv.sys_info,'') as service,
-        concat_ws(' - ',r.codigo,r.nombre)repartidor
+        concat_ws(' - ',r.codigo,r.nombre)repartidor,
+        qv.formapago
     from
         (
             select

@@ -125,18 +125,20 @@ var prn_ticket=
         let efectivo=(data.efectivo??0);
         let tarjeta=(data.tarjeta??0);
         let cambio=(data.cambio??0);
+        let credito=(data.credito??0);
 
+        if(efectivo>0)eposprn.printText(`Efectivo: $ ${views.format(efectivo,controller.decimals,".",",")}`);
+        if(tarjeta>0)eposprn.printText(`Tarjeta: $ ${views.format(tarjeta,controller.decimals,".",",")}`);
+        if(credito>0)eposprn.printText(`Crédito: $ ${views.format(credito,controller.decimals,".",",")}`);
+        if(cambio>0)eposprn.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
+        
         if(efectivo==0 && tarjeta==0 && cambio==0)
         {
           eposprn.printText("\n");
           eposprn.printText(data.nota_adicional??"");
           eposprn.printText("\n");
         }
-
-        if(efectivo>0)eposprn.printText(`Efectivo: $ ${views.format(efectivo,controller.decimals,".",",")}`);
-        if(tarjeta>0)eposprn.printText(`Tarjeta: $ ${views.format(tarjeta,controller.decimals,".",",")}`);
-        if(cambio>0)eposprn.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
-
+        
         eposprn.setAlign(1) //1 -> center
         eposprn.printText(`${data.text_footer}`);
 

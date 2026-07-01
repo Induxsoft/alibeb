@@ -156,17 +156,19 @@ var prn_generic=
         let efectivo=(data.efectivo??0);
         let tarjeta=(data.tarjeta??0);
         let cambio=(data.cambio??0);
+        let credito=(data.credito??0);
 
-        if(efectivo==0 && tarjeta==0 && cambio==0)
+        if(efectivo>0)printer.printText(`Efectivo: $ ${views.format(efectivo,controller.decimals,".",",")}`);
+        if(tarjeta>0)printer.printText(`Tarjeta: $ ${views.format(tarjeta,controller.decimals,".",",")}`);
+        if(credito>0)printer.printText(`Crédito: $ ${views.format(credito,controller.decimals,".",",")}`);
+        if(cambio>0)printer.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
+
+        if(efectivo==0 && tarjeta==0 && cambio==0 && credito == 0)
         {
           printer.printText("\n");
           printer.printText(data.nota_adicional??"");
           printer.printText("\n");
         }
-
-        if(efectivo>0)printer.printText(`Efectivo: $ ${views.format(efectivo,controller.decimals,".",",")}`);
-        if(tarjeta>0)printer.printText(`Tarjeta: $ ${views.format(tarjeta,controller.decimals,".",",")}`);
-        if(cambio>0)printer.printText(`Cambio: $ ${views.format(cambio,controller.decimals,".",",")}`);
 
         printer.printText(`${data.text_footer}`);
 

@@ -23,7 +23,8 @@ div(class="info-total" id="info-vnt" style="background-color:#FFF;")
             }
         }
 
-        small(id="account_dealer"){"---"}
+        small(id="account_dealer" style="font-size: small;"){"---"}
+        small(id="account_client" style="font-size: small;"){"---"}
     }
     
 }
@@ -39,7 +40,13 @@ div(id="module-nota" class="info-total" style="background-color:#FFF;height:auto
             <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z"/>
             </svg>'
         }
-        // p(id="lblnotavnt"){"---"}
+        button(class="btn ms-2" type="button" title="Cambiar cliente" onclick="controller.show_modal(\'#modal-change-client\');")
+        {
+            $'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+            </svg>
+            Cliente'
+        }
     }
 }
 div(class="card cmmd-account" id="mol_cmmd_account" style="background-color:#FFF;")

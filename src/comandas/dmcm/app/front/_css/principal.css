@@ -35,6 +35,12 @@ body
   font-family: "Poppins",Arial, Helvetica, sans-serif !important;
 }
 
+.btn-primary-b
+{
+  color: #fff;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
 
 /* datalist - select input */
 .datalist-container 
@@ -1615,7 +1621,7 @@ select
   .div-modal{display: flex;}
   .form-table{display: block;}
   .modal-responsive{
-    max-width: 85%;
+    max-width: 100%;
     padding: 3rem 1.5rem;
   }
 }

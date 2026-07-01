@@ -2,7 +2,11 @@
 #!
 module "lib.dk"
 {
+    #include "ventas/_lib/list.queries.dk"
+    #include "ventas/_lib/config.dk"
     #include "inventario/movimientos.dkh"
+    #include "ventas/procesos.dkh"
+    #include "cxc/movimientos.dkh"
     ref lib_numeros = _import_library("induxsoft_dkl_NumeroAletrasCorregido.dll")
 
     do _map_function(lib_numeros,"induxsoft_dkl_NumeroAletrasCorregido.NumerosEnLetras","ParteEntera","Int2Ltr","System.Decimal","$")
@@ -14,8 +18,25 @@ module "lib.dk"
     do _map_function(lib_precfdi, "precfdi4lib.proc", "GenCodeTicket", "ticket.encode_folio", "*System.Object,*System.Object,*System.Object", "$") 
     do _map_function(lib_precfdi, "precfdi4lib.proc", "DecodeTicket", "ticket.decode_folio", "System.String, System.Boolean", "#") 
     do _map_function(lib_precfdi, "precfdi4lib.proc", "VentaXml", "ticket.xml", "System.Int32", "$")
+    // do _map_function(lib_precfdi, "precfdi4lib.proc", "getLastError", "getLastError", "void", "$")
+
+    do _map_function(-1, "System.Enum", "ToObject", "EnumToObject", "*System.Type,System.Int32", "*")
+    do _map_function(-1, "System.DateTime", "SpecifyKind", "DateTimeSpecifyKind", "*System.DateTime,*System.DateTimeKind", "*")
+    
 
     //#region PRCESOS
+    change.client::&db,&params,&postData
+    {
+        if dbr.num(db,"SELECT sys_pk FROM venta where sys_pk=@id_table",params) < 1{do rise_error(500,"No se encontró la cuenta indicado")}
+
+        if @@(postData,"#client") < 1{do rise_error(500,"No se encontró el cliente indicado")}
+
+        new data{@"icliente":@@(postData,"#client")}
+
+        do dbr.update(db,"venta",data,"sys_pk=@id_table",params)
+
+        return @null
+    }
     table.savenote::&db,&params,&postData
     {
         notas=trim(@@(postData,"$nota"))
@@ -197,16 +218,21 @@ module "lib.dk"
             qv.iagente as 'ag',
             qv.idivisa AS 'divisa', 
             qv.tipocambio AS 'tcambio',
-            qv.sys_info as service
+            qv.sys_info as service,
+            qv.documento,
+            c.diascredito
         from
             qventasserviciomesa qv
+            INNER JOIN cliente c on qv.icliente=c.sys_pk
         where
             qv.sys_pk = @venta "
+
+        @mpago=tolower(trim(@@(postData,"$mpago")))
 
         ref totales=@@(postData,"&totales")
         ref rsource=dbr.rec(db,sql,postData)
         if @@(rsource,"#balance") < 0.1{do rise_error(500,"No existe un monto a cobrar")}
-
+        //obtener datos de la sesión
         do token.data.validate(db,@true)
 
         ref datatoken=dbr.rec(db,"select * from ut_dn_dmm_token where token=@dm_token",postData)
@@ -231,61 +257,100 @@ module "lib.dk"
             if corte < 1{do rise_error(500,"No se encontró un corte abierto en relación al agente")}
         }
         
-        new movcaja
-        {
-            @"sys_recver": 0
-            @"sys_guid":uuid()
-            @"sys_timestamp*":dbr.sql("now()")
-            @"sys_dtcreated*":dbr.sql("now()")
-            @"sys_exported": 0
-            @"sys_dtexported*":dbr.sql("now()")
-            @"auditado": 1
-            @"cheques": 0
-            @"contabilizado": 0
-            @"depositos": 0
-            @"documento": @documento_venta //ticket
-            @"efectivo":@@(postData,"#efectivo")
-            @"fecha*":dbr.sql("now()")
-            @"hora*":dbr.sql("now()")
-            @"notas":" Cobro de venta con referencia "+@@(rsource,"$reference")
-            @"referencia":toupper(uuid())
-            @"tarjetas":@@(postData,"#importe_tarjeta")
-            @"tipocambio": @@(rsource,"#tcambio")
-            @"vales": 0
-            @"icategoria":5
-            @"icorte": corte 
-            @"idivisa":@@(rsource,"#divisa")
-        }
-        
         do dbr.begin(db)
-        
-        ref divisa=dbr.rec(db,"select sys_pk,codigo,descripcion from divisa where sys_pk=@idivisa",movcaja)
 
-        ref data_array=@@(postData,"&data_array")
-        if field.exist(postData,"data_array") && @count(data_array) > 0{ref datarjeta=GetDataTarjeta(db,data_array)}
-        else{ref datarjeta=GetDataTarjetaByVenta(db,@@(postData,"#venta"),@@(movcaja,"#idivisa"))}
-        
-        if @@(datarjeta,"#importetotal") >= @@(rsource,"#balance"){movcaja<"efectivo">: 0 }
-
-        movcaja<"tarjetas">:@@(datarjeta,"#importetotal")
-        pagos=@@(postData,"#efectivo") + @@(movcaja,"#tarjetas")
-        
-        if pagos <  @@(rsource,"#balance") {do rise_error(500,"El importe acumulado no cubre con la totalidad de la venta")}
-
-        do dbr.insert(db,"movcaja",movcaja)
-        idmovcaja=dbr.num(db,"select sys_pk from movcaja where sys_guid=@sys_guid",movcaja)
-
-        //insertar tarjetas
-        for i = 0; i < @count(@@(datarjeta,"&dtarjetas"))
+        //actualizar cliente
+        if @@(postData,"#client") > 0 && @@(postData,"#client") != @@(rsource,"#cliente")
         {
-            ref dtarjeta=@item(@@(datarjeta,"&dtarjetas"),i)
-            dtarjeta<"fk_movcaja_detalletarjetas">:idmovcaja
-            do dbr.insert(db,"dtarjeta",dtarjeta)
+            params<"id_table">:@@(postData,"#venta")
+            do change.client(db,params,postData)
+            //obtener los datos del nuevo cliente
+            ref rsource=dbr.rec(db,sql,postData)
         }
+
+        postData<"icorte">:corte
+
+        ref movcaja=record.create()
+
+        pos_afectar_existencias=parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
+
+        switch @mpago
+        {
+            case "credito"
+            {
+                new data
+                {
+                    @"procesar_salida":@false //no realizar salida, para tener mas control en las salidas
+                    @"iventa": @@(postData,"#venta")//(int) Clave primaria del documento de venta a procesar.
+                    @"icliente":@@(rsource,"#cliente") //(int) Clave primaria del cliente.
+                    @"flimite":dbr.str(db,"SELECT date_format(DATE_ADD(NOW(),INTERVAL IFNULL(@diascredito,0) DAY),'%Y-%m-%d') ",rsource) //(string) Fecha [yyyy-MM-dd] limite.
+                    @"referencia":@@(rsource,"$reference") //(string) Referencia del documento de venta.
+                    @"documento": @@(rsource,"#documento")//(int) Clave primaria del tipo de documento de la venta.
+                    @"concepto": ifstr(trim(@@(postData,"$concepto"))=="","Venta a crédito: "+@@(rsource,"$reference"),@@(postData,"$concepto"))//(string) Descripción de la operación
+                }
+                do erp.ventas.procesos.liquidacionCredito(db,data)
+                break
+            }
+            default
+            {
+                new movcaja
+                {
+                    @"sys_recver": 0
+                    @"sys_guid":uuid()
+                    @"sys_timestamp*":dbr.sql("now()")
+                    @"sys_dtcreated*":dbr.sql("now()")
+                    @"sys_exported": 0
+                    @"sys_dtexported*":dbr.sql("now()")
+                    @"auditado": 1
+                    @"cheques": 0
+                    @"contabilizado": 0
+                    @"depositos": 0
+                    @"documento": @documento_venta //ticket
+                    @"efectivo":@@(postData,"#efectivo")
+                    @"fecha*":dbr.sql("now()")
+                    @"hora*":dbr.sql("now()")
+                    @"notas":" Cobro de venta con referencia "+@@(rsource,"$reference")
+                    @"referencia":toupper(uuid())
+                    @"tarjetas":@@(postData,"#importe_tarjeta")
+                    @"tipocambio": @@(rsource,"#tcambio")
+                    @"vales": 0
+                    @"icategoria":5
+                    @"icorte": corte 
+                    @"idivisa":@@(rsource,"#divisa")
+                }
+                
+                ref divisa=dbr.rec(db,"select sys_pk,codigo,descripcion from divisa where sys_pk=@idivisa",movcaja)
+
+                ref data_array=@@(postData,"&data_array")
+                if field.exist(postData,"data_array") && @count(data_array) > 0{ref datarjeta=GetDataTarjeta(db,data_array)}
+                else{ref datarjeta=GetDataTarjetaByVenta(db,@@(postData,"#venta"),@@(movcaja,"#idivisa"))}
+                
+                if @@(datarjeta,"#importetotal") >= @@(rsource,"#balance"){movcaja<"efectivo">: 0 }
+
+                movcaja<"tarjetas">:@@(datarjeta,"#importetotal")
+                pagos=@@(postData,"#efectivo") + @@(movcaja,"#tarjetas")
+                
+                if pagos <  @@(rsource,"#balance") {do rise_error(500,"El importe acumulado no cubre con la totalidad de la venta")}
+
+                do dbr.insert(db,"movcaja",movcaja)
+                idmovcaja=dbr.num(db,"select sys_pk from movcaja where sys_guid=@sys_guid",movcaja)
+
+                //insertar tarjetas
+                for i = 0; i < @count(@@(datarjeta,"&dtarjetas"))
+                {
+                    ref dtarjeta=@item(@@(datarjeta,"&dtarjetas"),i)
+                    dtarjeta<"fk_movcaja_detalletarjetas">:idmovcaja
+                    do dbr.insert(db,"dtarjeta",dtarjeta)
+                }
+                postData<"idmovcaja">:idmovcaja
+                break
+            }
+        }
+        
         //realizar salida de existencias
         //==============================================
         ref dventas=list.create()
-        pos_afectar_existencias=parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
+        
         if pos_afectar_existencias
         {
             ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo
@@ -359,17 +424,22 @@ module "lib.dk"
         sta_entrega= 3
         // if statusentrega == 0{sta_entrega= 1}
         //actualizar venta
+        icaja=dbr.num(db,"select icaja from corte where sys_pk=@icorte",postData)
         new venta
         {
             @"importeadicional":@@(postData,"#propina")
             @"statusadministrativo": 3
             @"statusentrega":sta_entrega
             @"statusfacturacion":1
-            @"icaja":dbr.num(db,"select icaja from corte where sys_pk=@icorte",movcaja)
+            @"icaja":icaja
             @"icorte":corte
-            @"imovcaja":idmovcaja
-            @"statusfinanciero": 2
+            // @"imovcaja":idmovcaja
         }
+        
+        if  @@(postData,"#idmovcaja") > 0{venta<"imovcaja">:@@(postData,"#idmovcaja")}
+
+        if icaja < 1{do field.remove(venta,"icaja")}
+
         if toupper(@@(rsource,"$service")) == "DS"{do field.remove(venta,"statusentrega")}
         do dbr.update(db,"venta",venta,"sys_pk=@venta",postData)
 
@@ -397,7 +467,7 @@ module "lib.dk"
         
         //obetner datos del ticket
         //folio de la venta
-        folio_factura=ticket.encode_folio(@@(response,"&fecha"),@@(response,"&sys_dtcreated"),@@(postData,"#venta"))
+        folio_factura=ticket.encode_folio(@@(response,"&fecha"),@@(response,"&sys_dtcreated"),from.json(@@(postData,"#venta")))
         
         using response
         {
@@ -411,7 +481,6 @@ module "lib.dk"
             // @"divisa*":divisa
             @"url_redir":"/comandas/?view=vw_principal&dmtm_token="+@@(datatoken,"$token")
         }
-        
         do dbr.commit(db)
 
         if pos_afectar_existencias && pos_produccion_al_cobrar == 2{do producir.x_ventas(db,params)}
@@ -566,6 +635,85 @@ module "lib.dk"
     
     
     //#region OBTENER DATOS
+    obtenerPrecioProducto::&db,&params
+    {
+        //#region PrecioProducto()
+        if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
+        decimals = @@(params,"#decimals")
+        cantidad = @@(params,"#cantidad")
+        precio = 0
+
+        // Determinar precio estándar, cliente o centro de consumo.
+        price_num = dbr.num(db,"select ifnull(precio,0) from cliente where sys_pk = @icliente",params)
+        if price_num == 6 { price_num = dbr.num(db,"select ifnull(precio,0) from cconsumo where sys_pk = @icconsumo",params) }
+        if price_num < 1{price_num= 1}
+        // Campo 'precio#' de la tabla 'producto'.
+        price_field = "precio"+str(price_num)
+
+        ref producto = dbr.rec(db,ftext("
+            select
+                ifnull(flaglimites,0) flaglimites,
+                ifnull(lim2,0) lim2,
+                ifnull(lim3,0) lim3,
+                ifnull(lim4,0) lim4,
+                ifnull(lim5,0) lim5,
+                ifnull(precio1,0) precio1,
+                ifnull(precio2,0) precio2,
+                ifnull(precio3,0) precio3,
+                ifnull(precio4,0) precio4,
+                ifnull(precio5,0) precio5,
+                (case @unidad
+                    when unidadb then factorb
+                    when unidadc then factorc
+                    when unidadd then factord
+                    when unidade then factore
+                    else 1
+                end) as factor,
+                ifnull(#<price_field>,0) AS PrecioA
+            from producto
+            where sys_pk = @iproducto
+        "),params)
+
+        PrecioA = round(producto.PrecioA, decimals)
+        PrecioB = 0
+        PrecioC = 0
+
+        // Determinar precio por límites.
+        if producto.flaglimites
+        {
+            if cantidad >= producto.lim2 { PrecioB = round(producto.precio2, decimals) }
+            if cantidad >= producto.lim3 { PrecioB = round(producto.precio3, decimals) }
+            if cantidad >= producto.lim4 { PrecioB = round(producto.precio4, decimals) }
+            if cantidad >= producto.lim5 { PrecioB = round(producto.precio5, decimals) }
+        }
+        // Determinar precio para un cliente y producto determinado.
+        ref precioventa = dbr.rec(db,"select ifnull(precio,0) precio, ifnull(limite,0) limite from precioventa where fk_cliente_listaprecios = @icliente and producto = @iproducto",params)
+        if not(isnull(precioventa)) && cantidad >= @@(precioventa,"#limite") { PrecioC = round(precioventa.precio, decimals) }
+
+        // Determinar valor del precio a devolver.
+        if PrecioC > 0 { precio = PrecioC }
+        else if PrecioB < PrecioA && PrecioB > 0 { precio = PrecioB }
+        else { precio = PrecioA }
+
+        new response
+        {
+            @"success": @true
+            @"precio": round(precio * @@(producto,"#factor"), decimals)
+        }
+        return response
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            if contains(error,"Unknown column") {
+                code = 404
+                error = "No fue posible obtener el precio del producto para el Cliente o Centro de consumo seleccionado. En su lugar se tomará el 'Precio 1'."
+            }
+            do rise_error(code,error)
+        }
+    }
     print.last_corte::&db,&params,&postData
     {
         do getVarsConfig()
@@ -874,29 +1022,33 @@ module "lib.dk"
 		// 		WHERE CONCAT_WS(' ',c.codigo,c.nombre) LIKE CONCAT('%',@s,'%');",params)
 
         return dbr.list(db,"SELECT
-            0 sys_pk,
+            c.sys_pk,
             c.codigo,
             c.nombre,
             c.telefonos telefono,
             CONCAT_WS(' ', d1.codpos, d1.colonia, d1.direccion) direccion,
-            '' notas
+            '' notas,
+            (IFNULL(limitecredito,0) = -1 OR IFNULL(limitecredito,0) > 0) credito
         FROM
             cliente c
             LEFT JOIN domicilio d1 ON c.domicilio1 = d1.sys_pk
-        WHERE
-            CONCAT_WS(' ', c.codigo, c.nombre,d1.codpos, d1.colonia, d1.direccion) LIKE CONCAT('%', @s, '%')
-        UNION
-        SELECT
-            d.sys_pk,
-            d.sys_pk codigo,
-            d.nombre,
-            d.telefono,
-            d.direccion,
-            d.notas
-        FROM
-            dmns_destino d
-        WHERE
-            CONCAT_WS(' ', d.telefono, d.nombre, d.direccion, d.notas,d.sys_pk) LIKE CONCAT('%', @s, '%');",params)
+        WHERE 
+         CONCAT_WS(' ', c.codigo, c.nombre,d1.codpos, d1.colonia, d1.direccion) LIKE CONCAT('%', @s, '%')
+        LIMIT 250
+        ",params)
+
+        // UNION
+        // SELECT
+        //     d.sys_pk,
+        //     d.sys_pk codigo,
+        //     d.nombre,
+        //     d.telefono,
+        //     d.direccion,
+        //     d.notas
+        // FROM
+        //     dmns_destino d
+        // WHERE
+        //     CONCAT_WS(' ', d.telefono, d.nombre, d.direccion, d.notas,d.sys_pk) LIKE CONCAT('%', @s, '%');
             
     }
     GetCategoriaByCodigo::&db,codcat
@@ -2366,11 +2518,6 @@ module "lib.dk"
 
         do addVentas(postData)
 
-        // do file.wtext("/usr/dkl_mxcvxii/_data/postData.json",to.json(postData))
-        // do file.wtext("/usr/dkl_mxcvxii/_data/details.json",to.json(details))
-        // do file.wtext("/usr/dkl_mxcvxii/_data/dic_orders.json",to.json(dic_orders))
-        // do file.wtext("/usr/dkl_mxcvxii/_data/params.json",to.json(params))
-
         do dbr.begin(db)
             do insert.ordenDorden(db,details,dic_orders)
             do updateinsert.ventaDventa(db,postData)
@@ -2440,7 +2587,7 @@ module "lib.dk"
             return order
         }
         //si es venta
-        if isnull(@@(postData,"&lventas")){postData<"lventas*">:record.create()}
+        postData<"lventas*">:record.create()
         postData<"lventas/"+clave+"*">:record.create()
         postData<"lventas/"+clave+"/dorden*">:list_dorden
 
@@ -2854,7 +3001,6 @@ module "lib.dk"
         }
         quantity=1
         ref dorden=dbr.rec(db,@getdorden_prod,data)
-        if isnull(dorden){ref dorden=dbr.rec(db,"SELECT d.cantidad,d.precio FROM dventa d WHERE d.iproducto=@producto AND d.fk_venta_detalle=@id_table;",data)}
 
         using data{@"pkorden":@@(dorden,"pkorden")}
         quantitycurrent=@@(dorden,"#cantidad")
@@ -2868,7 +3014,7 @@ module "lib.dk"
                 do dbr.execute(db,@updatedorden,data)
                 ref dv=dbr.rec(db,@getquantitydv,data)
                 cantidadv=@@(dv,"#cantidad")
-                
+
                 if cantidadv > 1
                 {
                     using data{@"cantidad":cantidadv - 1}
@@ -2896,7 +3042,7 @@ module "lib.dk"
                 do dbr.execute(db,@deleteadds,data)
                 do dbr.execute(db,@deletedorden,data)
                 if dbr.num(db,@countdorden,data)==0{do dbr.execute(db,@delete_orden,data)} 
-                do dbr.execute(db,@deletedvt,data)
+
                 do updateinsert.ventaDventa(db,p)      
                 
             }
@@ -3375,8 +3521,10 @@ module "lib.dk"
 
         ref datamesa=dbr.rec(db,@data_mesa,params)
         if isnull(datamesa){do rise_error(99,"No se encontro datos del ticket.")}
-
-        ref ticket=record.copyex(datamesa,@null,"*",",","code:mesa,reference:referencia,cliente:idcc,balance:total",":")
+        
+        ref ticket=record.caseinsensitive(record.copyex(datamesa,@null,"*",",","code:mesa,reference:referencia,cliente:idcc,balance:total",":"))
+        
+        ticket<"credito">: 0
         
         using p
         {
@@ -3428,9 +3576,11 @@ module "lib.dk"
 
         ticket<"entrega*">:entrega
         
-        if @count(list.create_from_fields(movcaja)) > 0
+        if @count(list.create_from_fields(movcaja)) > 0  || @@(ticket,"#formapago") == @fp_credito
         {
-            folio_factura=ticket.encode_folio(@@(ticket,"&fecha"),@@(ticket,"&sys_dtcreated"),@@(ticket,"#sys_pk"))
+            folio_factura=ticket.encode_folio(@@(ticket,"$fecha"),@@(ticket,"$sys_dtcreated"),from.json(@@(ticket,"$sys_pk")))
+            // er=getLastError()
+            // if folio_factura == ""{do rise_error(0,er)}
             using ticket
             {
                 @"propina":@@(ticket,"#importeadicional")
@@ -3439,6 +3589,12 @@ module "lib.dk"
                 @"folio_factura":folio_factura
             }
         }
+
+        if @@(ticket,"#formapago") == @fp_credito
+        {
+            ticket<"credito">: @@(ticket,"#total")
+        }
+
         return ticket
     }
     ticket.fpagos::&db,venta,_movcaja
@@ -3505,6 +3661,18 @@ module "lib.dk"
         where dv.fk_movcaja_detallevales=@_movcaja;",p)
 
         return movcaja
+    }
+    // EspecificarKind :: &mifecha, kind
+    // {
+    //     ref resultado = DateTimeSpecifyKind(mifecha, kind)
+    //     return resultado
+    // }
+    EspecificarKind :: &mifecha, kind
+    {
+        ref tipoKind   = _gettype(-1, "System.DateTimeKind")
+        ref valorKind  = EnumToObject(tipoKind, kind)        // construye el enum en runtime
+        ref resultado  = DateTimeSpecifyKind(mifecha, valorKind)
+        return resultado
     }
     ticket.comandas::&db,venta
     {

@@ -174,6 +174,40 @@ var views=
             })
 
             this.table_products_select=document.getElementById("tbody-products-selected");
+
+            //modulo de cobro
+            this.client_new = document.getElementById("client_new");
+            if(this.client_new)client_new.addEventListener("change",()=>{this.showBtnCredit();});
+      },
+      showBtnCredit()
+      {
+            let btn_sale_credit=document.getElementById("btn_sale_credit");
+            if(!btn_sale_credit)return;
+
+            if(!this.client_new)
+            {
+                  btn_sale_credit.classList.add("d-none");
+                  return;
+            }
+
+            let data=this.client_new.getValue();
+            if(!data || !data.credito)
+            {
+                  btn_sale_credit.classList.add("d-none");
+                  return;
+            }
+
+            if(data.credito)btn_sale_credit.classList.remove("d-none");
+      },
+      ValidateCredit()
+      {
+            if((controller.tarjeta.tbl_tarjetas && controller.tarjeta.tbl_tarjetas.DataArray.length > 0) || controller.tarjeta.Transactions.length > 0)
+            {
+                  alert("No puede pagar a crédito, ha agregado tarjetas");
+                  return false;
+            }
+
+            return true;
       },
       ShowDialog(iddialog="")
       {
@@ -1064,11 +1098,13 @@ var views=
             let lbl_impuestos=document.getElementById("lbl_impuestos");
             let id_account=document.getElementById("id_account");
             let btn_mdl_save_note=document.getElementById("btn_mdl_save_note");
+            let account_client=document.getElementById("account_client");
 
             lbl_subtotal.textContent="SubTotal: $ "+views.format(data.subtotal,controller.decimals,".",",")
             lbl_descuento.textContent="Descuento: $ "+views.format((data.d1??0) + (data.d2??0),controller.decimals,".",",")
             lbl_impuestos.textContent="Impuestos: $ "+views.format((data.i1+data.i2+data.i3+data.i4),controller.decimals,".",",")
             lblnotavnt.innerHTML=data.notetable;
+            if(account_client)account_client.textContent=`${data?.customer?.code ?? ""} ${data?.customer?.name ?? ""}`;
             // if(infvnt && data.notetable=="")
             //       infvnt.style.height="5rem";
             // else
