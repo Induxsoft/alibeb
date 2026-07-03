@@ -25,6 +25,297 @@ module "lib.dk"
     
 
     //#region PRCESOS
+    get_config::&db,cconsumo
+    {
+        cconsumo >> p
+        str_config=dbr.str(db,"SELECT config from cconsumo where sys_pk=@cconsumo",p)
+
+        if trim(str_config)!=""
+        {
+            return from.json(str_config)
+        }
+
+        // exception{}
+
+        new config
+		{
+			@"option":"any"
+			@"grupo":-1
+			@"clases*":from.json('["2","6"]')
+		}
+
+        return config
+    }
+    exist.value.num::&l,value
+    {
+        for i = 0; i < @count(l)
+        {
+            n=parse.num(list.str(l,i))
+            if n==value{return @true}
+        }
+        return @false
+    }
+    /*
+    *```
+    * transactions.globalpay ()
+    * Descripción: 
+    * Busca las transacciones realizadas con tarjeta en relació a la venta y devuelve la lista de transacciones
+    * Parámetros
+    *  - db conexion hacia la base de datos
+    *  - venta - sys_pk de la venta
+    * Summary
+    * puede muchas trasacciones canceladas , falladas, devoluciones pero está función devuelve las transacciones vigentes y con AuthResultCode='00'
+    *```
+    */
+    transactions.globalpay::&db,venta
+    {
+        ref ltransactions=list.create()
+        //verificar table de globalpay
+        exit_table_card_procesor=TableExist(db,"globalpay")
+        new p{@"idt":venta}
+        if exit_table_card_procesor
+        {
+            ref transactions=dbr.list(db,@sql_transaciones_realizadas,p)
+            for i = 0; i < @count(transactions)
+            {
+                ref trans=@item(transactions,i)
+                ref response=from.json(@@(trans,"$response"))
+                if @@(response,"$AuthResultCode") == "00"{do list.add(ltransactions,response)}
+            }
+        }
+
+        return ltransactions
+    }
+    ticket.cancel::&db,&params,&postData
+    {
+        ref movcaja=record.create()
+        ref venta=dbr.rec(db,ftext("SELECT 
+        v.sys_pk,
+        v.sys_guid,
+        v.`referencia`,
+        v.`statusadministrativo` as `statusadministrativo`,
+        v.`statusentrega` as `statusentrega`,
+        v.`statusfacturacion` as `statusfacturacion`,
+        v.`statusfinanciero` as `statusfinanciero`,
+        v.`formapago` as formapago,
+        v.`iagente` as `iagente`,
+        v.`icaja` as `icaja`,
+        v.`icconsumo` as `icconsumo`,
+        v.`icliente` as `icliente`,
+        v.`icorte` as `icorte`,
+        v.`idivisa` as `idivisa`,
+        v.`ifolio` as `ifolio`,
+        v.tipocambio,
+        ((((((IFNULL(v.subtotal,0)
+                - IFNULL(v.descuento1,0))
+                - IFNULL(v.descuento2,0))
+                + IFNULL(v.impuesto1,0))
+                + IFNULL(v.impuesto2,0))
+                + IFNULL(v.impuesto3,0))
+                + IFNULL(v.impuesto4,0)
+            ) AS total,
+        v.documento,
+        v.imovcaja
+        FROM venta v 
+        WHERE v.sys_pk=@id_table
+        AND V.statusadministrativo=#<@stt_adm_procesado>"),params)
+
+        if isnull(venta){do rise_error(404,"No se encontró la venta indicada o no esta disponible")}
+        corte= 0
+        do dbr.begin(db)
+        // 1. Se regresa la mercancía que haya salido con las  salvedades de la configuración
+        // verificar si la venta realizó salida de inventario
+        pk_cardex=dbr.num(db,"SELECT ifnull(sys_pk,0) FROM cardex WHERE (docventa=@sys_pk OR referencia=@referencia)",venta)
+        if pk_cardex > 0 // realizar entrada
+        {
+            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo,
+            (((IFNULL(dv.precio,0) * IFNULL(dv.cantidad,0)) - IFNULL(dv.descuento1,0)) - IFNULL(dv.descuento2,0)) AS cargos,
+            dv.tipocambio,v.icliente,p.iclase
+            FROM dventa dv 
+            INNER JOIN dcardex dc on dv.sys_pk=dc.rventa
+            INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+            INNER JOIN producto p ON dv.iproducto=p.sys_pk
+            WHERE v.sys_guid=@sys_guid;",venta)
+
+            ref config =get_config(db,@@(venta,"#icconsumo"))
+            
+            if @count(dventas) > 0
+            {
+                ref @LAST_DCARDEX=@null
+
+                //cargar configuracion del centro de consumo
+                almacen=@@(config,"#almacen")
+                if isanyword(@@(config,"$option"),"all,any") && almacen < 1{do rise_error(500,"No ha configurado un almacén de mermas y devoluciones en el centro de consumo")}
+
+                code_cat=dbr.vars.get(db,"v12.ventas.devinv")
+                code_cat >> _p
+                categoria=dbr.num(db,"SELECT ifnull(sys_pk,0) FROM categoria where codigo=@code_cat",_p)
+
+                if categoria < 1{do rise_error(500,"No ha configurado una categoría:  v12.ventas.devinv")}
+                
+                new cardex
+                {
+                    @"sys_guid":uuid()
+                    @"sys_dtcreated*":dbr.sql("now()")
+                    @"sys_timestamp*":dbr.sql("now()")
+                    @"sys_info":"flex-pos"
+                    @"sys_recver": 0
+                    @"descripcion":"Entrada por cancelación de venta: "+@@(venta,"$referencia")
+                    @"icategoria":categoria
+                    @"referencia":"DEV_"+@@(venta,"$referencia")
+                    @"fecha*":dbr.sql("now()")
+                    @"docventa":@@(venta,"#sys_pk")
+                }
+
+                do dbr.insert(db,"cardex",cardex)
+                cardex<"sys_pk">:dbr.num(db,"SELECT sys_pk FROM cardex WHERE sys_guid=@sys_guid",cardex)
+
+                for i = 0; i < @count(dventas)
+                {
+                    ref dv=@item(dventas,i)
+                    almacen=@@(dv,"#ialmacen")
+                    //verificar configuracion
+                    switch @@(config,"$option")
+                    {
+                        case "all"
+                        {
+                            almacen=@@(config,"#almacen")
+                            break
+                        }
+                        case "any"
+                        {
+                            if @@(config,"#grupo") < 1
+                            {
+                                //buscar por clase
+                                if exist.value.num(@@(config,"&clases"),@@(dv,"#iclase")){almacen=@@(config,"#almacen")}
+                            }
+                            else
+                            {
+                                if exist.value.num(@@(config,"&clases"),@@(dv,"#iclase"))
+                                {
+                                    new p
+                                    {
+                                        @"grupo":@@(config,"#grupo")
+                                        @"producto":@@(dv,"#iproducto")
+                                    }
+                                    if dbr.num(db,"SELECT ifnull(sys_pk,0) FROM grupoproductos_producto_ gp WHERE gp.igrupos=@grupo AND gp.iproductos=@producto;",p) > 0
+                                    {
+                                        almacen=@@(config,"#almacen")
+                                    }
+                                }
+                            }
+                            break
+                        }
+                    }
+                    cantidad=@@(dv,"#cantidad")
+                    new dcardex
+                    {
+                        @"sys_guid":uuid()
+                        @"sys_dtcreated*":dbr.sql("now()")
+                        @"sys_timestamp*":dbr.sql("now()")
+                        @"sys_info":"flex-pos"
+                        @"sys_recver": 0
+                        @"ialmacen":almacen
+                        @"iproducto":@@(dv,"#iproducto")
+                        @"referencia":cut(uuid(),30)
+                        @"entradas": cantidad
+                        @"salidas":0
+                        @"rventa":@@(dv,"#sys_pk")
+                        @"fk_cardex_movimientos":@@(cardex,"#sys_pk")
+                        @"cargos":@@(dv,"#cargos")
+                    }
+
+                    do dbr.insert(db,"dcardex",dcardex)
+                }
+                do erp.inventario.aplicar_mov(db,@@(cardex,"#sys_pk"),@false)
+            }
+        }
+        // 2. Se devuelve el efectivo (ojo si se procesó una tarjeta) o se aplica nota de crédito (cxc) si fue a crédito
+        if @@(venta,"#formapago") == @fp_credito
+        {
+            // Liberar a las cotizaciones o pedidos relacionados (`aplicadoa` y `xfacturar`).
+            params<"_entity_id">:dbr.num(db,"SELECT sys_pk FROM dcxc d WHERE d.iventa=@sys_pk AND d.documento=@documento",venta)
+            doctype = ftext("#<@cCotizacion>,#<@cPedido>")
+            do dbr.execute(db,ftext(@qry_liberar_documentos),params)
+
+            // Realizar la entrada de todos los productos que salieron por este documento al mismo costo de la salida.
+            // do erp.ventas.procesos.cancelacion(db,@@(venta,"#sys_pk"))
+            // Generar un movimiento a CxC inverso al que hubiere generado.
+            do erp.ventas.procesos.reverseCxC(db,@@(venta,"#sys_pk"))
+
+            movcaja<"reload">:@true
+        }
+        //efectivo o cualquier movimiento de caja
+        if @@(venta,"#imovcaja") > 0
+        {
+            //verificar efectivo,tarjeta,depositos,vale
+            //realizar retiro
+            ref saldos=dbr.rec(db,"SELECT m.sys_pk,m.tarjetas,
+            m.vales,m.depositos,m.efectivo,m.cheques
+            FROM movcaja m WHERE m.sys_pk=@imovcaja;",venta)
+
+            cheques=@@(saldos,"#cheques")
+            vales=@@(saldos,"#vales")
+            depositos=@@(saldos,"#depositos")
+            tarjetas =@@(saldos,"#tarjetas")
+            efectivo=@@(saldos,"#efectivo")
+
+            tsaldos=cheques + vales + depositos + tarjetas + efectivo
+
+            /*
+             * Summary:
+             * Si existe saldo en la caja en relacion a la venta , realizar un retiro de todo
+             * 
+             */
+            if tsaldos > 0
+            {
+                cat_devefec=dbr.vars.get(db,"v12.ventas.devefec")
+
+                if cat_devefec==""{do rise_error(500,"No ha configurado una categoría para realizar el egreso por cancelación de venta 'v12.ventas.devefec' ")}
+                ref movcaja_egreso_fpagos=_CopyFieldsMov(PrepareMovCaja(db,GetCategoriaByCodigo(db,cat_devefec),0,"Devolución de mercancía por documento:"+@@(venta,"$referencia")))
+                
+                movcaja_egreso_fpagos<"referencia">:"DEV_"+@@(venta,"$referencia")
+                
+                if cheques > 0{movcaja_egreso_fpagos<"cheques">:cheques * -1}
+                if vales > 0{movcaja_egreso_fpagos<"vales">:vales * -1}
+                if tarjetas > 0{movcaja_egreso_fpagos<"tarjetas">:tarjetas * -1}
+                if depositos > 0{movcaja_egreso_fpagos<"depositos">:depositos * -1}
+                if efectivo > 0{movcaja_egreso_fpagos<"efectivo">:efectivo * -1}
+
+                corte >> movcaja_egreso_fpagos
+                movcaja_egreso_fpagos<"documento">:@DOCUMENTO_EGRESO
+                ref movcaja=_insertMovcaja(db,movcaja_egreso_fpagos)
+
+                /*
+                 * Summary:
+                 * Obtener datos del retiro(egreso) para imprimirlo como ticket
+                 * - el objeto printer es importante ya que el js verifica si viene y así dispara a imprimir los datos
+                 */
+                movcaja<"printer*">:PrintIngresoEgreso(db,movcaja,"EGRESO",@@(postData,"&_config_prn"),@false)
+            }
+        }
+        //verificar si existen transacciones de globalpay
+        ref trans=transactions.globalpay(db,@@(venta,"#sys_pk"))
+        if @count(trans) > 0{movcaja<"message">:"Se ha cancelado la venta mas sin embargo existe transacciones realizas con globalpay, dirijase al módulo de cancelación de transacciones y realice la cancelación de la venta: "+@@(venta,"$referencia")}
+        // 3. Se marca la venta como "Cancelada"
+        new status
+        {
+            @"statusadministrativo":@stt_adm_cancelado
+            @"statusentrega":@stt_ent_na
+            @"statusfinanciero":@stt_fin_na
+        }
+        do dbr.update(db,"venta",status,"sys_pk=@sys_pk",venta)
+
+        do dbr.commit(db)
+
+        return movcaja
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(500,last_error())
+        }
+    }
     change.client::&db,&params,&postData
     {
         if dbr.num(db,"SELECT sys_pk FROM venta where sys_pk=@id_table",params) < 1{do rise_error(500,"No se encontró la cuenta indicado")}
@@ -196,7 +487,6 @@ module "lib.dk"
 
         return data
     }
-    
     
     mesa.cobrar::&db,&params,&postData
     {
@@ -382,7 +672,9 @@ module "lib.dk"
                 @"icategoria":categoria
                 @"referencia":@@(rsource,"$reference")
                 @"fecha*":dbr.sql("now()")
+                @"docventa":@@(postData,"#venta")
             }
+
             do dbr.insert(db,"cardex",cardex)
             cardex<"sys_pk">:dbr.num(db,"SELECT sys_pk FROM cardex WHERE sys_guid=@sys_guid",cardex)
 
@@ -402,7 +694,7 @@ module "lib.dk"
                     @"referencia":cut(uuid(),30)
                     @"entradas": 0
                     @"salidas":cantidad
-                    @"rventa":@@(rsource,"#sys_pk")
+                    @"rventa":@@(dv,"#sys_pk")
                     @"fk_cardex_movimientos":@@(cardex,"#sys_pk")
                 }
 
@@ -411,7 +703,7 @@ module "lib.dk"
 
                 do dbr.insert(db,"dcardex",dcardex)
             }
-            do erp.inventario.aplicar_mov(db,@@(cardex,"#sys_pk"),@false)
+            do erp.inventario.aplicar_mov(db,@@(cardex,"#sys_pk"),@true)
         }
         //=========================================================
         //cargar datos del ticket antes de actualizar el estado de la venta
@@ -569,10 +861,10 @@ module "lib.dk"
         ref saldos=GetSaldoCorte(db,corte)
         cheques=@@(saldos,"#cheques")
         vales=@@(saldos,"#vales")
-        despositos=@@(saldos,"#despositos")
+        depositos=@@(saldos,"#depositos")
         tarjetas =@@(saldos,"#tarjetas")
 
-        tsaldos=cheques + vales + despositos + tarjetas
+        tsaldos=cheques + vales + depositos + tarjetas
         if tsaldos > 0
         {
             if pos_cat_retiro_otras_fpago==""{do rise_error(500,"No ha configurado una categoría para realizar el retiro de otras formas de pagos 'pos_cat_retiro_otras_fpago' ")}
@@ -581,7 +873,7 @@ module "lib.dk"
             if cheques > 0{movcaja_egreso_fpagos<"cheques">:cheques * -1}
             if vales > 0{movcaja_egreso_fpagos<"vales">:vales * -1}
             if tarjetas > 0{movcaja_egreso_fpagos<"tarjetas">:tarjetas * -1}
-            if despositos > 0{movcaja_egreso_fpagos<"despositos">:despositos * -1}
+            if depositos > 0{movcaja_egreso_fpagos<"depositos">:depositos * -1}
 
             corte >> movcaja_egreso_fpagos
             movcaja_egreso_fpagos<"documento">:@DOCUMENTO_EGRESO
@@ -744,7 +1036,30 @@ module "lib.dk"
     {
         ref caja=GetCaja(db)
         params<"caja">:@@(caja,"#caja")
-        return dbr.list(db,ftext(@tickets_procesados),params)
+        @conditionals=""
+        sql=@tickets_procesados
+        switch tolower(@@(params,"$condition"))
+        {
+            case "where"
+            {
+                if trim(@@(params,"$search")) !=""{@conditionals="AND v.`referencia`=@search"}
+                break
+            }
+            case "like"
+            {
+                if trim(@@(params,"$search")) !=""{@conditionals="AND v.`referencia` LIKE CONCAT('%',@search,'%')"}
+                break
+            }
+            default
+            {
+                if trim(@@(params,"$search")) != ""
+                {
+                    @conditionals="AND CONCAT_WS(' ',v.`referencia`) LIKE CONCAT('%',@search,'%')"
+                }
+                break
+            }
+        }
+        return dbr.list(db,ftext(sql),params)
     }
     get.productos::&db,&params
     {
@@ -1168,7 +1483,7 @@ module "lib.dk"
     GetSaldoCorte::&db,corte
     {
         new p{@"corte":corte}
-        sql="SELECT SUM(total) AS total,SUM(efectivo)AS efectivo,SUM(cheques)cheques,SUM(vales)vales,SUM(depositos)despositos,SUM(tarjetas)tarjetas 
+        sql="SELECT SUM(total) AS total,SUM(efectivo)AS efectivo,SUM(cheques)cheques,SUM(vales)vales,SUM(depositos)depositos,SUM(tarjetas)tarjetas 
         from qryDetalleCorte where icorte=@corte;"
 
         return dbr.rec(db,sql,p)

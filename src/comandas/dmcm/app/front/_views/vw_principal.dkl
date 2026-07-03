@@ -189,6 +189,7 @@ module "terminal de mesero"
 							{
 								li{a(href="#<preserveQSParams('./?view=printer_tickets')>"){"Reimpresión de ticket"}}
 								li{a(href="#" onclick="controller.PrintCorte()"){"Imprimir el último corte de caja"}}
+								li{a(href="#<preserveQSParams('./?view=cancel-tickets&action=cancel-ticket')>"){"Cancelar ticket"}}
 								li{a(href="#" onclick="toggleDebug()"){$"Activar / desactivar debug"}}
 							}
 						}

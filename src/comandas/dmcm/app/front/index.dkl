@@ -106,6 +106,15 @@ module "index"
 			file_include=path.concat(@path_view,"vw_fpagos.dkl")
 			break
 		}
+		case "cancel-tickets"
+		{
+			@GET<"--action">:"cancel-ticket"
+			@GET<"--search">:@true
+			@GET<"--condition">:"where"
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"vw_tickets.dkl")
+			break
+		}
 		default
 		{
 			@token=""

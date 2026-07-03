@@ -506,12 +506,17 @@ module "lista de consultas"
                     ) + v.`impuesto2`
                 ) + v.`impuesto3`
             ) + v.`impuesto4`
-        ) as `total`
+        ) as `total`,
+    fp.const fpago,
+    concat_ws(' ',cl.codigo,cl.nombre)cliente
     from
         venta as v 
+        INNER JOIN cliente cl ON v.icliente = cl.sys_pk
+        LEFT JOIN cformaspago fp on v.formapago=fp.id
     where
         v.`statusadministrativo` = 3
         AND v.icaja=@caja
+        #<@conditionals>
     ORDER BY v.sys_dtcreated DESC
     LIMIT 50;"
 

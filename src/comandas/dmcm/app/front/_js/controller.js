@@ -1750,12 +1750,12 @@ var controller=
       views.search_prod.focus();
       data_foodbev=[];
     },
-    loadTickets()
+    loadTickets(action="",params="")
     {
-      var uri=`${url}pos/dinner/load-tickets/`;
+      var uri=`${url}pos/dinner/load-tickets/`+params;
       let tbody_tickets=document.getElementById("tbody-tickets");
       if(!tbody_tickets)return;
-
+      console.log(uri)
       views.toggle(document.body,false,"","Cargando, por favor espere...");
         model.invoke_service(uri,null,(data) =>
         {
@@ -1766,8 +1766,20 @@ var controller=
             html+=`<tr>`;
             html+=`<td>${row.referencia}</td>`;
             html+=`<td>${row.creacion}</td>`;
+            html+=`<td>${row.fpago??""}</td>`;
+            html+=`<td>${row.cliente??""}</td>`;
             html+=`<td>$ ${views.format(row.total,controller.decimals,".",",")}</td>`;
-            html+=`<td><button class="btn rounded-0" onclick="controller.reprint(${row.sys_pk})">Imprimir</button></td>`;
+
+            switch(action)
+            {
+              case "cancel-ticket":
+                html+=`<td><button class="btn rounded-0" onclick="controller.cancel_ticket(${row.sys_pk})">Cancelar</button></td>`;
+                break;
+              default:
+                html+=`<td><button class="btn rounded-0" onclick="controller.reprint(${row.sys_pk})">Imprimir</button></td>`;
+              break;
+            }
+            
             html+=`</tr>`;
           });
 
@@ -1778,6 +1790,36 @@ var controller=
           alert(error.message);
           views.toggle(document.body,true);
         },"GET",false);
+    },
+    cancel_ticket(ticket,callback=null)
+    {
+      if(!confirm("¿Está seguro de cancelar la venta?"))return;
+      var uri=`${url}pos/dinner/cancel-ticket/?id_table=${ticket}`;
+      var data=
+      {
+        action:"cancel-ticket"
+      }
+
+      model.invoke_service(uri,data,(data) =>
+      {
+        if(callback)callback(data);
+        views.toggle(document.body,true);
+        if(data.message)alert(data.message);
+        if(data.reload)window.location.reload();
+        if(data.href)window.location.href=data.href;
+
+        if(data.printer)model_prn.print_egreso(data.printer,
+          ()=>
+          {
+            views.trigger("#search","change");
+          });
+
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.toggle(document.body,true);
+      },"PATCH",false);
     },
     SaveFPago(idtable,callback=null,reload=true)
     {

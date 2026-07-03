@@ -1,0 +1,12 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.vars.dkl"
+    @SITE_INCLUDES="config.dk,list_query.dk"
+    #include "website.dkl"
+
+
+}
