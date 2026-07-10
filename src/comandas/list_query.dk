@@ -96,7 +96,7 @@ module "lista de consultas"
     @prodc="select cp.sys_pk,cp.codigo from cproduccion cp where cp.codigo=@code"
 
     @dataventa="select v.sys_pk,v.dmnsmesa,v.referencia,
-    if(ifnull(sys_info,'')='','SM',sys_info)servicio 
+    if(ifnull(sys_info,'')='','SM',sys_info)servicio,v.tipocambio
     from venta v where v.sys_guid=@id_table"
 
     @dataorden="select importe from orden where iventa=@sys_pk"

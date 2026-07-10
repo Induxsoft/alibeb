@@ -510,7 +510,8 @@ module "lib.dk"
             qv.tipocambio AS 'tcambio',
             qv.sys_info as service,
             qv.documento,
-            c.diascredito
+            c.diascredito,
+            qv.formapago
         from
             qventasserviciomesa qv
             INNER JOIN cliente c on qv.icliente=c.sys_pk
@@ -563,11 +564,12 @@ module "lib.dk"
         ref movcaja=record.create()
 
         pos_afectar_existencias=parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
-
+        
         switch @mpago
         {
             case "credito"
             {
+                @venta_fpago=@fp_credito
                 new data
                 {
                     @"procesar_salida":@false //no realizar salida, para tener mas control en las salidas
@@ -583,6 +585,12 @@ module "lib.dk"
             }
             default
             {
+                @venta_fpago=@fp_contado
+                code_cat=dbr.vars.get(db,"pos_cat_movcaja")
+                code_cat >> _p
+                categoria=dbr.num(db,"SELECT ifnull(sys_pk,0) FROM categoria where codigo=@code_cat",_p)
+                if categoria < 1{do rise_error(500,"No ha configurado una categoría:  pos_cat_movcaja")}
+
                 new movcaja
                 {
                     @"sys_recver": 0
@@ -604,7 +612,7 @@ module "lib.dk"
                     @"tarjetas":@@(postData,"#importe_tarjeta")
                     @"tipocambio": @@(rsource,"#tcambio")
                     @"vales": 0
-                    @"icategoria":5
+                    @"icategoria":categoria
                     @"icorte": corte 
                     @"idivisa":@@(rsource,"#divisa")
                 }
@@ -643,7 +651,8 @@ module "lib.dk"
         
         if pos_afectar_existencias
         {
-            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo
+            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo,
+            ((IFNULL(dv.precio,0) * ifnull(dv.cantidad,0)) - IFNULL(dv.descuento1,0) - IFNULL(dv.descuento2,0)) AS abonos
             FROM dventa dv 
             INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
             INNER JOIN producto p ON dv.iproducto=p.sys_pk
@@ -660,50 +669,17 @@ module "lib.dk"
             categoria=dbr.num(db,"SELECT ifnull(sys_pk,0) FROM categoria where codigo=@code_cat",_p)
 
             if categoria < 1{do rise_error(500,"No ha configurado una categoría:  v12.ventas.salida")}
-            
-            new cardex
-            {
-                @"sys_guid":uuid()
-                @"sys_dtcreated*":dbr.sql("now()")
-                @"sys_timestamp*":dbr.sql("now()")
-                @"sys_info":"flex-pos"
-                @"sys_recver": 0
-                @"descripcion":"Aplicado por venta con referencia: "+@@(rsource,"$reference")
-                @"icategoria":categoria
-                @"referencia":@@(rsource,"$reference")
-                @"fecha*":dbr.sql("now()")
-                @"docventa":@@(postData,"#venta")
-            }
 
-            do dbr.insert(db,"cardex",cardex)
-            cardex<"sys_pk">:dbr.num(db,"SELECT sys_pk FROM cardex WHERE sys_guid=@sys_guid",cardex)
-
-            for i = 0; i < @count(dventas)
-            {
-                ref dv=@item(dventas,i)
-                cantidad=@@(dv,"#cantidad")
-                new dcardex
-                {
-                    @"sys_guid":uuid()
-                    @"sys_dtcreated*":dbr.sql("now()")
-                    @"sys_timestamp*":dbr.sql("now()")
-                    @"sys_info":"flex-pos"
-                    @"sys_recver": 0
-                    @"ialmacen":@@(dv,"#ialmacen")
-                    @"iproducto":@@(dv,"#iproducto")
-                    @"referencia":cut(uuid(),30)
-                    @"entradas": 0
-                    @"salidas":cantidad
-                    @"rventa":@@(dv,"#sys_pk")
-                    @"fk_cardex_movimientos":@@(cardex,"#sys_pk")
-                }
-
-                if @@(dv,"#costopromedio") > 0{dcardex<"abonos">:@@(dv,"#costopromedio") * cantidad}
-                else{dcardex<"abonos">:@@(dv,"#costoultimo") * cantidad }
-
-                do dbr.insert(db,"dcardex",dcardex)
-            }
-            do erp.inventario.aplicar_mov(db,@@(cardex,"#sys_pk"),@true)
+            /*
+             * Summary:
+             * - Crear cardex de la salida del invetario
+             */
+            mov_sys_pk=erp.ventas.procesos.salidaInventario(db,@@(postData,"#venta"),categoria)
+            /*
+             * Summary:
+             * - Aplicar movimiento de salida
+             */
+            if mov_sys_pk > 0{do erp.inventario.aplicar_mov(db,mov_sys_pk,@true)}
         }
         //=========================================================
         //cargar datos del ticket antes de actualizar el estado de la venta
@@ -714,7 +690,11 @@ module "lib.dk"
 
         statusentrega=dbr.num(db,"SELECT statusentrega from venta where sys_pk=@venta",postData)
         sta_entrega= 3
-        // if statusentrega == 0{sta_entrega= 1}
+        
+        /*
+         * Summary:
+         * - Preparar datos para actualizar la venta
+         */
         //actualizar venta
         icaja=dbr.num(db,"select icaja from corte where sys_pk=@icorte",postData)
         new venta
@@ -725,7 +705,7 @@ module "lib.dk"
             @"statusfacturacion":1
             @"icaja":icaja
             @"icorte":corte
-            // @"imovcaja":idmovcaja
+            @"formapago":@venta_fpago
         }
         
         if  @@(postData,"#idmovcaja") > 0{venta<"imovcaja">:@@(postData,"#idmovcaja")}
@@ -734,6 +714,12 @@ module "lib.dk"
 
         if toupper(@@(rsource,"$service")) == "DS"{do field.remove(venta,"statusentrega")}
         do dbr.update(db,"venta",venta,"sys_pk=@venta",postData)
+
+        /*
+         * Summary:
+         * - Actualizar estado de la venta
+         */
+         do erp.ventas.procesos.setStatus(db,@@(postData,"#venta"),@venta_fpago)
 
         //órdenes pendientes
         ref ordenes=dbr.list(db,"SELECT o.*
@@ -746,6 +732,10 @@ module "lib.dk"
 
         pos_produccion_al_cobrar=parse.num(GetVars("pos_produccion_al_cobrar"))
         // configuracion pos_produccion_al_cobrar total estricta
+        /*
+         * Summary:
+         * - Producir el producto final si la configuración es modo estricta
+         */
         if pos_afectar_existencias && pos_produccion_al_cobrar == 1{do producir.x_ventas(db,params)}
         //ACTULIZAR ORDEN
         
@@ -775,6 +765,10 @@ module "lib.dk"
         }
         do dbr.commit(db)
 
+        /*
+         * Summary:
+         * - Producir el producto final si el modo es ejecución fléxible
+         */
         if pos_afectar_existencias && pos_produccion_al_cobrar == 2{do producir.x_ventas(db,params)}
 
         postData<"data_ticket*">:response
@@ -3257,7 +3251,7 @@ module "lib.dk"
             @"Impuesto2":0
             @"Impuesto4":0
             @"Status":1
-            @"TipoCambio":1
+            @"TipoCambio":if(@@(dataVenta,"#tipocambio")> 0,@@(dataVenta,"#tipocambio"),1)
             @"IAlmacen":ialmacen
             @"FK_Venta_Detalle":@@(dataVenta,"#sys_pk")
         }
