@@ -73,6 +73,12 @@ module "form.dk"
                     label(class="form-check-label" "for"="check_visible"){$"Visible en punto de venta"}
                     input(type="hidden" name="visible" id="ipt_visible" value="#<@@(linea,'#visible')>")
                 }
+                div(class="form-check")
+                {
+                    input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_sys_info" "#<ifstr(@@(linea,'$sys_info')=='HIDDEN','checked','')>"="true" onchange="document.getElementById('sys_info').value = !this.checked ? '' : 'HIDDEN'")
+                    label(class="form-check-label" "for"="check_sys_info"){$"Visible en E-commerce"}
+                    input(type="hidden" name="sys_info" id="sys_info" value="#<@@(linea,'$sys_info')>")
+                }
                 div(class="row mb-2 mt-3")
                 {
                     div(class="col-12")

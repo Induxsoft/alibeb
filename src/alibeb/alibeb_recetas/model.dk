@@ -151,7 +151,7 @@ module "model"
 
         sql_producto = "
             SELECT
-                p.sys_pk, p.sys_recver, p.codigo, p.descripcion, IFNULL(p.ilinea,'') ilinea, 
+                p.sys_pk, p.sys_recver,p.sys_info, p.codigo, p.descripcion, IFNULL(p.ilinea,'') ilinea, 
                 IFNULL(p.idepartamento,'') idepartamento, p.itipo, IFNULL(p.idivisa,'') idivisa,
                 IFNULL(p.codbar1,'') codbar1, IFNULL(p.codbar2,'') codbar2, IFNULL(p.codbar3,'') codbar3,
                 IFNULL(p.visible,0) visible, p.unidad, IFNULL(p.factorb,1) factorb, IFNULL(p.unidadB,'') unidadB,

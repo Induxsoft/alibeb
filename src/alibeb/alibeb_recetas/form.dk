@@ -191,6 +191,13 @@ module "form.dk"
                                 label(class="form-check-label" "for"="check_view_pv"){small{$"Visible en Punto de Venta"}}
                                 input(type="hidden" name="visible" id="ipt_visible" value="#<field.dnum(producto,'visible',1)>")
                             }
+
+                            div(class="form-check")
+                            {
+                                input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_sys_info" "#<ifstr(@@(producto,'$sys_info')=='HIDDEN','checked','')>"="true" onchange="document.getElementById('sys_info').value = !this.checked ? '' : 'HIDDEN'")
+                                label(class="form-check-label" "for"="check_sys_info"){$"Visible en E-commerce"}
+                                input(type="hidden" name="sys_info" id="sys_info" value="#<@@(producto,'$sys_info')>")
+                            }
                         }
                         div(class="py-3 row")
                         {
