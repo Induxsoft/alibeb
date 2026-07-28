@@ -75,7 +75,7 @@ module "form.dk"
                 }
                 div(class="form-check")
                 {
-                    input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_sys_info" "#<ifstr(@@(linea,'$sys_info')=='HIDDEN','checked','')>"="true" onchange="document.getElementById('sys_info').value = !this.checked ? '' : 'HIDDEN'")
+                    input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_sys_info" "#<ifstr(@@(linea,'$sys_info')=='HIDDEN','','checked')>"="true" onchange="document.getElementById('sys_info').value = this.checked ? '' : 'HIDDEN'")
                     label(class="form-check-label" "for"="check_sys_info"){$"Visible en E-commerce"}
                     input(type="hidden" name="sys_info" id="sys_info" value="#<@@(linea,'$sys_info')>")
                 }
