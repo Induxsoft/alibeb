@@ -84,7 +84,8 @@ module "form.dk"
                     div(class="col-12")
                     {
                         label(class="mb-1"){$"Instrucciones de preparación:"}
-                        textarea(class="induxsoft-form-control mb-2" name="uf_indicaciones" rows="12"){$"#<@@(linea,'$uf_indicaciones')>"}
+                        textarea(class="induxsoft-form-control mb-2" name="uf_indicaciones" rows="12" id="uf_indicaciones"){$"#<@@(linea,'$uf_indicaciones')>"}
+                        $'<tag-man sync="uf_indicaciones" placeholder="Agregar indicación…"></tag-man>'
                     }
                 }
                 hr{""}
@@ -107,6 +108,7 @@ module "form.dk"
             }
         }
         script(src="#<@JS_LINEA>"){$""}
+        script(src="/$/alibeb/js/tag-man.js"){$""}
         script
         {
             $'

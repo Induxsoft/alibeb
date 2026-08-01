@@ -1797,7 +1797,7 @@ function agregarProducto(prod)
 //     }
       if (!seleccion[grupoActual].has(prod.sys_pk)) 
       {
-        seleccion[grupoActual].set(prod.sys_pk,min);
+        seleccion[grupoActual].set(prod.sys_pk,1);//min
     }
     else cambiarCantidadProducto(productoSeleccionado, 1);
     

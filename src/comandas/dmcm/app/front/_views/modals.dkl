@@ -84,7 +84,7 @@
     }
 
     //*******************modal indicaciones****************************************
-    div(id="modal-indicaciones" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+    div(id="modal-indicaciones" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important;z-index: 1000;")
     {
         $""
          div(class="control-x" onclick="controller.hide_modal(\'#modal-indicaciones\');")
@@ -109,21 +109,21 @@
                 button(class="btn card-border" id="time_4" value="4" onclick="controller.time(this);"){"4"}
                 button(class="btn card-border" id="time_5" value="5" onclick="controller.time(this);"){"5"}
            }
-           div(class="card w-100 card-border mb-2" id="div-multiples" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
+           div(class="card w-100 card-border mb-2 p-2" id="div-multiples" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
            {
             $""
            }
-           div(class="card w-100 card-border mb-2 div-singles" id="div-singles" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
+           div(class="card w-100 card-border mb-2 div-singles p-2" id="div-singles" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
            {
             $""
            }
-           div(class="card w-100 card-border mb-2")
+           div(class="card w-100 card-border mb-2 p-2")
            {
                 div(class="d-grid" id="modl_indicaciones" style="grid-template-columns: repeat(auto-fill, 9rem);gap: 2px;")
                 {$""
                 }
                 label{"Notas:"}br{}
-                textarea(class="form-control" id="txtnotas-indicacion" rows="6"){$""}
+                textarea(class="form-control w-100" id="txtnotas-indicacion" rows="6"){$""}
            }
         }
         div(class="footer text-end")
@@ -289,7 +289,7 @@ div(class="modal fade " id="modal-home-delivery" tabindex="-1" "data-bs-backdrop
 }
 
 //******************* modal recetas variables ****************************************
-div(id="modal-recetas-variables" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+div(id="modal-recetas-variables" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important;z-index: 1000;")
 {
     div(class="d-flex" id="btn_close_mdl_prods_vars" )//onclick="controller.hide_modal(\'#modal-recetas-variables\');"
     {
