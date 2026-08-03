@@ -88,6 +88,21 @@ module "form.dk"
                         $'<tag-man sync="uf_indicaciones" placeholder="Agregar indicación…"></tag-man>'
                     }
                 }
+
+                div(class="form-check")
+                {
+                    input(class="form-check-input induxsoft-corners genrl-check" type="checkbox" id="check_uf_req_indicaciones" "#<ifstr(@@(linea,'#uf_req_indicaciones'),'checked','')>"="true" onchange="document.getElementById('uf_req_indicaciones').value = this.checked?1:0")
+                    label(class="form-check-label" "for"="check_uf_req_indicaciones"){$"Siempre requerir indicaciones"}
+                    input(type="hidden" name="uf_req_indicaciones" id="uf_req_indicaciones" value="#<@@(linea,'#uf_req_indicaciones')>")
+                }
+
+                div
+                {
+                    label(class="form-label" "for"=""){"Notas:"}
+                    textarea(class="form-control" name="notas" id=""){"#<@@(linea,'$notas')>"}
+                }
+                
+
                 hr{""}
                 input(type="file" class="induxsoft-form-control d-none" id="line_file" name="line_file"  accept=".png, .jpg, .jpeg")
                 label(class="btn btn-sm btn-secondary induxsoft-corners" "for"="line_file" id="lbl_file"){"Asignar imagen a esta línea"}

@@ -345,6 +345,7 @@ model "alibeb"
         @"notas" memo
         @"visible" bool
         @"uf_indicaciones" string(1024)
+        @"uf_req_indicaciones" bool
     }
     entity "producto" : "TableModel"
     {

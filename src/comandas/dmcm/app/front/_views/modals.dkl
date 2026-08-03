@@ -122,7 +122,8 @@
                 div(class="d-grid" id="modl_indicaciones" style="grid-template-columns: repeat(auto-fill, 9rem);gap: 2px;")
                 {$""
                 }
-                label{"Notas:"}br{}
+                br{}
+                label{"Notas:"}
                 textarea(class="form-control w-100" id="txtnotas-indicacion" rows="6"){$""}
            }
         }

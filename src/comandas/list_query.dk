@@ -415,7 +415,7 @@ module "lista de consultas"
     ) q where visible<>0 and icproduccion=@prodc" // inyeccion sql con funcion In para definir las clases a mostrar
 
     @all_lines="select sys_pk as 'sys_pk',codigo,descripcion as 'description', color as 'color' from linea where visible<>0 and clase IN(#<@@(@config_default,'$class_prod')>) order by linea.codigo;"
-    @line="select sys_pk,codigo as code,descripcion as description,uf_indicaciones as indicaciones,clase from linea where sys_pk=@line"
+    @line="select sys_pk,codigo as code,descripcion as description,uf_indicaciones as indicaciones,clase,uf_req_indicaciones from linea where sys_pk=@line"
 
     @bars_prod="select db.nombre as 'name',if(db.tipo=0,'single','multiple')as 'type',ds.auto as 'required',
                 db.opciones as 'values'
