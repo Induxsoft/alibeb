@@ -1,0 +1,213 @@
+#include "dkli.dkh"
+#!
+program "Consulta el menú del Punto de Venta V12"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.vars.dkl"
+    #include "lib.sise.dk"
+    #include "comandas/impuesto.dk"
+
+    function GetLines(&db)
+    {
+        clases = ""
+
+        if parse.bool(dbr.vars.get(db,"pos_mostrar_recetas")) { clases = clases + "2," }
+        if parse.bool(dbr.vars.get(db,"pos_mostrar_servicios")) { clases = clases + "3," }
+        if parse.bool(dbr.vars.get(db,"pos_mostrar_articulos")) { clases = clases + "4," }
+
+        if clases == "" { return list.create() }
+        else { clases = rremove(clases,1) }
+
+        sql = ftext("
+        SELECT
+            l.sys_pk,
+            l.codigo,
+            l.descripcion,
+            l.uf_req_indicaciones,
+            l.uf_indicaciones
+        FROM
+            linea l
+        WHERE
+            NOT ifnull(l.sys_deleted,0)
+            AND ifnull(l.visible,1) = 1
+            AND l.clase IN (#<clases>);
+        ")
+
+        return dbr.list(db,sql,@null)
+    }
+
+    function GetRecipesByLine(&db,ilinea)
+    {
+        sql = ftext("
+        SELECT
+            p.sys_pk,
+            p.codigo,
+            p.descripcion,
+            p.precio1,
+            p.precio2,
+            p.precio3,
+            p.precio4,
+            p.precio5,
+            p.notas,
+            i.i1venta,
+            i.i2venta,
+            i.i3venta,
+            i.i4venta
+        FROM
+            producto p
+            INNER JOIN cfgimpuesto AS i ON p.impuestos = i.sys_pk
+        WHERE
+            NOT ifnull(p.sys_deleted,0)
+            AND ifnull(p.visible,1) = 1
+            AND p.ilinea = #<ilinea>;
+        ")
+
+        return dbr.list(db,sql,@null)
+    }
+
+    function GetGroupsOfVariableIngredients(&db,iproducto)
+    {
+        sql = ftext("
+        SELECT g.nombre, v.grupo, v.minimo, v.maximo
+        FROM
+            ivariable v
+            INNER JOIN grupoproductos g ON v.grupo = g.sys_pk
+        WHERE
+            v.fk_producto_ivariables = #<iproducto>;
+        ")
+
+        return dbr.list(db,sql,@null)
+    }
+
+    function GetIngredientsOfVarGroup(&db,igrupo)
+    {
+        sql = ftext("
+        SELECT p.codigo, p.descripcion
+        FROM
+            grupoproductos_producto_ gp
+            INNER JOIN producto p ON gp.iproductos = p.sys_pk
+        WHERE
+            gp.igrupos = #<igrupo>;
+        ")
+
+        return dbr.list(db,sql,@null)
+    }
+
+    function SetLine(&line,&output)
+    {
+        do text.say(output,@@(line,"$descripcion"))
+
+        indicaciones = trim(@@(line,"$uf_indicaciones"))
+        if indicaciones == "" { do text.say(output,"") }
+        else
+        {
+            indicaciones = replace(indicaciones,"\r\n","\n")
+            indicaciones = replace(indicaciones,"\n",", ")
+            indicaciones = ifstr(@@(line,"#uf_req_indicaciones"), "(Requerido)", "(Opcional)") + " Elegir indicaciones: " + indicaciones
+
+            do text.say(output,"")
+            do text.say(output,indicaciones)
+            do text.say(output,"")
+        }
+    }
+
+    function SetVariableIngredients(&db,iproducto,&output)
+    {
+        ref groups = GetGroupsOfVariableIngredients(db,iproducto)
+
+        c_groups = list.count(groups)
+        if c_groups > 0 { do text.say(output,"{") }
+
+        for i = 0; i < c_groups
+        {
+            ref vg = list.obj(groups,i)
+            ref ingredients = GetIngredientsOfVarGroup(db,@@(vg,"#grupo"))
+
+            total = list.count(ingredients)
+            if total > 0
+            {
+                label = "Elegir "+@@(vg,"$nombre")+"; mínimo "+@@(vg,"$minimo")+", máximo "+@@(vg,"$maximo")
+                do text.say(output,label)
+
+                for j = 0; j < total
+                {
+                    ref item = list.obj(ingredients,j)
+                    do text.say(output,"- "+ @@(item,"$codigo") +" "+ @@(item,"$descripcion"))
+                }
+            }
+        }
+        
+        if c_groups > 0 { do text.say(output,"}") }
+    }
+
+    function SetRecipes(db,&recipes,&output)
+    {
+        do text.say(output,"| Código | Descripción | Precio |")
+        do text.say(output,"")
+
+        for i = 0; i < list.count(recipes)
+        {
+            ref recipe = list.obj(recipes,i)
+
+            precio = aplImpuestos(@@(recipe,campoPrecioR5(@PrecioVenta)), parseImpuesto(@@(recipe,"i1venta"),@zonaImpuesto), parseImpuesto(@@(recipe,"i2venta"),@zonaImpuesto), parseImpuesto(@@(recipe,"i3venta"),@zonaImpuesto), parseImpuesto(@@(recipe,"i4venta"),@zonaImpuesto))
+
+            row = "| "+ @@(recipe,"$codigo") +" | "+ @@(recipe,"$descripcion") +" | "+ format(precio,@formato_moneda) +" |"
+            do text.say(output,row)
+
+            notes = trim(@@(recipe,"$notas"))
+            if notes != "" { do text.say(output,notes) }
+
+            do SetVariableIngredients(db,@@(recipe,"#sys_pk"),output)
+        }
+    }
+
+    function BuildMenu(&db)
+    {
+        ref lines = GetLines(db)
+
+        c_lines = list.count(lines)
+        if c_lines < 1 { return "No hay líneas disponibles." }
+
+        ref menu = text.create()
+        for i = 0; i < c_lines
+        {
+            ref line = list.obj(lines,i)
+            ref recipes = GetRecipesByLine(db,@@(line,"#sys_pk"))
+
+            if list.count(recipes) > 0
+            {
+                do SetLine(line,menu)
+                do SetRecipes(db,recipes,menu)
+                do text.say(menu,"---")
+            }
+        }
+
+        return text.get(menu)
+    }
+
+    if not(isset("@__process_request")) { @__process_request = @true }
+    if parse.bool(@__process_request)
+    {
+        do errordet(@false)
+
+        // -- Procesar solicitud HTTP -------------------------
+        go sise_base_service(params:params, payload:payload, response:response)
+        {
+            ref db = _db()
+            @DecimalesEnImportes = parse.num(dbr.vars.get(db,"FXCA001"))
+
+            response<"message"> : BuildMenu(db)
+
+            exception
+            {
+                using response
+                {
+                    @"success": @false
+                    @"message": "No fue posible obtener el menú: "+last_error()
+                }
+            }
+        }
+    }
+}

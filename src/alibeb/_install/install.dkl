@@ -27,7 +27,8 @@ program "instalador"
         "divisa.csv",
         "dmnszona.csv",
         "cstatusordenproduccion.csv",
-        "ccantidades.csv"
+        "ccantidades.csv",
+        "sys_rest_integration.csv"
     ]')
 
     // Lista de privilegios iniciales (arreglo de id de privilegios)
