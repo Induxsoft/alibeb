@@ -2157,6 +2157,13 @@ module "lib.dk"
 
             total=aplImpuestos((@@(rsource,"#precio")*@@(rsource,"#cantidad"))-@@(rsource,"#d1")-@@(rsource,"#d2"),parseImpuesto(@@(rsource,"i1venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i2venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i3venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i4venta"),@zonaImpuesto))
             precio=aplImpuestos(@@(rsource,"#precio"),parseImpuesto(@@(rsource,"i1venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i2venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i3venta"),@zonaImpuesto),parseImpuesto(@@(rsource,"i4venta"),@zonaImpuesto))
+            
+            ref adds=dbr.list(db,@addOrdendmns,rsource)
+            for j = 0; j < @count(adds)
+            {
+                ref itm=@item(adds,j)
+                itm<"importe">:aplImpuestos(@@(itm,"#precio"),parseImpuesto(@@(itm,"i1venta"),@zonaImpuesto),parseImpuesto(@@(itm,"i2venta"),@zonaImpuesto),parseImpuesto(@@(itm,"i3venta"),@zonaImpuesto),parseImpuesto(@@(itm,"i4venta"),@zonaImpuesto))
+            }
             using row
             {
                 @"unidad":@@(rsource,"$unidad")
@@ -2173,7 +2180,7 @@ module "lib.dk"
                 @"total":total //ya con impuesto
                 @"notes":@@(rsource,"$especificaciones")
                 @"time":@@(rsource,"$tiempo")
-                @"adds*":dbr.list(db,@addOrdendmns,rsource)
+                @"adds*":adds
 
                 @"_precio":@@(rsource,"#precio") //sin impuesto
                 @"_total":(@@(rsource,"#precio")*@@(rsource,"#cantidad")) - (@@(rsource,"#d1") + @@(rsource,"#d2")) //sin impuesto
@@ -2803,6 +2810,9 @@ module "lib.dk"
     
     execute.command::&db,&params,&postData
     {
+        // do file.wtext("/usr/dkl_mxcvxii/comandas/dmcm/app/svc/params.json",to.json(params))
+        // do file.wtext("/usr/dkl_mxcvxii/comandas/dmcm/app/svc/data.json",to.json(postData))
+
         ref dt= token.data.validate(db,@false)
         if trim(@@(postData,"$waiter"))=="" && @@(dt,"$waiter")!=""{postData<"waiter">:@@(dt,"$waiter")}
         
@@ -2896,7 +2906,7 @@ module "lib.dk"
             return order
         }
         //si es venta
-        postData<"lventas*">:record.create()
+        if isnull(@@(postData,"&lventas")){postData<"lventas*">:record.create()}
         postData<"lventas/"+clave+"*">:record.create()
         postData<"lventas/"+clave+"/dorden*">:list_dorden
 
@@ -3123,7 +3133,7 @@ module "lib.dk"
                     ref prod=dbr.rec(db,@dataadds,val)
                     ref now=now()
 
-                    ref dt_imp=GetDataImpuestos(db,@@(val,"#amount"),1,0,0,@@(prod,"#impuestos"))
+                    // ref dt_imp=GetDataImpuestos(db,@@(val,"#amount"),1,0,0,@@(prod,"#impuestos"))
 
                     new adds
                     {
@@ -3136,7 +3146,7 @@ module "lib.dk"
                         @"CIndirecto": 0
                         @"CManoObra": 0
                         @"CMaquinaria": 0
-                        @"Precio":@@(dt_imp,"#total")
+                        @"Precio":@@(prod,"#"+campoPrecioAdcR5(@PrecioAdcs))//@@(dt_imp,"#total")
                         @"IProducto":@@(prod,"#sys_pk")
                     }
                 }
@@ -3270,7 +3280,10 @@ module "lib.dk"
         for i=0;i<list.count(dtventa)
         {
             ref dv=@item(dtventa,i)
-        
+            if @@(dv,"#dorden") > 0
+            {
+                dv<"precio">:@@(dv,"#precio") + dbr.num(db,"SELECT ifnull(sum(IFNULL(d.cantidad,0) * IFNULL(d.precio,0)),0) FROM dadicionales d WHERE d.fk_dorden_adicionales=@dorden;",dv)
+            }
             using dventa
             {
                 @"Sys_GUID":toupper(uuid())
@@ -3310,6 +3323,7 @@ module "lib.dk"
         }
         quantity=1
         ref dorden=dbr.rec(db,@getdorden_prod,data)
+        if isnull(dorden){ref dorden=dbr.rec(db,"SELECT d.cantidad,d.precio FROM dventa d WHERE d.iproducto=@producto AND d.fk_venta_detalle=@id_table;",data)}
 
         using data{@"pkorden":@@(dorden,"pkorden")}
         quantitycurrent=@@(dorden,"#cantidad")
@@ -3352,6 +3366,7 @@ module "lib.dk"
                 do dbr.execute(db,@deletedorden,data)
                 if dbr.num(db,@countdorden,data)==0{do dbr.execute(db,@delete_orden,data)} 
 
+                do dbr.execute(db,@deletedvt,data)
                 do updateinsert.ventaDventa(db,p)      
                 
             }

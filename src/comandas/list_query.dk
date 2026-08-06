@@ -104,14 +104,14 @@ module "lista de consultas"
 
     @deletedventa="delete dventa from dventa inner join producto on dventa.iproducto=producto.sys_pk where producto.iclase=2 and dventa.fk_venta_detalle=@sys_pk"
 
-    @dataadds="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos from producto p where p.codigo=@sku"
+    @dataadds="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos,p.padic1,p.padic2,p.padic3,p.padic4,p.padic5 from producto p where p.codigo=@sku"
 
     @getordennew="select sys_pk from orden where sys_guid=@sys_guid" 
 
     @block="select f.sys_pk,f.cancelado,f.fecha,f.folio,f.block from foliosdocumentos f where f.sys_guid=@sys_guid"
     @blockdoc="SELECT serie FROM blockdocumentos WHERE sys_pk=6;"
 
-    @getdorden="select d.iproducto,d.precio precio, sum(d.cantidad) cantidad, sum(d.d1) d1, sum(d.d2) d2
+    @getdorden="select d.iproducto,d.precio precio, sum(d.cantidad) cantidad, sum(d.d1) d1, sum(d.d2) d2,d.sys_pk dorden
                 from dorden d
                 inner join orden o on o.sys_pk=d.fk_orden_detalle
                 inner join venta v on o.iventa=v.sys_pk
@@ -434,8 +434,10 @@ module "lista de consultas"
                 inner join cfgimpuesto c on p.impuestos=c.sys_pk 
                 where p.adicional order by p.codigo"
 
-    @addOrdendmns="select d.sys_pk as pkadd,d.cantidad,d.precio,d.iproducto as pkprod,d.fk_dorden_adicionales as pkdorden,p.codigo as sku,p.descripcion 
+    @addOrdendmns="select d.sys_pk as pkadd,d.cantidad,d.precio,d.iproducto as pkprod,d.fk_dorden_adicionales as pkdorden,p.codigo as sku,p.descripcion ,
+                c.i1venta,c.i2venta,c.i3venta,c.i4venta
                 from dadicionales d inner join producto p on d.iproducto=p.sys_pk
+                inner join cfgimpuesto c on p.impuestos=c.sys_pk 
                 where d.fk_dorden_adicionales=@pkdorden"
 
     @getorden_xsys_guid="select o.sys_pk,o.sys_timestamp,c.sys_pk pkcp,c.codigo code from orden o inner join cproduccion c on o.icproduccion=c.sys_pk

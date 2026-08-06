@@ -1267,10 +1267,8 @@ var controller=
               
             }
           }
-      
           
           var subtotal=Number(list_orders[index]._priceProd_) + price;
-          
 
           list_orders[index].price=subtotal;
           list_orders[index]["adds"]=price;
@@ -1278,8 +1276,6 @@ var controller=
           list_orders[index]["options"]=values;
           list_orders[index]["notes"]=notas.value;
           text_detail+=notas.value+",";
-
-          
 
           views.showSubTotal(id,subtotal);
 
@@ -1298,13 +1294,9 @@ var controller=
     get_indications:function(name,ismultiple)
     {
       var reqname = this.escape_selector(name.replace(/ /g,""));
-      
-      if(ismultiple) {
-        var indications=document.querySelectorAll(`.div-multiple > .div-check_${reqname} > input`);
-      }
-      else {
-        var indications=document.querySelectorAll(`.body-single > .div-single_${reqname} > select`);
-      }
+      console.log(reqname)
+      if(ismultiple) {var indications=document.querySelectorAll(`.div-multiple > .div-check_${reqname} input`);}
+      else {var indications=document.querySelectorAll(`.body-single > .div-single_${reqname} > select`);}
 
       var values=[];
       indications.forEach(function (elem,index) {
