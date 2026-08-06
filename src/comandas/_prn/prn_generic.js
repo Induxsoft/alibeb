@@ -127,6 +127,17 @@ var prn_generic=
         {
             const row = list_dorden[i];
             printer.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.total,controller.decimals,".",",")}`);
+            
+            if(row.adds && row.adds?.length > 0)
+            {
+                printer.printText(`     Adicionales`);
+
+                for (let j = 0; j < row.adds.length; j++) 
+                {
+                    const add = row.adds[j];
+                    printer.printText(`     - ${add.descripcion}    ${controller.RoundTo(add.cantidad??0,controller.decimals)}  $ ${views.format(add.importe,controller.decimals,".",",")}`);
+                }
+            }
         }
 
         printer.printText(divider_full);
