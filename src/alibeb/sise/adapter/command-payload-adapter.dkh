@@ -299,7 +299,7 @@ module ":command.adapter"
             @"sku*":sku
             @"quantity":quantity
             @"time":field.dnum(detail,"time",0)
-            // @"variables*":variables(db,detail)
+            @"variables*":variables(db,detail)
             @"options*":additional(detail)
             @"notes":notas
         }

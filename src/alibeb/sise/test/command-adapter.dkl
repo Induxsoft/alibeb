@@ -7,58 +7,52 @@ program ""
     #include "dbr.dkh"
     #include "alibeb/sise/adapter/command-payload-adapter.dkh"
 
-    ref db=dbr.open("connections@induxsoft/vxii8f948a4a73ac4c738bd881e1ca2e205c@v12")
+    qn = "connections@induxsoft/vxiiadb4555e35294609804030f22fd83565@v12" //test
+    // qn = "connections@induxsoft/vxii8f948a4a73ac4c738bd881e1ca2e205c@v12" //demo
+    ref db=dbr.open(qn)
 
 json='{
-  "nombre": "Francisco",
-  "telefono": "777 889 0001",
-  "domicilio": "",
-  "cc": "0001",
-  "pedido": [
-    {
-      "codigo": "00040005",
-      "descripcion": "Pizza mixta",
-      "cantidad": 1,
-      "variables": [
+    "nombre": "Francisco",
+    "telefono": "777 889 0001",
+    "domicilio": "",
+    "cconsumo": "0001",
+    "pedido": [
         {
-          "codigo": "00040004",
-          "descripcion": "Mitad de Mexicana",
-          "cantidad": 1,
-          "adicional": 0,
-          "ingrediente": "Mitad de especialidad",
-          "ivariable": 12
-        },
-        {
-          "codigo": "00040002",
-          "descripcion": "Mitad de Hawaina",
-          "cantidad": 1,
-          "adicional": 0,
-          "ingrediente": "Mitad de especialidad",
-          "ivariable": 12
-        },
-        {
-          "codigo": "00040006",
-          "descripcion": "Clásica",
-          "cantidad": 1,
-          "adicional": 0,
-          "ingrediente": "Masas",
-          "ivariable": 13
-        }
-      ],
-      "adicionales": [
-        {
-            "codigo": "",
-            "descripcion": "",
+            "codigo": "00050002",
+            "descripcion": "Pizza mixta",
             "cantidad": 1,
-            "importe": 123.00
+            "variables": [
+                {
+                    "codigo": "00050005",
+                    "descripcion": "Mitad Mexicana",
+                    "cantidad": 1,
+                    "adicional": 0,
+                    "ingrediente": "Mitad de especialidad",
+                    "ivariable": 4
+                },
+                {
+                    "codigo": "00050003",
+                    "descripcion": "Mitad Hawaiana",
+                    "cantidad": 1,
+                    "adicional": 0,
+                    "ingrediente": "Mitad de especialidad",
+                    "ivariable": 4
+                },
+                {
+                    "codigo": "00050006",
+                    "descripcion": "Clasica",
+                    "cantidad": 1,
+                    "adicional": 0,
+                    "ingrediente": "Masas",
+                    "ivariable": 5
+                }
+            ],
+            "precio_unitario": 290,
+            "subtotal": 290
         }
-      ],
-      "precio_unitario": 290,
-      "subtotal": 290
-    }
-  ],
-  "total": 290,
-  "tipo": "Recoge"
+    ],
+    "total": 290,
+    "tipo": "Recoge"
 }'
     
     ref rawPostData=from.json(json)
