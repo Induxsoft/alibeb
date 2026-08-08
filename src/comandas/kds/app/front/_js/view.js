@@ -23,17 +23,19 @@ var views={
 				{
 					var adds=adcs[a];
 					hadcs+=`<div class="datails-adcs">
-							<small class="adcs">${adds.descripcion}</small>
+							<small class="adcs">${adds.cantidad??1} - ${adds.descripcion}</small>
 						</div>`;
 				}
 				list_orders+=`<div class="details">
 						<label>${data_orders.quantity} ${data_orders.description}
 							<small class="order-time">${controller.lifetime(data_orders.tiempo)}</small>
-							<div class="order-notes"> 
-								<small class="notes-adcs">${data_orders.notes}</small>
-							</div>
 						</label>
 						${hadcs}
+
+						<div class="order-notes"> 
+								<small class="notes-adcs">${(data_orders.notes??"").trim()!=""?`<span class="fw-bold">Indicaciones</span><br>${data_orders.notes.trim()}`:""}</small>
+						</div>
+
 					</div>`;
 			}
 			var btn=`<button class="btn-kds "  onclick="controller.do_command(${itm.pkorden})">

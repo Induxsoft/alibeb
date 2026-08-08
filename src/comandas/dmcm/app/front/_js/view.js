@@ -909,23 +909,24 @@ var views=
                                     });
                                     
                                     var check="";
-                                    if(checked)
-                                          check="checked";
-
+                                    if(checked)check="checked";
+                                    
                                     var sku="";
-                                    if(val.sku)
-                                          sku=val.sku;
+                                    if(val.sku)sku=val.sku;
+                                    
+                                    let idquantity=`quantity_${sku.replace(/ /g,"").trim()}`;
 
                                     html_val+=`<div class="p-0 m-0 div-check_${itm.name.replace(/ /g,"")}">
                                                 <div class="d-flex aling-items-center gap-2 form-check ">
                                                       <div>
-                                                      <input style="border-radius: 0 !important;width: 1.5rem;height: 1.5rem;" class="form-check-input" type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}">
+                                                      <input style="border-radius: 0 !important;width: 1.5rem;height: 1.5rem;" class="form-check-input" type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}" onchange="views.show_element('${idquantity}',this.checked)">
                                                       </div>
                                                       <div>
                                                       <label class="fw-bold" for="${val.text.replace(/ /g,"")}">${val.text}</label><br>
                                                       <small style="font-size: smaller;">$ ${views.format(val.amount,controller.decimals_backend,".",",")}</small>
                                                       </div>
                                                 </div>
+                                                <input type="number" class="form-control form-control-sm d-none" min="1" value="1" id="${idquantity}">
                                           </div>`;
                               }
                               var name="";
@@ -1040,11 +1041,22 @@ var views=
                               return false;
                         }
                   }
-                        
             });
 
             var btnacept=document.querySelector("#btn_addcs");
             btnacept.setAttribute("onclick",`controller.add_indications("${uuid}")`);
+      },
+      show_element(idelement,visible)
+      {
+            if(!idelement)return;
+            let element=document.getElementById(idelement);
+            if(!element)return;
+            
+            element.classList.add("d-none");
+
+            if(visible)element.classList.remove("d-none");
+
+            element.value="0";
       },
       add_details:function(time,text_detail,detail_indications)
       {

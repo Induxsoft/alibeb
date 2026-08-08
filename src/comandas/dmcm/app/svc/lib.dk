@@ -3103,6 +3103,7 @@ module "lib.dk"
 
                     new item_adds
                     {
+                        @"sys_info":"variable"
                         @"Sys_TimeStamp*":now
                         @"Sys_GUID":uuid()
                         @"Sys_DTCreated*":now
@@ -3138,7 +3139,8 @@ module "lib.dk"
                     ref prod=dbr.rec(db,@dataadds,val)
                     ref now=now()
 
-                    // ref dt_imp=GetDataImpuestos(db,@@(val,"#amount"),1,0,0,@@(prod,"#impuestos"))
+                    cantidad= 1
+                    if @@(val,"#quantity") > 0{cantidad=@@(val,"#quantity")}
 
                     new adds
                     {
@@ -3146,7 +3148,7 @@ module "lib.dk"
                         @"Sys_GUID":toupper(cut(uuid(),30))
                         @"Sys_DTCreated*":now
                         @"Sys_DTExported*":now
-                        @"Cantidad": 1
+                        @"Cantidad": cantidad
                         @"CDirecto": 0
                         @"CIndirecto": 0
                         @"CManoObra": 0
