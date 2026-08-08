@@ -26,6 +26,11 @@ module "Utilidades para los servicios SISE"
         return post
     }
 
+    set_http_status :: code
+    {
+        @http_context<"response/headers/status"> : if(code >= 100 && code <= 599, code, 500)
+    }
+
     set_response :: type, text
     {
         @http_context<"request/headers/http_accept"> : type

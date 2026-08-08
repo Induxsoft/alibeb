@@ -1,0 +1,84 @@
+#include "dkli.dkh"
+#!
+program ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "alibeb/sise/adapter/command-payload-adapter.dkh"
+
+    ref db=dbr.open("connections@induxsoft/vxii8f948a4a73ac4c738bd881e1ca2e205c@v12")
+
+json='{
+  "nombre": "Francisco",
+  "telefono": "777 889 0001",
+  "domicilio": "",
+  "cc": "0001",
+  "pedido": [
+    {
+      "codigo": "00040005",
+      "descripcion": "Pizza mixta",
+      "cantidad": 1,
+      "variables": [
+        {
+          "codigo": "00040004",
+          "descripcion": "Mitad de Mexicana",
+          "cantidad": 1,
+          "adicional": 0,
+          "ingrediente": "Mitad de especialidad",
+          "ivariable": 12
+        },
+        {
+          "codigo": "00040002",
+          "descripcion": "Mitad de Hawaina",
+          "cantidad": 1,
+          "adicional": 0,
+          "ingrediente": "Mitad de especialidad",
+          "ivariable": 12
+        },
+        {
+          "codigo": "00040006",
+          "descripcion": "Clásica",
+          "cantidad": 1,
+          "adicional": 0,
+          "ingrediente": "Masas",
+          "ivariable": 13
+        }
+      ],
+      "adicionales": [
+        {
+            "codigo": "",
+            "descripcion": "",
+            "cantidad": 1,
+            "importe": 123.00
+        }
+      ],
+      "precio_unitario": 290,
+      "subtotal": 290
+    }
+  ],
+  "total": 290,
+  "tipo": "Recoge"
+}'
+    
+    ref rawPostData=from.json(json)
+    ref postData=command.adapter.payload(db,rawPostData)
+
+    do print(to.json(postData))
+
+    exception
+    {
+        do print(last_error())
+        do clear_exceptions()
+    }
+
+    if isset("db")
+    {
+        if not(isnull(db)) {
+            if dbr.is_open(db) {
+                do dbr.close(db)
+                do print("Conexión cerrada")
+            }
+        }
+    }
+}

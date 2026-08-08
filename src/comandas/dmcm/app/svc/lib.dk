@@ -2810,11 +2810,12 @@ module "lib.dk"
     
     execute.command::&db,&params,&postData
     {
-        // do file.wtext("/usr/dkl_mxcvxii/comandas/dmcm/app/svc/params.json",to.json(params))
-        // do file.wtext("/usr/dkl_mxcvxii/comandas/dmcm/app/svc/data.json",to.json(postData))
-
-        ref dt= token.data.validate(db,@false)
-        if trim(@@(postData,"$waiter"))=="" && @@(dt,"$waiter")!=""{postData<"waiter">:@@(dt,"$waiter")}
+        if not(isset("@__from_sise")) { @__from_sise = @false }
+        if not(@__from_sise)
+        {
+            ref dt = token.data.validate(db,@false)
+            if trim(@@(postData,"$waiter"))=="" && @@(dt,"$waiter")!="" { postData<"waiter"> : @@(dt,"$waiter") }
+        }
         
         ref details=@@(postData,"&details")
         postData<"id_table">:@@(params,"$id_table")
@@ -2935,12 +2936,14 @@ module "lib.dk"
     
     table.order::&db,&itm_details,&postData
     {
+        if not(isset("@__from_sise")) { @__from_sise = @false }
+
         ref now=now()
         ref prodc=@@(itm_details,"&prodcenter")
         new p{@"ag":@@(postData,"waiter")}
         
         ref waiter=dbr.rec(db,@waiter_cd,p)
-        if isnull(waiter){do rise_error(500,"No se encontró datos del agente")}
+        if isnull(waiter) && not(@__from_sise) { do rise_error(500,"No se encontró datos del agente") }
         ref dataprodc=dbr.rec(db,@prodc,prodc)
 
         ref sku=@@(itm_details,"&sku")
@@ -2980,12 +2983,14 @@ module "lib.dk"
             @"TiempoProduccion":0
             @"TiempoServicio":@@(itm_details,"#time")
             @"TipoCambio":dbr.num(db,"select tcambio from divisa where sys_pk=@idivisa",product)
-            @"IAgente":@@(waiter,"sys_pk")
             @"ICConsumo":@@(cc,"#sys_pk")
             @"ICProduccion":@@(dataprodc,"#sys_pk")
             @"IDivisa":@@(product,"#idivisa")
             @"IVenta":@@(venta,"#sys_pk")
         }
+
+        if @@(waiter,"#sys_pk") > 0 { order<"IAgente"> : @@(waiter,"#sys_pk") }
+
         return order
     }
 
@@ -3179,6 +3184,8 @@ module "lib.dk"
     //inserta datos correspondientes a la tabla orden y de dorden
     insert.ordenDorden::&db,&params,&data
     {
+        if not(isset("@__from_sise")) { @__from_sise = @false }
+
         ref listcvs=list.create_from_fields(ifnull(data,record.create()))
         for i=0;i<list.count(listcvs)
         {
@@ -3232,7 +3239,7 @@ module "lib.dk"
             new im{@"importe":importe}
             do dbr.update(db,"orden",im,"sys_guid=@sys_guid",orden)
 
-            do printer_command(db,@@(orden,"$sys_guid"))
+            if not(@__from_sise) { do printer_command(db,@@(orden,"$sys_guid")) }
         }
         exception
         {

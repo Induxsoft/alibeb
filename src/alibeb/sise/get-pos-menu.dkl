@@ -70,7 +70,7 @@ program "Consulta el menú del Punto de Venta V12"
     function GetGroupsOfVariableIngredients(&db,iproducto)
     {
         sql = ftext("
-        SELECT g.nombre, v.grupo, v.minimo, v.maximo
+        SELECT v.sys_pk AS id, g.nombre, v.grupo, v.minimo, v.maximo
         FROM
             ivariable v
             INNER JOIN grupoproductos g ON v.grupo = g.sys_pk
@@ -128,7 +128,8 @@ program "Consulta el menú del Punto de Venta V12"
             total = list.count(ingredients)
             if total > 0
             {
-                label = "Elegir "+@@(vg,"$nombre")+"; mínimo "+@@(vg,"$minimo")+", máximo "+@@(vg,"$maximo")
+                do field.remove(vg,"grupo")
+                label = "Elegir grupo ingrediente:" + to.json(vg)
                 do text.say(output,label)
 
                 for j = 0; j < total

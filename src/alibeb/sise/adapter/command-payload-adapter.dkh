@@ -1,0 +1,337 @@
+#include "dkli.dkh"
+#!
+module ":command.adapter"
+{
+    /**
+    * Obtiene los datos mínimos del producto requeridos por execute.command.
+    *
+    * @param db      Conexión abierta
+    * @param sku     Código SKU recibido en el nuevo payload
+    * @param cc      Código del centro de consumo recibido en el payload
+    *
+    * Devuelve:
+    * - sys_pk
+    * - sku
+    * - cod_cc: código del centro de consumo
+    * - cod_cp: código del centro de producción
+    * - desc_cp descripción del centro de producción
+    */
+    productContext::&db,sku,cc
+    {
+        new p
+        {
+            @"sku":sku
+            @"cc":cc
+        }
+
+        /*
+        cod_cc debe ser el CÓDIGO que consume @ccxcode en table.order.
+        cod_cp debe identificar el centro de producción que consume @prodc.
+        */
+
+        ref product=dbr.rec(db,"
+            SELECT
+                p.sys_pk,
+                p.codigo AS sku,
+                @cc AS cod_cc,
+                IFNULL(cp.codigo,'') AS cod_cp,
+                IFNULL(cp.descripcion,'') AS desc_cp
+            FROM producto p
+                LEFT JOIN cproduccion_producto_ cpp ON cpp.iproductos = p.sys_pk
+                LEFT JOIN cproduccion cp ON cpp.icentrosproduccion = cp.sys_pk
+            WHERE
+                NOT IFNULL(p.sys_deleted,0)
+                AND p.codigo = @sku
+            LIMIT 1;
+        ",p)
+
+        if isnull(product) { do rise_error(404,"No se encontró el producto con SKU "+sku) }
+
+        return product
+    }
+
+    /**
+    * Resuelve un grupo del nuevo payload.
+    *
+    * La clave recibida corresponde a ivariable.sys_pk. execute.command,
+    * mediante adds_variables, espera que variables use ivariable.grupo.
+    *
+    * @return Registro con: sys_pk, grupo, minimo y maximo.
+    */
+    variableGroup::&db,ivariable
+    {
+        ivariable >> p
+
+        ref data=dbr.rec(db,"
+            SELECT
+                v.sys_pk,
+                v.grupo,
+                v.minimo,
+                v.maximo
+            FROM ivariable v
+            WHERE
+                NOT IFNULL(v.sys_deleted,0)
+                AND v.sys_pk = @ivariable
+            LIMIT 1;
+        ",p)
+
+        if isnull(data) { do rise_error(404,"No se encontró el grupo de ingredientes variables.") }
+
+        return data
+    }
+
+    /**
+    * Convierte un SKU variable al producto requerido por adds_variables.
+    *
+    * Valida que el producto pertenece a la ivariable recibida.
+    */
+    variableProduct::&db,sku,ivariable_pk
+    {
+        new p
+        {
+            @"sku":sku
+            @"ivariable":ivariable_pk
+        }
+
+        ref product=dbr.rec(db,"
+            SELECT
+                p.sys_pk,
+                p.codigo AS sku
+            FROM ivariable v
+                INNER JOIN grupoproductos_producto_ gpp ON gpp.igrupos = v.grupo
+                INNER JOIN producto p ON gpp.iproductos = p.sys_pk
+            WHERE
+                v.sys_pk = @ivariable
+                AND p.codigo = @sku
+            LIMIT 1;
+        ",p)
+
+        if isnull(product) { do rise_error(404,"No se encontró el producto variable con SKU "+sku) }
+
+        return product
+    }
+
+    /**
+    * Convierte adicionales al formato de options esperado por get.adds.
+    *
+    * Nuevo:
+    *   adicionales: [
+    *       { codigo, descripcion, cantidad, importe }
+    *   ]
+    *
+    * get.adds actualmente fija Cantidad=1. Para respetar cantidad, el
+    * adaptador repite el valor tantas veces como indique cantidad.
+    */
+    additional::&detail
+    {
+        ref result=list.create()
+        ref values=list.create()
+        ref additional=field.dobj(detail,"adicionales",list.create())
+
+        for i=0;i<list.count(additional)
+        {
+            ref add=list.obj(additional,i)
+            sku=trim(field.dstr(add,"codigo",""))
+            quantity=field.dnum(add,"cantidad",1)
+            amount=field.dnum(add,"importe",0)
+
+            if quantity < 1{quantity=1}
+
+            if sku!=""
+            {
+                repeat quantity
+                {
+                    new value
+                    {
+                        @"sku":sku
+                        @"amount":amount
+                    }
+                    do list.add(values,value)
+                }
+            }
+        }
+
+        if list.count(values)>0
+        {
+            new option
+            {
+                @"name":"__adds"
+                @"type":"multiple"
+                @"required":0
+                @"values*":values
+            }
+            do list.add(result,option)
+        }
+
+        return result
+    }
+
+    /**
+    * Convierte variables al formato requerido por adds_variables.
+    *
+    * Nuevo:
+    *   variables: [
+    *       { codigo, cantidad, ivariable, ... },
+    *       ...
+    *   ]
+    *
+    * Formato requerido:
+    *   variables[ivariable.grupo][producto.sys_pk] = cantidad
+    *
+    * La validación de mínimo y máximo se realiza con la suma de cantidades
+    * seleccionadas para cada ivariable.
+    */
+    variables::&db,&detail
+    {
+        ref result=record.create()
+        ref source=field.dobj(detail,"variables",list.create())
+        ref counters=record.create()
+        ref groups_data=record.create()
+
+        // Primero transforma las selecciones y acumula cantidades por ivariable.
+        for i=0;i<list.count(source)
+        {
+            ref selected=list.obj(source,i)
+            ivariable_pk=field.dnum(selected,"ivariable",0)
+            sku=trim(field.dstr(selected,"codigo",""))
+            quantity=field.dnum(selected,"cantidad",1)
+
+            if ivariable_pk < 1
+            {
+                do rise_error(400,"La variable del SKU "+sku+" no contiene una ivariable válida")
+            }
+            if sku == ""
+            {
+                do rise_error(400,"Una variable no contiene código de producto")
+            }
+            if quantity < 1
+            {
+                do rise_error(400,"La cantidad de la variable "+sku+" debe ser mayor que cero")
+            }
+
+            ivariable_key=str(ivariable_pk)
+            ref variable=field.dobj(groups_data,ivariable_key,@null)
+            if isnull(variable)
+            {
+                ref variable:variableGroup(db,ivariable_pk)
+                groups_data<ivariable_key+"*">:variable
+            }
+
+            grupo=@@(variable,"$grupo")
+            if isnull(@@(result,"&"+grupo))
+            {
+                result<grupo+"*">:record.create()
+            }
+
+            ref product=variableProduct(db,sku,ivariable_pk)
+            product_key=str(@@(product,"#sys_pk"))
+
+            current=field.dnum(result,grupo+"/"+product_key,0)
+            result<grupo+"/"+product_key>:current+quantity
+
+            selected_count=field.dnum(counters,ivariable_key,0)
+            counters<ivariable_key>:selected_count+quantity
+        }
+
+        // Después valida mínimo/máximo una sola vez por ivariable.
+        ref keys=list.create_from_fields(groups_data)
+        for i=0;i<list.count(keys)
+        {
+            ivariable_key=list.str(keys,i)
+            ref variable=@@(groups_data,"&"+ivariable_key)
+            minimo=@@(variable,"#minimo")
+            maximo=@@(variable,"#maximo")
+            selected_count=field.dnum(counters,ivariable_key,0)
+
+            if selected_count < minimo
+            {
+                do rise_error(400,"El grupo "+ivariable_key+" requiere al menos "+str(minimo)+" elemento(s)")
+            }
+
+            if maximo > 0 && selected_count > maximo
+            {
+                do rise_error(400,"El grupo "+ivariable_key+" permite como máximo "+str(maximo)+" elemento(s)")
+            }
+        }
+
+        return result
+    }
+
+    /**
+    * Adapta una línea del nuevo payload.
+    */
+    detail::&db,&detail,cc
+    {
+        sku_code=trim(@@(detail,"$codigo"))
+        if sku_code=="" { do rise_error(400,"La línea no contiene código") }
+
+        ref product=productContext(db,sku_code,cc)
+
+        cod_cc=@@(product,"$cod_cc")
+        cod_cp=@@(product,"$cod_cp")
+
+        new prodcenter
+        {
+            @"code":cod_cp
+            @"description":@@(product,"$desc_cp")
+        }
+
+        new sku
+        {
+            @"sys_pk":@@(product,"#sys_pk")
+            @"pkprod":@@(product,"#sys_pk")
+            @"sku":sku_code
+            @"cod_cc":cod_cc
+            @"cod_cp":cod_cp
+        }
+
+        quantity=field.dnum(detail,"cantidad",1)
+        if quantity < 1 { do rise_error(400,"cantidad debe ser mayor que cero para el SKU "+sku_code) }
+
+        // notas + indicaciones de la línea
+        // Las opciones propuestas por el menú deben llegar concatenadas desde el payload.
+        notas=trim(field.dstr(detail,"notas",""))
+
+        new adapted
+        {
+            @"prodcenter*":prodcenter
+            @"uuid":toupper(cut(uuid(),30))
+            @"sku*":sku
+            @"quantity":quantity
+            @"time":field.dnum(detail,"time",0)
+            // @"variables*":variables(db,detail)
+            @"options*":additional(detail)
+            @"notes":notas
+        }
+
+        return adapted
+    }
+
+    /**
+    * Convierte el nuevo payload al mínimo requerido por:
+    * execute.command(&db,&params,&postData)
+    *
+    * Conserva los campos generales del payload y reemplaza details.
+    */
+    payload::&db,&payload
+    {
+        ref output=record.copy(payload,"*")
+        ref source_details=field.dobj(payload,"pedido",list.create())
+        ref details=list.create()
+
+        cc=@@(payload,"$cconsumo")
+        if cc == "" { do rise_error(400,"El payload no contiene un centro de consumo válido.") }
+
+        for i=0;i<list.count(source_details)
+        {
+            ref detail=list.obj(source_details,i)
+            ref adapted=detail(db,detail,cc)
+            do list.add(details,adapted)
+        }
+
+        do field.remove(output,"pedido")
+        output<"details*">:details
+
+        return output
+    }
+}

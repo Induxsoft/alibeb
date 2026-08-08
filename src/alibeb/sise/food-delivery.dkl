@@ -1,0 +1,287 @@
+#include "dkli.dkh"
+#!
+program "Ordenar comida a domicilio"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.vars.dkl"
+    #include "dbr.folios.dkl"
+    #include "lib.sise.dk"
+    #include "alibeb/sise/adapter/command-payload-adapter.dkh"
+    #include "comandas/list_query.dk"
+    #include "comandas/config.dk"
+    #include "comandas/impuesto.dk"
+    #include "comandas/dmcm/app/svc/lib.dk"
+    
+    function GetDestinationByPhone(&db,&params)
+    {
+        sql = "
+        SELECT sys_pk, telefono, nombre, direccion, notas, longitud, latitud
+        FROM dmns_destino
+        WHERE REGEXP_REPLACE(TRIM(telefono), '[^0-9]', '') = REGEXP_REPLACE(TRIM(@telefono), '[^0-9]', '');
+        "
+        return dbr.rec(db,sql,params)
+    }
+
+    function SaveDestination(&db,&data)
+    {
+        ref now = dbr.sql("now()")
+        ref destino = ifnull(GetDestinationByPhone(db,data), record.create())
+
+        idestino = @@(destino,"#sys_pk")
+        telefono = trim(@@(data,"$telefono"))
+        nombre = trim(@@(data,"$nombre"))
+        direccion = trim(@@(data,"$domicilio"))
+        longitud = @@(data,"#longitud")
+        latitud = @@(data,"#latitud")
+        notas = trim(@@(data,"$refdom"))
+
+        if idestino < 1
+        {
+            using destino
+            {
+                @"sys_guid": uuid()
+                @"sys_dtcreated*": now
+                @"sys_timestamp*": now
+                @"sys_dtexported*": now
+                @"sys_exported": 0
+                @"sys_recver": 0
+            }
+            telefono, nombre, direccion, notas, longitud, latitud >> destino
+
+            do dbr.insert(db,"dmns_destino",destino)
+            idestino = dbr.num(db,"SELECT LAST_INSERT_ID()",@null)
+        }
+        else
+        {
+            idestino >> params
+
+            if direccion != "" { direccion >> destino }
+            if notas != "" { notas >> destino }
+            if longitud != 0 { longitud >> destino }
+            if latitud != 0 { latitud >> destino }
+
+            using destino
+            {
+                @"sys_timestamp*": now
+                @"sys_recver*": dbr.sql("ifnull(sys_recver,0) + 1")
+            }
+
+            do dbr.update(db,"dmns_destino",destino,"sys_pk=@idestino",params)
+        }
+
+        return idestino
+    }
+
+    function SetEntrega(&db,iventa,idestino)
+    {
+        ref now = dbr.sql("now()")
+        new entrega
+        {
+            @"sys_guid": uuid()
+            @"sys_dtcreated*": now
+            @"sys_timestamp*": now
+            @"sys_dtexported*": now
+            @"sys_exported": 0
+            @"sys_recver": 0
+            @"venta": iventa
+            @"destino": idestino
+        }
+        do dbr.insert(db,"dmns_entrega",entrega)
+    }
+
+    function ResolveTableID(&data)
+    {
+        guid = @@(data,"$order_guid")
+
+        if guid == "" { guid = @@(data,"$cuenta") }
+        if guid == "" { guid = @@(data,"$table_id") }
+        if guid == "" { guid = @@(data,"$id_table") }
+
+        return guid
+    }
+
+    function OpenHomeDeliveryTicket(&db,&data)
+    {
+        guid = ResolveTableID(data)
+        if guid == "" { guid = uuid() }
+        else
+        {
+            guid >> p
+            ref r = dbr.rec(db,"SELECT sys_pk FROM venta WHERE sys_guid = @guid",p)
+            if not(isnull(r)) { return guid }
+        }
+
+        icliente = dbr.num(db,"SELECT sys_pk FROM cliente WHERE codigo=@cliente",data)
+        iagente = dbr.num(db,"SELECT sys_pk FROM agente WHERE codigo=@mesero",data)
+        ref_size = dbr.vars.getd(db, "ventas_fix_ref_size", 8)
+        idivisa = parse.num(dbr.vars.get(db,"FXCA013")) // Divisa predeterminada
+        tipocambio = dbr.num(db,ftext("SELECT tcambio FROM divisa WHERE sys_pk = #<idivisa>"),@null)
+
+        // Generar referencia del ticket
+        sql = ftext("SELECT sys_pk AS iblock, serie FROM blockdocumentos WHERE documento = #<@cTicket> AND activo LIMIT 1")
+        ref block = dbr.rec(db,sql,@null)
+
+        iblock, serie << block
+        fultimo = dbr.folios.set_new(db, iblock, dbr.folios.get_new(db,iblock), 3)
+        referencia = serie + padleft(str(fultimo),ref_size,"0")
+
+        ref folio = dbr.folios.info(db, iblock, fultimo)
+
+        // Estructura para la nueva venta
+        ref now = dbr.sql("now()")
+        new venta
+        {
+            @"sys_timestamp*": now
+            @"sys_guid": guid
+            @"sys_dtcreated*": now
+            @"sys_exported": 0
+            @"sys_dtexported*": now
+            @"sys_info": "DS" //Servicio a domicilio
+            @"auditado": 0
+            @"contabilizado": 0
+            @"descuento1": 0
+            @"descuento2": 0
+            @"formapago": @fp_contado
+            @"importeadicional": 0
+            @"impuesto1": 0
+            @"impuesto2": 0
+            @"impuesto3": 0
+            @"impuesto4": 0
+            @"referencia": referencia
+            @"dmnsmesa": cut("DS/"+referencia,45)
+            @"dmnsnota": trim(@@(data,"$notas"))
+            @"dmnspersonas": 1
+            @"documento": @cTicket
+            @"statusadministrativo": @stt_adm_abierto
+            @"statusentrega": @stt_ent_na
+            @"statusfacturacion": @stt_fac_xfacturar
+            @"statusfinanciero": @stt_fin_na
+            @"subtotal": 0
+            @"tipodomicilio": 0
+            @"fecha*": now
+            @"fembarque*": now
+            @"fentrega*": now
+            @"fliquidacion*": now
+            @"fultimocobro*": now
+            @"tipocambio": tipocambio
+            @"pcomision": 0
+            @"vencimiento*": now
+            @"icconsumo": @@(data,"#icconsumo")
+            @"icliente": icliente
+            @"idivisa": idivisa
+            @"ifolio": @@(folio,"#sys_pk")
+        }
+
+        if iagente > 0 { venta<"iagente"> : iagente }
+
+        // Crear venta
+        do dbr.insert(db,"venta",venta)
+        iventa = dbr.num(db,"SELECT LAST_INSERT_ID()",@null)
+        idestino = SaveDestination(db,data)
+        do SetEntrega(db,iventa,idestino)
+
+        return guid
+    }
+
+    function AddOrder(&db,&data,cuenta)
+    {
+        @__from_sise = @true
+
+        new params
+        {
+            @"module": "pos"
+            @"process": "dinner"
+            @"entity": "tables"
+            @"id_table": cuenta
+        }
+
+        data<"id_table"> : cuenta
+        data<"waiter"> : @@(data,"$mesero")
+        data<"cc"> : @@(data,"#icconsumo")
+
+        ref postData = command.adapter.payload(db,data)
+        do execute.command(db,params,postData)
+    }
+
+    function responseTemplate(&db,cuenta)
+    {
+        cuenta >> params
+        sql = "
+        SELECT
+            SUM(IFNULL(d.precio,0) * IFNULL(d.cantidad,0)) AS subtotal,
+            SUM(IFNULL(d.descuento1,0)) AS descuento1,
+            SUM(IFNULL(d.descuento2,0)) AS descuento2,
+            SUM(IFNULL(d.impuesto1,0)) AS impuesto1,
+            SUM(IFNULL(d.impuesto2,0)) AS impuesto2,
+            SUM(IFNULL(d.impuesto3,0)) AS impuesto3,
+            SUM(IFNULL(d.impuesto4,0)) AS impuesto4,
+            IFNULL(SUM(
+                ((IFNULL(d.precio,0) * IFNULL(d.cantidad,0))
+                - IFNULL(d.descuento1,0)
+                - IFNULL(d.descuento2,0))
+                + IFNULL(d.impuesto1,0)
+                + IFNULL(d.impuesto2,0)
+                + IFNULL(d.impuesto3,0)
+                + IFNULL(d.impuesto4,0)
+            ),0) total
+        FROM
+            venta v
+            INNER JOIN dventa d ON d.fk_venta_detalle = v.sys_pk
+        WHERE v.sys_guid = @cuenta
+        "
+        ref amounts = dbr.rec(db,sql,params)
+
+        total = format(@@(amounts,"#total"),"$ #,#.00")
+        return ftext("Orden aceptada (id:#<cuenta>). Total: #<total>")
+    }
+
+    if not(isset("@__process_request")) { @__process_request = @true }
+    if parse.bool(@__process_request)
+    {
+        do errordet(@false)
+
+        // -- Procesar solicitud HTTP -------------------------
+        go sise_base_service(params:params, payload:payload, response:response)
+        {
+            ref db = _db()
+            ref data = @@(payload,"&data")
+            ref pedido = @@(data,"&pedido")
+
+            if @@(params,"$cconsumo") == "" { do rise_error(400,"No se proporciono un centro de consumo.") }
+
+            data<"cliente"> : ifstr(@@(params,"$cliente")!="", @@(params,"$cliente"), "(PG)")
+            data<"icconsumo"> : dbr.num(db,"SELECT sys_pk FROM cconsumo WHERE codigo=@cconsumo",params)
+            data<"cconsumo"> : @@(params,"$cconsumo")
+            data<"mesero"> : @@(params,"$mesero")
+
+            do dbr.begin(db)
+            
+            do field.remove(data,"pedido")
+            cuenta = OpenHomeDeliveryTicket(db,data)
+            
+            data<"pedido*"> : pedido
+            do AddOrder(db,data,cuenta)
+
+            if dbr.in_transaction(db) { do dbr.commit(db) }
+
+            http_status = 200
+            response<"message"> : responseTemplate(db,cuenta)
+
+            exception
+            {
+                http_status = last_error_code()
+                if dbr.in_transaction(db) { do dbr.rollback(db) }
+
+                using response
+                {
+                    @"success": @false
+                    @"message": "No fue posible procesar la orden: "+last_error()
+                }
+            }
+
+            do set_http_status(http_status)
+        }
+    }
+}

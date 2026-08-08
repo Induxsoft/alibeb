@@ -1,0 +1,59 @@
+#include "dkli.dkh"
+#!
+program "Cancelar cuenta"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "lib.sise.dk"
+    #include "comandas/dmcm/app/svc/lib.dk"
+
+    do errordet(@false)
+
+    function ResolveTableID(&data)
+    {
+        guid = @@(data,"$order_guid")
+
+        if guid == "" { guid = @@(data,"$cuenta") }
+        if guid == "" { guid = @@(data,"$table_id") }
+        if guid == "" { guid = @@(data,"$id_table") }
+
+        return guid
+    }
+
+    // -- Procesar solicitud HTTP -------------------------
+    go sise_base_service(params:params, payload:payload, response:response)
+    {
+        ref db = _db()
+        ref data = @@(payload,"&data")
+
+        order_guid = ResolveTableID(data)
+        if order_guid == "" { do rise_error(400,"No se proporciono el id de la orden.") }
+
+        order_guid >> params
+        id_table = dbr.num(db,"SELECT IFNULL((SELECT sys_pk FROM venta WHERE sys_guid = @order_guid),0);",params)
+
+        if id_table > 0
+        {
+            id_table >> params
+            do cancel.table(db,params,@null)
+        }
+
+        http_status = 200
+        response<"message"> : "Se cancelo la orden"
+
+        exception
+        {
+            http_status = last_error_code()
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
+
+            using response
+            {
+                @"success": @false
+                @"message": last_error()
+            }
+        }
+
+        do set_http_status(http_status)
+    }
+}

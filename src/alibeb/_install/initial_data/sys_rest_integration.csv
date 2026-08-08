@@ -1,3 +1,5 @@
 sys_guid,sys_dtcreated,sys_timestamp,sys_recver,id,description,token,source,pack_id,disabled
 
 5ea0a8ac04c846afbce7781ddb814ea4,2026-08-04 12:00:00,2026-08-04 12:00:00,0,pos-menu,Consulta el menu disponible del punto de venta,pos-menu,alibeb/sise/get-pos-menu.dkl,alibeb,0
+ead4f23aaf634b588ac10239c10c7355,2026-08-05 12:00:00,2026-08-05 12:00:00,0,food-delivery,Ordenar comida a domicilio,food-delivery,alibeb/sise/food-delivery.dkl,alibeb,0
+31c7018acdc841208b795126f3659477,2026-08-07 12:00:00,2026-08-07 12:00:00,0,cancel-delivery,Cancelar cuenta,cancel-delivery,alibeb/sise/cancel-delivery.dkl,alibeb,0
