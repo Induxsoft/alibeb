@@ -257,12 +257,12 @@ module "lib.dk"
 	}
 	producirOrdenes::&db,&params
 	{
-		ref orden=dbr.rec(db,"SELECT o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa,o.iventa FROM orden o WHERE o.iventa=@idkdf;",params)
+		ref orden=dbr.rec(db,"SELECT o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa,o.iventa FROM orden o WHERE o.sys_pk=@idkdf;",params)
         if isnull(orden){do rise_error(500,"No se encontró la orden indicada")}
 
         params<"code_cat_sal">:GetVars("dprod_output_cat")
         params<"code_cat_ent">:GetVars("dprod_input_cat")
-        
+        pds_action=parse.num(GetVars("pds_btn_mode"))
         new context
         {
             @"db*":db
@@ -275,11 +275,11 @@ module "lib.dk"
             @"descripcion_entrada":GetVars("dprod_input_description")
             @"cat_salida":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_sal",params)
             @"cat_entrada":dbr.num(db,"SELECT sys_pk from categoria where codigo=@code_cat_ent",params)
-            @"venta":@@(params,"#idkdf")
+            @"venta":@@(orden,"#iventa")
             @"orders*":dbr.list(db,"SELECT o.sys_pk,o.sys_guid,o.referencia,o.`status`,o.atendido,o.idivisa ,o.icconsumo,cc.ialmacen
                         FROM orden o 
                         INNER JOIN cconsumo cc ON o.icconsumo=cc.sys_pk
-                        WHERE o.iventa=@idkdf AND IFNULL(o.atendido,0)=0;",params)
+                        WHERE o.sys_pk=@idkdf AND IFNULL(o.atendido,0)=0;",params)
         }
         
         if pds_action == 1 //ejecucion estricta

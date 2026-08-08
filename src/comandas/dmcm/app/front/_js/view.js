@@ -722,7 +722,7 @@ var views=
 								<span>Indicaciones</span>
 							</button>
 
-                                          <button class="${exist_adicional ? ``:`d-none`}" id="btn_adicional_${uuid}" onclick='controller.indicatios(${JSON.stringify(itm)},"${uuid}")'>
+                                          <button class="${exist_adicional ? ``:`d-none`}" id="btn_adicional_${uuid}" onclick='controller.indicatios(${JSON.stringify(itm)},"${uuid}",true)'>
 								<div>
 									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z" /><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" /></svg>
 								</div>
@@ -837,13 +837,29 @@ var views=
             if(subtotal)
                   subtotal.innerHTML=`<h3>$ ${views.format(price,controller.decimals,".",",")}</h3>`;
       },
-      show_indications:function(options,uuid,uuid_ant="")
+      show_indications:function(options,uuid,uuid_ant="",isadic=false)
       {
             var multiples=document.querySelector("#div-multiples");
-            if(multiples)multiples.innerHTML="";
-
+            var div_aditionals=document.getElementById("div-aditionals");
             var select=document.querySelector("#div-singles");
-            if(select)select.innerHTML="";
+
+            if(multiples)
+            {
+                  multiples.innerHTML="";
+                  multiples.classList.add("d-none");
+                  if(isadic)multiples.classList.remove("d-none");
+            }
+            if(select)
+            {
+                  select.innerHTML="";
+                  select.classList.add("d-none");
+                  if(isadic)select.classList.remove("d-none");
+            }
+            if(div_aditionals)
+            {
+                  div_aditionals.classList.remove("d-none");
+                  if(isadic)div_aditionals.classList.add("d-none");
+            }
 
             var html="";
             var html_select="";
@@ -1001,7 +1017,8 @@ var views=
             }
 
             var notas=document.querySelector("#txtnotas-indicacion");
-            list_orders.forEach(function(elem,index){
+            list_orders.forEach(function(elem,index)
+            {
                   if(elem.uuid==uuid)
                   {
                         var times=document.querySelectorAll("#times > button");
@@ -1013,9 +1030,9 @@ var views=
                                     return false;
                               }
                         });
-                        if(elem.notas)
+                        if(elem.notas || elem.notes)
                         {
-                              notas.value=elem.notas;
+                              notas.value=elem.notas??elem.notes;
                               return false;
                         }else
                         {

@@ -1188,10 +1188,10 @@ var controller=
       views.counter();
       views.showTotal();
     },
-    indicatios:function(item,uuid)
+    indicatios:function(item,uuid,isadic=false)
     {
       controller.show_modal('#modal-indicaciones');
-      views.show_indications(item.options,uuid);
+      views.show_indications(item.options,uuid,"",isadic);
     },
     lifetime:function(time)
     {
@@ -1241,7 +1241,8 @@ var controller=
         if(id===elem.uuid)
         {
           var values=[];
-          for (var i = 0; i < data.options.length; i++) {
+          for (var i = 0; i < data.options.length; i++) 
+          {
             var opt=data.options[i];
             var vals=controller.get_indications(opt.name,opt.type=="multiple");
             
@@ -1254,7 +1255,8 @@ var controller=
             }
           }
           var price=0;
-          for (var j = 0; j <values.length; j++) {
+          for (var j = 0; j <values.length; j++) 
+          {
             var value=values[j];
             if(value.name==="adds")
             {
@@ -1289,12 +1291,10 @@ var controller=
       controller.hide_modal('#modal-indicaciones');
       views.add_details(time,text_detail,detail_indications);
       views.showTotal();
-
     },
     get_indications:function(name,ismultiple)
     {
       var reqname = this.escape_selector(name.replace(/ /g,""));
-      console.log(reqname)
       if(ismultiple) {var indications=document.querySelectorAll(`.div-multiple > .div-check_${reqname} input`);}
       else {var indications=document.querySelectorAll(`.body-single > .div-single_${reqname} > select`);}
 
@@ -1361,7 +1361,7 @@ var controller=
         producto:pkproducto,
         action:"uptorder"
       }
-      // console.log(data)
+      
       // return;
       var uri=`${url}pos/dinner/foodbev/${idt}/`;
       model.invoke_service(uri,data,function(data) {
@@ -1747,7 +1747,7 @@ var controller=
       var uri=`${url}pos/dinner/load-tickets/`+params;
       let tbody_tickets=document.getElementById("tbody-tickets");
       if(!tbody_tickets)return;
-      console.log(uri)
+      
       views.toggle(document.body,false,"","Cargando, por favor espere...");
         model.invoke_service(uri,null,(data) =>
         {

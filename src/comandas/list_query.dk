@@ -567,7 +567,7 @@ WHERE
     cp.Codigo = @cprod
     and (
         ifnull(o.atendido,0) = 0
-    ) #<@where> GROUP BY qv.sys_guid "
+    ) #<@where> GROUP BY o.sys_pk "
 
 
     @kdf_last_order="select count(o.sys_pk) from orden o
@@ -580,14 +580,14 @@ WHERE
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
-                        where orden.iventa=@iventa AND cp.codigo=@cprod and ifnull(orden.`atendido`,0)=0"
+                        where orden.sys_pk=@orden AND orden.iventa=@iventa AND cp.codigo=@cprod and ifnull(orden.`atendido`,0)=0"
    
    @kds.updateventa="update venta set StatusAdministrativo=@StatusAdministrativo where sys_pk=@idkdf"
 
    @kds.updateorder="update orden o inner join cproduccion cp on o.icproduccion=cp.sys_pk
                     inner join qventasserviciomesa v on o.iventa=v.sys_pk 
                     SET o.`atendido`=@status,o.sys_timestamp=@sys_timestamp,o.hproduccion=@hproduccion,o.fproduccion=@fproduccion,o.fatendido=now()
-                     where v.sys_pk=@idkdf and cp.codigo=@cprod"
+                     where o.sys_pk=@idkdf and cp.codigo=@cprod"
 
     @kdf_tables_orders_history="select
         distinct qv.dmnsmesa as 'code',
@@ -628,7 +628,7 @@ WHERE
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
-                        where orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`atendido`) AND DATE(NOW())=DATE(orden.sys_timestamp)  AND HOUR(NOW())=HOUR(orden.sys_timestamp) order BY orden.sys_timestamp DESC  LIMIT  10 "
+                        where orden.sys_pk=@orden AND orden.iventa=@iventa AND cp.codigo=@cprod and (orden.`atendido`) AND DATE(NOW())=DATE(orden.sys_timestamp)  AND HOUR(NOW())=HOUR(orden.sys_timestamp) order BY orden.sys_timestamp DESC  LIMIT  10 "
     // *************************************************************************************************************
 
     // ******************************************************kds admin***********************************************

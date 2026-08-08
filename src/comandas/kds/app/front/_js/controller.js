@@ -44,6 +44,7 @@ var controller={
   },
   view_history:function()
   {
+    this.get_commands_history();
     controller.show_modal("modal-historial");
   },
   show_modal:function(idmodal)

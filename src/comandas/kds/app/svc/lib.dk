@@ -24,9 +24,11 @@ module "lib.dk"
         for i=0;i<@count(list_commands)
         {
             ref item=@item(list_commands,i)
-            new p{
-                @"iventa":@@(item,"sys_pk")
+            new p
+            {
+                @"iventa":@@(item,"#sys_pk")
                 @"cprod":@@(params,"cprod")
+                @"orden":@@(item,"#pkorden")
             }
             item<"orders*">:kds.get.ordenes_adcs(db,p)//get.ordenes(db,p)
         }
@@ -119,8 +121,10 @@ module "lib.dk"
         for i=0;i<@count(list_history)
         {
             ref item=@item(list_history,i)
-            new p{
-                @"iventa":@@(item,"sys_pk")
+            new p
+            {
+                @"orden":@@(item,"#pkorden")
+                @"iventa":@@(item,"#sys_pk")
                 @"cprod":@@(params,"cprod")
             }
             item<"orders*">:kds.get.orders_history(db,p)
