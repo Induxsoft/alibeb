@@ -139,15 +139,13 @@ module ":command.adapter"
 
             if sku!=""
             {
-                repeat quantity
+                new value
                 {
-                    new value
-                    {
-                        @"sku":sku
-                        @"amount":amount
-                    }
-                    do list.add(values,value)
+                    @"sku":sku
+                    @"quantity":quantity
+                    @"amount":amount
                 }
+                do list.add(values,value)
             }
         }
 
@@ -155,9 +153,7 @@ module ":command.adapter"
         {
             new option
             {
-                @"name":"__adds"
-                @"type":"multiple"
-                @"required":0
+                @"name":"adds"
                 @"values*":values
             }
             do list.add(result,option)

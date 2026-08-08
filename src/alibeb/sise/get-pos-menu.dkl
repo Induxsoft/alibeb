@@ -67,6 +67,34 @@ program "Consulta el menú del Punto de Venta V12"
         return dbr.list(db,sql,@null)
     }
 
+    function GetAdditionalIngredientsByLine(&db,ilinea)
+    {
+        sql = ftext("
+        SELECT
+            p.codigo,
+            p.descripcion,
+            p.padic1,
+            p.padic2,
+            p.padic3,
+            p.padic4,
+            p.padic5,
+            i.i1venta,
+            i.i2venta,
+            i.i3venta,
+            i.i4venta
+        FROM
+            producto p
+            INNER JOIN cfgimpuesto i ON p.impuestos = i.sys_pk 
+        WHERE
+            NOT ifnull(p.sys_deleted,0)
+            AND ifnull(p.adicional,0) = 1
+            AND p.ilinea = #<ilinea>
+        ORDER BY p.codigo;
+        ")
+
+        return dbr.list(db,sql,@null)
+    }
+
     function GetGroupsOfVariableIngredients(&db,iproducto)
     {
         sql = ftext("
@@ -95,20 +123,37 @@ program "Consulta el menú del Punto de Venta V12"
         return dbr.list(db,sql,@null)
     }
 
-    function SetLine(&line,&output)
+    function SetLine(&db,&line,&output)
     {
         do text.say(output,@@(line,"$descripcion"))
 
-        indicaciones = trim(@@(line,"$uf_indicaciones"))
-        if indicaciones == "" { do text.say(output,"") }
+        options = trim(@@(line,"$uf_indicaciones"))
+        if options == "" { do text.say(output,"") }
         else
         {
-            indicaciones = replace(indicaciones,"\r\n","\n")
-            indicaciones = replace(indicaciones,"\n",", ")
-            indicaciones = ifstr(@@(line,"#uf_req_indicaciones"), "(Requerido)", "(Opcional)") + " Elegir indicaciones: " + indicaciones
+            options = replace(options,"\r\n","\n")
+            options = replace(options,"\n",", ")
+            options = ifstr(@@(line,"#uf_req_indicaciones"), "(Requerido)", "(Opcional)") + " Elegir indicaciones: " + options
 
             do text.say(output,"")
-            do text.say(output,indicaciones)
+            do text.say(output,options)
+            do text.say(output,"")
+        }
+
+        ref additional = GetAdditionalIngredientsByLine(db,@@(line,"#sys_pk"))
+        total = list.count(additional)
+        if total > 0
+        {
+            do text.say(output,"(Opcional) Elegir adicionales:")
+            for i = 0; i < total
+            {
+                ref item = list.obj(additional,i)
+                
+                precio = aplImpuestos(@@(item,campoPrecioAdcR5(@PrecioAdcs)), parseImpuesto(@@(item,"i1venta"),@zonaImpuesto), parseImpuesto(@@(item,"i2venta"),@zonaImpuesto), parseImpuesto(@@(item,"i3venta"),@zonaImpuesto), parseImpuesto(@@(item,"i4venta"),@zonaImpuesto))
+                
+                ingredient = "- "+ @@(item,"$codigo") +" "+ @@(item,"$descripcion") +" "+ format(precio,@formato_moneda)
+                do text.say(output,ingredient)
+            }
             do text.say(output,"")
         }
     }
@@ -145,7 +190,7 @@ program "Consulta el menú del Punto de Venta V12"
 
     function SetRecipes(db,&recipes,&output)
     {
-        do text.say(output,"| Código | Descripción | Precio |")
+        do text.say(output,"Recetas (Código - Descripción - Precio { ...componentes })")
         do text.say(output,"")
 
         for i = 0; i < list.count(recipes)
@@ -154,7 +199,7 @@ program "Consulta el menú del Punto de Venta V12"
 
             precio = aplImpuestos(@@(recipe,campoPrecioR5(@PrecioVenta)), parseImpuesto(@@(recipe,"i1venta"),@zonaImpuesto), parseImpuesto(@@(recipe,"i2venta"),@zonaImpuesto), parseImpuesto(@@(recipe,"i3venta"),@zonaImpuesto), parseImpuesto(@@(recipe,"i4venta"),@zonaImpuesto))
 
-            row = "| "+ @@(recipe,"$codigo") +" | "+ @@(recipe,"$descripcion") +" | "+ format(precio,@formato_moneda) +" |"
+            row = @@(recipe,"$codigo") +" - "+ @@(recipe,"$descripcion") +" - "+ format(precio,@formato_moneda)
             do text.say(output,row)
 
             notes = trim(@@(recipe,"$notas"))
@@ -179,13 +224,17 @@ program "Consulta el menú del Punto de Venta V12"
 
             if list.count(recipes) > 0
             {
-                do SetLine(line,menu)
+                do SetLine(db,line,menu)
                 do SetRecipes(db,recipes,menu)
                 do text.say(menu,"---")
             }
         }
 
-        return text.get(menu)
+        content = text.get(menu)
+        do text.clear(menu)
+        do _free(menu)
+
+        return content
     }
 
     if not(isset("@__process_request")) { @__process_request = @true }
