@@ -115,12 +115,17 @@ module "index"
 			file_include=path.concat(@path_view,"vw_tickets.dkl")
 			break
 		}
+		case "detail-acount"
+		{
+			@module="vw_principal"
+			file_include=path.concat(@path_view,"vw_details.dkl")
+			break
+		}
 		default
 		{
 			@token=""
 			file_include=path.concat(@path_view,"login.dkl")
 		}
-			
 	}
 	
 	#$

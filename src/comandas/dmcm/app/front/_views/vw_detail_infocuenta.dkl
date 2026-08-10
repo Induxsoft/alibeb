@@ -228,7 +228,7 @@ div(class="card cmmd-account" id="mol_cmmd_account" style="background-color:#FFF
             }
             "Enviada"
         }
-        a(class="btn " id="btn-detalles" href="#")
+        a(class="btn " id="btn-detalles" href="#<preserveQSParams('./?view=detail-acount')>")
         {
             div(class="div-img")
             {
