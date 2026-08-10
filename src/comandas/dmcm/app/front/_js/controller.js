@@ -1304,26 +1304,37 @@ var controller=
         {
           if(elem.checked )
           {
+            let sku=elem.getAttribute("sku") ?? "";
+            let quantity=document.getElementById(`quantity_${sku.replace(/ /g,"").trim()}`);
+            let cantidad=quantity ? Number(quantity.value):0;
+            if(cantidad < 0)cantidad=1;
+
             if(ismultiple && name===name_addcs)
             {
-              var d={
+              var d=
+              {
                 text:elem.value,
-                sku:elem.getAttribute("sku"),
-                amount:Number(elem.getAttribute("amount"))
+                sku:sku,
+                amount:Number(elem.getAttribute("amount")) * cantidad,
+                quantity:cantidad
               };
-            }else
+            }
+            else
+            {
               var d={
-                text:elem.value,
-                sku:"",
-                amount:0
-              };
+              text:elem.value,
+              sku:sku,
+              amount:0,
+              quantity:cantidad
+            };
+            }
             values.push(d);
             // elem.checked=false;
           }
         }
         else 
         {
-          if(elem.options.selectedIndex>0)
+          if(elem.options && elem.options.selectedIndex>0)
           {
             var val=elem.options[elem.options.selectedIndex].value;
             var d={text:val};
@@ -1336,10 +1347,11 @@ var controller=
       {
         name="adds";
       }
-      var data_indications={
-          name:name,
-          values:values
-        }
+      var data_indications=
+      {
+        name:name,
+        values:values
+      }
       if(values.length>0)
         return data_indications;
       else
