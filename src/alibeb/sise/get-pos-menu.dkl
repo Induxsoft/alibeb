@@ -26,7 +26,8 @@ program "Consulta el menú del Punto de Venta V12"
             l.codigo,
             l.descripcion,
             l.uf_req_indicaciones,
-            l.uf_indicaciones
+            l.uf_indicaciones,
+            l.notas
         FROM
             linea l
         WHERE
@@ -40,6 +41,8 @@ program "Consulta el menú del Punto de Venta V12"
 
     function GetRecipesByLine(&db,ilinea)
     {
+        sb_group = ftext("select g.sys_pk from grupoproductos_producto_ g where g.iproductos = p.sys_pk and g.igrupos = #<@visible_group>")
+        
         sql = ftext("
         SELECT
             p.sys_pk,
@@ -60,8 +63,15 @@ program "Consulta el menú del Punto de Venta V12"
             INNER JOIN cfgimpuesto AS i ON p.impuestos = i.sys_pk
         WHERE
             NOT ifnull(p.sys_deleted,0)
-            AND ifnull(p.visible,1) = 1
-            AND p.ilinea = #<ilinea>;
+            AND p.ilinea = #<ilinea>
+            AND (
+                CASE '#<@visibility_rule>'
+                    WHEN 'pos' THEN ifnull(p.visible,1) = 1
+                    WHEN 'e-commerce' THEN p.sys_info <> 'HIDDEN'
+                    WHEN 'both' THEN (ifnull(p.visible,1) = 1 OR p.sys_info <> 'HIDDEN')
+                    WHEN 'group' THEN (#<sb_group>) > 0
+                END
+            )
         ")
 
         return dbr.list(db,sql,@null)
@@ -126,16 +136,22 @@ program "Consulta el menú del Punto de Venta V12"
     function SetLine(&db,&line,&output)
     {
         do text.say(output,@@(line,"$descripcion"))
+        do text.say(output,"")
+
+        notes = trim(@@(line,"$notas"))
+        if notes != "" && @add_line_notes
+        {
+            do text.say(output,notes)
+            do text.say(output,"")
+        }
 
         options = trim(@@(line,"$uf_indicaciones"))
-        if options == "" { do text.say(output,"") }
-        else
+        if options != ""
         {
             options = replace(options,"\r\n","\n")
             options = replace(options,"\n",", ")
             options = ifstr(@@(line,"#uf_req_indicaciones"), "(Requerido)", "(Opcional)") + " Elegir indicaciones: " + options
 
-            do text.say(output,"")
             do text.say(output,options)
             do text.say(output,"")
         }
@@ -203,7 +219,7 @@ program "Consulta el menú del Punto de Venta V12"
             do text.say(output,row)
 
             notes = trim(@@(recipe,"$notas"))
-            if notes != "" { do text.say(output,notes) }
+            if notes != "" && @add_recipe_notes { do text.say(output,notes) }
 
             do SetVariableIngredients(db,@@(recipe,"#sys_pk"),output)
         }
@@ -246,7 +262,12 @@ program "Consulta el menú del Punto de Venta V12"
         go sise_base_service(params:params, payload:payload, response:response)
         {
             ref db = _db()
+
             @DecimalesEnImportes = parse.num(dbr.vars.get(db,"FXCA001"))
+            @add_line_notes = parse.bool(dbr.vars.getd(db, "alibeb.notas_de_linea_en_menu", "true"))
+            @add_recipe_notes = parse.bool(dbr.vars.getd(db, "alibeb.notas_de_receta_en_menu", "true"))
+            @visibility_rule = dbr.vars.getd(db, "alibeb.menu_visibility_rule", "pos")
+            @visible_group = parse.num(dbr.vars.get(db,"alibeb.visible_group"))
 
             response<"message"> : BuildMenu(db)
 

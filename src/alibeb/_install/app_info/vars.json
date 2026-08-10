@@ -40,5 +40,91 @@
                 }
             }
         ]
+    },
+    {
+        "id": "alibeb",
+        "caption": "Alimentos y bebidas",
+        "help": "Variables del paquete: alibeb",
+        "vars": [
+            {
+                "varname": "alibeb.notas_de_linea_en_menu",
+                "vardefault": "1",
+                "varvalue": "1",
+                "varcaption": "Notas de la línea en menú",
+                "varhelp": "Incluir notas de la línea en el contexto del menú",
+                "vartype": "bool",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"list",
+                        "values":[
+                            {"value":"1", "text":"Sí"},
+                            {"value":"0", "text":"No"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"value"
+                    }
+                }
+            },
+            {
+                "varname": "alibeb.notas_de_receta_en_menu",
+                "vardefault": "1",
+                "varvalue": "1",
+                "varcaption": "Notas del producto en menú",
+                "varhelp": "Incluir notas del producto en el contexto del menú",
+                "vartype": "bool",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"list",
+                        "values":[
+                            {"value":"1", "text":"Sí"},
+                            {"value":"0", "text":"No"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"value"
+                    }
+                }
+            },
+            {
+                "varname": "alibeb.menu_visibility_rule",
+                "vardefault": "pos",
+                "varvalue": "pos",
+                "varcaption": "Productos disponibles",
+                "varhelp": "Productos disponibles para el agente",
+                "vartype": "string",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"list",
+                        "values":[
+                            {"value":"pos", "text":"Visibles en POS"},
+                            {"value":"e-commerce", "text":"Visibles en E-Commerce"},
+                            {"value":"both", "text":"Cualquiera, POS o E-Commerce"},
+                            {"value":"group", "text":"Solo un grupo"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"value"
+                    }
+                }
+            },
+            {
+                "varname": "alibeb.visible_group",
+                "vardefault": "0",
+                "varvalue": "0",
+                "varcaption": "Grupo de productos",
+                "varhelp": "Grupo de productos visibles para el agene",
+                "vartype": "string",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"query",
+                        "query":"SELECT 0 AS sys_pk, 'Ninguno' AS nombre UNION SELECT sys_pk, nombre FROM grupoproductos WHERE NOT ifnull(sys_deleted,0);",
+                        "keyfield":"sys_pk",
+                        "showfield":"nombre"
+                    }
+                }
+            }
+        ]
     }
 ]
