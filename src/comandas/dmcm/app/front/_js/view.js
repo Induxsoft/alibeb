@@ -593,15 +593,15 @@ var views=
             {
                   printGrupo(grupos);
                   renderTabla();
+
                   controller.show_modal('#modal-recetas-variables');
 
                   let btn_acept_prods_vars=document.getElementById("btn_acept_prods_vars");
                   let btn_close_mdl_prods_vars=document.getElementById("btn_close_mdl_prods_vars");
-
-                  btn_acept_prods_vars.addEventListener("click",()=>
+                  
+                  btn_acept_prods_vars.onclick =()=>
                   {
                         let total=totalCantidad(seleccion,null,true);
-                        
                         if(total == -1){return;}
                         if( total < min)
                         {
@@ -610,14 +610,14 @@ var views=
                         }
                         controller.hide_modal("#modal-recetas-variables");
                         resolve(true);
-                  });
-                  btn_close_mdl_prods_vars.addEventListener("click",()=>
+                  };
+
+                  btn_close_mdl_prods_vars.onclick=()=>
                   {
                         controller.hide_modal("#modal-recetas-variables");
                         resolve(false);
-                  });
+                  };
             });
-            
       },
       async add_foodbev(sys_pk,other=false)
       {
@@ -704,7 +704,9 @@ var views=
                                           <h3>$ ${views.format(itm.price * 1,controller.decimals,".",",")}</h3>
                                     </div>
                                     <div class="" id="detail-indications_${uuid}"></div>
-                                    <small>${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </small>
+                                    <div class="d-flex justify-content-end" style="grid-column: 1 / 3;">
+                                          <button class="btn btn-sm" id="cant_prods_variables_${uuid}" onclick="views.load_variables('${uuid}')">${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </button>
+                                    </div>
                               </div>
                         <small class="list-btns">
 
@@ -758,6 +760,38 @@ var views=
                   let btn_indicacion=document.getElementById("btn_indicacion_"+uf_req_indicaciones);
                   if(btn_indicacion)btn_indicacion.click();
             }
+      },
+      async load_variables(uuid_prod)
+      {
+           let orden=list_orders.find(e=>e.uuid==uuid_prod);
+           if(!orden || !orden.variables || orden.variables.length< 1)return;
+            
+           let itm=orden.sku;
+           if(itm.grupos.length >0)
+            {
+                  edit_seleccion=Object.fromEntries(
+                        Object.entries(orden.variables).map(([key, value]) => [
+                              Number(key),
+                              new Map(Object.entries(value).map(([k, v]) => [Number(k), v]))
+                        ])
+                  );
+                  
+                  let h=await this.createGrupos(itm.grupos??[]);
+                  edit_seleccion=null;
+                  if(!h)return;
+                  
+                  const filtrado = Object.fromEntries(
+                  Object.entries(seleccion)
+                        .filter(([key, value]) => value instanceof Map && value.size > 0)
+                        .map(([key, value]) => [key, Object.fromEntries(value)])
+                  );
+
+                  if(Object.keys(filtrado).length > 0)orden["variables"]=filtrado;
+            }
+            let cant_prods_variables_=document.getElementById("cant_prods_variables_"+uuid_prod);
+            if(!cant_prods_variables_)return;
+
+            cant_prods_variables_.textContent=orden.variables ? totalCantidad(seleccion) +"+ Producto variable":"";
       },
       select_waiter:function(idselect,data)
       {
@@ -837,12 +871,22 @@ var views=
             if(subtotal)
                   subtotal.innerHTML=`<h3>$ ${views.format(price,controller.decimals,".",",")}</h3>`;
       },
+      _options:null,
       show_indications:function(options,uuid,uuid_ant="",isadic=false)
       {
             var multiples=document.querySelector("#div-multiples");
             var div_aditionals=document.getElementById("div-aditionals");
             var select=document.querySelector("#div-singles");
-
+            let lbl_indicaciones=document.getElementById("lbl-indicaciones");
+            let total_adics=document.getElementById("total_adics");
+            
+            if(lbl_indicaciones)lbl_indicaciones.textContent=!isadic ? lbl_indicaciones.getAttribute("title-indic") : lbl_indicaciones.getAttribute("title-adics") ;
+            if(total_adics)
+            {
+                  total_adics.textContent=" $ "+views.format(0,controller.decimals,".",",");
+                  total_adics.classList.add("d-none");
+                  if(isadic)total_adics.classList.remove("d-none");
+            }
             if(multiples)
             {
                   multiples.innerHTML="";
@@ -866,7 +910,7 @@ var views=
             list_requireds=[];
 
             if(!options)options=[];
-            
+            this._options=options;
             if(options)
             {
                   for (var a = 0;a<options.length; a++) 
@@ -919,14 +963,25 @@ var views=
                                     html_val+=`<div class="p-0 m-0 div-check_${itm.name.replace(/ /g,"")}">
                                                 <div class="d-flex aling-items-center gap-2 form-check ">
                                                       <div>
-                                                      <input style="border-radius: 0 !important;width: 1.5rem;height: 1.5rem;" class="form-check-input" type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}" onchange="views.show_element('${idquantity}',this.checked)">
+                                                      <input style="border-radius: 0 !important;width: 1.5rem;height: 1.5rem;" class="form-check-input" type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}"
+                                                       onchange="
+                                                       views.show_element('div_${idquantity}',this.checked)
+                                                       views.show_element('${idquantity}',this.checked)">
                                                       </div>
                                                       <div>
                                                       <label class="fw-bold" for="${val.text.replace(/ /g,"")}">${val.text}</label><br>
-                                                      <small style="font-size: smaller;">$ ${views.format(val.amount,controller.decimals_backend,".",",")}</small>
+                                                      <small style="font-size: smaller;">$ ${views.format(val.amount,controller.decimals_backend,".",",")}</small><br>
+                                                      <small class="fw-bold d-none" style="font-size: smaller;" id="total_${idquantity}">$ ${views.format(val.amount,controller.decimals_backend,".",",")}</small>
                                                       </div>
                                                 </div>
-                                                <input type="number" class="form-control form-control-sm d-none" min="1" value="1" id="${idquantity}">
+                                                <div class="d-flex d-none" id="div_${idquantity}">
+                                                      <input type="number" class="form-control form-control-sm d-none w-50" min="1" value="1" step="1" id="${idquantity}"
+                                                      onkeydown="if (!/[0-9]/.test(event.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(event.key)) event.preventDefault();"
+                                                      oninput="this.value = this.value.replace(/\D/g, '')">
+
+                                                      <button class="btn" onclick="views.add_quantity_adic('${idquantity}',-1)">➖</button>
+                                                      <button class="btn" onclick="views.add_quantity_adic('${idquantity}',1)">➕</button>
+                                                </div>
                                           </div>`;
                               }
                               var name="";
@@ -935,7 +990,7 @@ var views=
 
                               if(html_val.trim()!="")
                               {
-                                    html+=`<h4 class="h3-name text-center" value="${itm.name}">${name}</h4>
+                                    html+=`<h4 class="h3-name text-center d-none" value="${itm.name}">${name}</h4>
                                     <div class="div-multiple">
                                           ${html_val}
                                     </div>
@@ -998,8 +1053,6 @@ var views=
                               </div>
                               `;
                         }
-                        
-                        
                   }
             }     
             
@@ -1046,6 +1099,51 @@ var views=
             var btnacept=document.querySelector("#btn_addcs");
             btnacept.setAttribute("onclick",`controller.add_indications("${uuid}")`);
       },
+      add_quantity_adic(id_input,cantidad)
+      {
+            let input=document.getElementById(id_input);
+            if(!input || (Number(input.value) < 2 && cantidad < 1))return;
+
+            input.value=Number(input.value) + cantidad;
+
+            this.total_adics("total_adics",id_input,true);
+      },
+      total_adics(idlbl_total,id_quantity,visible=false)
+      {
+            if(!this._options || !idlbl_total)return;
+
+            let lbl_total=document.getElementById(idlbl_total);
+            let total_adic_element=document.getElementById("total_"+id_quantity);
+            let sku_adic=id_quantity.replace("quantity_","");
+            
+            if(!lbl_total)return;
+
+            let total_adics=0;
+            let total_adic=0;
+
+            this._options.forEach(a => 
+            {
+               let adics=controller.get_indications(a.name,a.type == "multiple");   
+               
+               var itm=adics?.values  ?? [];
+              for(a=0;a<itm.length;a++)
+              {
+                var val=itm[a];
+                let sku=(val?.sku??"").replace(/ /g,"").trim();
+                total_adics+=Number(val.amount);
+                if(sku_adic == sku)total_adic+=Number(val.amount);
+              }
+            });
+
+            lbl_total.textContent=" $ "+views.format(total_adics,controller.decimals,".",",");
+
+            if(total_adic_element)
+            {
+                  total_adic_element.textContent=" $ "+views.format(total_adic,controller.decimals,".",",");
+                  // total_adic_element.classList.add("d-none");
+                  total_adic_element.classList.toggle("d-none",!visible);
+            }
+      },
       show_element(idelement,visible)
       {
             if(!idelement)return;
@@ -1053,10 +1151,14 @@ var views=
             if(!element)return;
             
             element.classList.add("d-none");
-
-            if(visible)element.classList.remove("d-none");
-
             element.value="0";
+            if(visible)
+            {
+                  element.classList.remove("d-none");
+                  element.value="1";
+            }
+
+            this.total_adics("total_adics",idelement,visible);
       },
       add_details:function(time,text_detail,detail_indications)
       {
@@ -1756,7 +1858,7 @@ let productoSeleccionado = null;
 let seleccion = {};
 let _grupos=[];
 // RENDER GRUPOS
-
+let edit_seleccion=null;
 function printGrupo(grupos)
 {
       _grupos=grupos;
@@ -1766,7 +1868,7 @@ function printGrupo(grupos)
       contGrupos.innerHTML="";
       grupoActual=null;
       productoSeleccionado=null;
-      seleccion = {};
+      seleccion = edit_seleccion ? edit_seleccion:{};
       minmaxgrupos={};
 
       for (let i = 0; i < grupos.length; i++) 
@@ -1961,7 +2063,7 @@ function totalCantidad(seleccion, grupoActual = null,validatebygroup=false)
             if (!(grupo instanceof Map)) continue;
 
             let total_grupo = 0;
-
+            
             for (const cantidad of grupo.values()) {
                   total += cantidad;
                   total_grupo += cantidad;

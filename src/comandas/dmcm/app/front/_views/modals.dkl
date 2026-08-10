@@ -96,18 +96,23 @@
         }
         div(class="just-cont-center" style="display:flex;")
         {
-            h4(id=""){$"Indicaciones"}br{}br{}
+            h4(id="lbl-indicaciones" "title-indic"="Indicaciones" "title-adics"="Adicionales"){$"Indicaciones"}br{}br{}
         }
         div(class="d-flex mt-2 container-all" id="div-modal" style="display:flex;")
         {
-           div(class="div-time w-100 d-flex just-cont-end just-itm-center" id="times")
+           div(class="div-time w-100 d-flex just-itm-center" id="times")
            {
+                div(class="flex-grow-1")
+                {
+                    h4(id="total_adics" ){"$ 0.00"}
+                }
+                
                 label(class="d-flex align-itm-center"){"Tiempos: "}
-                button(class="btn card-border" id="time_1" value="1" onclick="controller.time(this);"){"1"}
-                button(class="btn card-border" id="time_2" value="2" onclick="controller.time(this);"){"2"}
-                button(class="btn card-border" id="time_3" value="3" onclick="controller.time(this);"){"3"}
-                button(class="btn card-border" id="time_4" value="4" onclick="controller.time(this);"){"4"}
-                button(class="btn card-border" id="time_5" value="5" onclick="controller.time(this);"){"5"}
+                button(class="btn card-border" id="time_1" value="1" style="width: 3rem;height: 3rem;" onclick="controller.time(this);"){"1"}
+                button(class="btn card-border" id="time_2" value="2" style="width: 3rem;height: 3rem;" onclick="controller.time(this);"){"2"}
+                button(class="btn card-border" id="time_3" value="3" style="width: 3rem;height: 3rem;" onclick="controller.time(this);"){"3"}
+                button(class="btn card-border" id="time_4" value="4" style="width: 3rem;height: 3rem;" onclick="controller.time(this);"){"4"}
+                button(class="btn card-border" id="time_5" value="5" style="width: 3rem;height: 3rem;" onclick="controller.time(this);"){"5"}
            }
            div(class="card w-100 card-border mb-2 p-2" id="div-multiples" style="margin-bottom:.5cm !important;max-height: 15rem !important;overflow: auto;")
            {

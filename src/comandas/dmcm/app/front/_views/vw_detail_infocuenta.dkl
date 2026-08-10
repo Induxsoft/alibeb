@@ -47,6 +47,42 @@ div(id="module-nota" class="info-total" style="background-color:#FFF;height:auto
             </svg>
             Cliente'
         }
+        buttom(class="btn ms-2" id="btn-cancelar" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
+        {
+            $'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-file-x" viewBox="0 0 16 16">
+                <path d="M6.146 6.146a.5.5 0 0 1 .708 0L8 7.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707 6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8 6.146 6.854a.5.5 0 0 1 0-.708"/>
+                <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1"/>
+                </svg>'
+            "Cancelar"
+        }
+        buttom(class="btn ms-2" id="btn-show-cortesia" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>" onclick='')
+        {
+            $'<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+            <!-- Base de la caja -->
+            <rect x="40" y="100" width="176" height="100" rx="10"/>
+
+            <!-- Tapa -->
+            <rect x="30" y="70" width="196" height="40" rx="10"/>
+
+            <!-- Cinta vertical -->
+            <line x1="128" y1="70" x2="128" y2="200"/>
+
+            <!-- Cinta horizontal -->
+            <line x1="40" y1="120" x2="216" y2="120"/>
+
+            <!-- Moño -->
+            <path d="M128 70 
+                    C110 40, 70 50, 90 80
+                    C105 100, 128 85, 128 70"/>
+            
+            <path d="M128 70 
+                    C146 40, 186 50, 166 80
+                    C151 100, 128 85, 128 70"/>
+
+            </svg>'
+            "Cortesía"
+        }
     }
 }
 div(class="card cmmd-account" id="mol_cmmd_account" style="background-color:#FFF;")
@@ -87,48 +123,6 @@ div(class="card cmmd-account" id="mol_cmmd_account" style="background-color:#FFF
                 </svg>'
             }
             "Cobrar"
-        }
-        buttom(class="btn " id="btn-cancelar" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>")
-        {
-            div(class="div-img")
-            {
-                $'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-file-x" viewBox="0 0 16 16">
-                <path d="M6.146 6.146a.5.5 0 0 1 .708 0L8 7.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 8l1.147 1.146a.5.5 0 0 1-.708.708L8 8.707 6.854 9.854a.5.5 0 0 1-.708-.708L7.293 8 6.146 6.854a.5.5 0 0 1 0-.708"/>
-                <path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1"/>
-                </svg>'
-            }
-            "Cancelar"
-        }
-        buttom(class="btn " id="btn-show-cortesia" href="#" "data-href"="#<preserveQSParams('./?view=cobrar')>" onclick='')
-        {
-            div(class="div-img")
-            {
-                $'<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-
-                    <!-- Base de la caja -->
-                    <rect x="40" y="100" width="176" height="100" rx="10"/>
-
-                    <!-- Tapa -->
-                    <rect x="30" y="70" width="196" height="40" rx="10"/>
-
-                    <!-- Cinta vertical -->
-                    <line x1="128" y1="70" x2="128" y2="200"/>
-
-                    <!-- Cinta horizontal -->
-                    <line x1="40" y1="120" x2="216" y2="120"/>
-
-                    <!-- Moño -->
-                    <path d="M128 70 
-                            C110 40, 70 50, 90 80
-                            C105 100, 128 85, 128 70"/>
-                    
-                    <path d="M128 70 
-                            C146 40, 186 50, 166 80
-                            C151 100, 128 85, 128 70"/>
-
-                    </svg>'
-            }
-            "Cortesía"
         }
 
         //ds
@@ -233,6 +227,16 @@ div(class="card cmmd-account" id="mol_cmmd_account" style="background-color:#FFF
                 </svg>'
             }
             "Enviada"
+        }
+        a(class="btn " id="btn-detalles" href="#")
+        {
+            div(class="div-img")
+            {
+                $'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-ticket-detailed-fill" viewBox="0 0 16 16">
+                <path d="M0 4.5A1.5 1.5 0 0 1 1.5 3h13A1.5 1.5 0 0 1 16 4.5V6a.5.5 0 0 1-.5.5 1.5 1.5 0 0 0 0 3 .5.5 0 0 1 .5.5v1.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 11.5V10a.5.5 0 0 1 .5-.5 1.5 1.5 0 1 0 0-3A.5.5 0 0 1 0 6zm4 1a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7a.5.5 0 0 0-.5.5m0 5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 0-1h-7a.5.5 0 0 0-.5.5M4 8a1 1 0 0 0 1 1h6a1 1 0 1 0 0-2H5a1 1 0 0 0-1 1"/>
+                </svg>'
+            }
+            "Detalles"
         }
     }
 }
