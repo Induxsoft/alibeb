@@ -118,6 +118,7 @@ program "Ordenar comida a domicilio"
         ref_size = dbr.vars.getd(db, "ventas_fix_ref_size", 8)
         idivisa = parse.num(dbr.vars.get(db,"FXCA013")) // Divisa predeterminada
         tipocambio = dbr.num(db,ftext("SELECT tcambio FROM divisa WHERE sys_pk = #<idivisa>"),@null)
+        tipo = ifstr(isanyword(@@(data,"$tipo"),"recoge,FF"), "FF", "DS")
 
         // Generar referencia del ticket
         sql = ftext("SELECT sys_pk AS iblock, serie FROM blockdocumentos WHERE documento = #<@cTicket> AND activo LIMIT 1")
@@ -138,7 +139,7 @@ program "Ordenar comida a domicilio"
             @"sys_dtcreated*": now
             @"sys_exported": 0
             @"sys_dtexported*": now
-            @"sys_info": "DS" //Servicio a domicilio
+            @"sys_info": tipo
             @"auditado": 0
             @"contabilizado": 0
             @"descuento1": 0
@@ -150,7 +151,7 @@ program "Ordenar comida a domicilio"
             @"impuesto3": 0
             @"impuesto4": 0
             @"referencia": referencia
-            @"dmnsmesa": cut("DS/"+referencia,45)
+            @"dmnsmesa": cut(tipo+"/"+referencia,45)
             @"dmnsnota": trim(@@(data,"$notas"))
             @"dmnspersonas": 1
             @"documento": @cTicket
