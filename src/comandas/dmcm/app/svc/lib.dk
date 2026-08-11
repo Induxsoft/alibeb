@@ -2235,42 +2235,34 @@ module "lib.dk"
     
     insert.folio::db,params
     {
-        // new folio
-        // {
-        //     @"Sys_TimeStamp*":now()
-        //     @"Sys_GUID":toupper(cut(uuid(),30))
-        //     @"Sys_DTCreated*":now()
-        //     @"Cancelado":0
-        //     @"Sys_Exported":0
-        //     @"Sys_DTExported*":now()
-        //     @"Fecha*":now()
-        //     @"Folio":dbr.num(db,@folio_doc,@null)
-        //     @"Block":6
-        // }
-        // do dbr.insert(db,"foliosdocumentos",folio)
-        // return dbr.rec(db,@block,folio)
+        iblock=@@(params,"#block")
+        if iblock < 1{do rise_error(500,"No no se encontró el block de documentos indicado")}
 
-        folio=dbr.folios.set_new(db,6,dbr.num(db,@folio_doc,@null),3)
+        fultimo = dbr.folios.set_new(db, iblock, dbr.folios.get_new(db,iblock), 3)
+        // folio=dbr.folios.set_new(db,6,dbr.num(db,@folio_doc,@null),3)
 
-        return dbr.folios.info(db,6,folio)
+        return dbr.folios.info(db,iblock,fultimo)
     }
     
-    get.referencia::serie,numsig,formato
+    get.referencia::serie,fultimo,ref_size
     {
 
-        lnum=length(numsig)
-        lserie=length(serie)
-        lformt=length(formato)
+        // lnum=length(numsig)
+        // lserie=length(serie)
+        // lformt=length(formato)
 
-        if length(lnum)>9 {return right(numsig,9) }
+        // if length(lnum)>9 {return right(numsig,9) }
 
-        nformat=remove(str(formato),2,lserie)
-        // return nformat
-         num= serie+format(val(numsig),nformat)
+        // nformat=remove(str(formato),2,lserie)
+        // // return nformat
+        //  num= serie+format(val(numsig),nformat)
 
-        if length(num)>9 {return right(num,9) }
+        // if length(num)>9 {return right(num,9) }
  
-        return num 
+        // return num 
+        referencia = serie + padleft(str(fultimo),ref_size,"0")
+
+        return referencia
     }
     
     GetCorteMesero::&db,&json,&data
@@ -2296,11 +2288,38 @@ module "lib.dk"
 
         do VerifyToken(db,data)
 
-        serie=dbr.str(db,@blockdoc,@null)
-        ref data_folio=insert.folio(db,params)
-        referencia=get.referencia(serie,@@(data_folio,"folio"),@@(data,"format"))
+        fastfoot=parse.bool(@@(params,"$fastfoot"))
+        if fastfoot
+        {
+            if dbr.vars.get(db,"pos_crear_ticket_venta_rapida") == "02"
+            {
+                new venta
+                {
+                    @"sys_guid":uuid()
+                    @"reference":""
+                    @"code":""
+                    @"sys_pk":0
+                    @"reference":0
+                    @"balance":0
+                }
+                return venta
+            }
+        }
+
+        params<"block">:parse.num(dbr.vars.get(db,"pos_serie_default"))
+
+        if @@(params,"#block") < 1{do rise_error(500,"No se ncontró datos de la serie configurada")}
         
-        if parse.bool(@@(params,"$fastfoot"))
+        serie=dbr.str(db,@blockdoc,params)
+        ref data_folio=insert.folio(db,params)
+    
+        referencia=get.referencia(serie,@@(data_folio,"#folio"),dbr.vars.getd(db, "ventas_fix_ref_size", 8))
+        
+        /*
+         * Summary:
+         * -  verificar si es venta rápida o venta a domicilio
+        */
+        if fastfoot || @@(params,"#gen_table_ff")
         {
             data<"info">:"FF"
             data<"table">:cut("FF/"+referencia,45)
@@ -2311,6 +2330,10 @@ module "lib.dk"
             data<"table">:cut("DS/"+referencia,45)
             data<"notes">:@@(data,"$notas")
         }
+        else
+        {
+            do exist.table(db,params,data)
+        }
         
         @divisa=GetDivisaPredet(db)
         
@@ -2319,7 +2342,7 @@ module "lib.dk"
         new venta
         {
             @"Sys_TimeStamp*":now()
-            @"Sys_GUID":toupper(cut(uuid(),30))
+            @"sys_guid":toupper(uuid())
             @"Sys_DTCreated*":now()
             @"Sys_Exported":0
             @"Sys_DTExported*":now()
@@ -2337,7 +2360,7 @@ module "lib.dk"
             @"referencia":referencia
             @"dmnsMesa":@@(data,"$table")
             @"dmnsNota":@@(data,"$notes")
-            @"dmnsPersonas":@@(data,"num_people")
+            @"dmnsPersonas":@@(data,"#num_people")
             @"documento":@documento_venta
             @"StatusAdministrativo":@_status_admin_abierto
             @"StatusEntrega":0
@@ -2364,7 +2387,7 @@ module "lib.dk"
         if @@(data,"#icorte") > 0{venta<"icorte">:@@(data,"#icorte")}
 
         do dbr.insert(db,"venta",venta)
-        params<"id_table">:dbr.num(db,@max_venta,@null)
+        params<"id_table">:dbr.num(db,"select sys_pk from venta where sys_guid=@sys_guid",venta)
 
         if parse.bool(@@(params,"$homedelivery"))
         {
@@ -2405,10 +2428,10 @@ module "lib.dk"
             }
             do dbr.insert(db,"dmns_entrega",dmns_entrega)
         }
-        do dbr.commit(db)
 
+        do dbr.commit(db)
         
-        return get.mesa(db,params)//dbr.rec(db,"select * from venta where Sys_GUID=@Sys_GUID",venta)
+        return get.mesa(db,params)
 
         exception
         {
@@ -2820,6 +2843,23 @@ module "lib.dk"
         ref details=@@(postData,"&details")
         postData<"id_table">:@@(params,"$id_table")
 
+        /*
+         * Summary:
+         * Verificar si la venta existe , sí no crearla
+        */
+
+        if isnull(dataventa(db,params))
+        {
+            /*
+             * Summary:
+             * - Crear venta 
+            */
+            params<"gen_table_ff">:@true
+            ref venta=open.table(db,params,postData)
+            postData<"id_table">:@@(venta,"$sys_guid")
+            params<"id_table">:@@(venta,"$sys_guid")
+        }
+        
         ref dic_orders=record.create()
 
         for i=0;i<@count(details)
@@ -3120,7 +3160,6 @@ module "lib.dk"
                     do list.add(adds,item_adds)
                 }
             }
-            
         }
     }
     get.adds::&db,&options
@@ -3141,6 +3180,7 @@ module "lib.dk"
 
                     cantidad= 1
                     if @@(val,"#quantity") > 0{cantidad=@@(val,"#quantity")}
+                    // ref dt_imp=GetDataImpuestos(db,@@(val,"#amount"),1,0,0,@@(prod,"#impuestos"))
 
                     new adds
                     {
@@ -3662,6 +3702,8 @@ module "lib.dk"
 
         if isnull(user){do rise_error(500,"Usuario y contraseña incorrecto")}
 
+        do dbr.setHashUnicode(@true)
+        
         ref _db=dbr.login(@@(@http_context,"$session/idp/qname"),@@(params,"$uid"),trim(@@(postData,"$pwd")))
         if isnull(@@(@http_context,"&session/user")){@http_context<"session/user*">:record.create()}
 
