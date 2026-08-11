@@ -837,19 +837,21 @@ var views=
                   counter="99+";
             count.innerHTML=counter;
       },
+      limpiarNumero(valor) {
+            return valor.replace(/[^0-9.-]/g, '');
+      },
       showTotal:function()
       {
             var price=0;
             list_orders.forEach(function(e,i){
-                  price+=Number(e.price);
-                        
+                  price+=Number(views.limpiarNumero(e.price+""));
             });
             var eprice=document.querySelector("#div-total-all");
             var currenttotal=document.querySelector("#totalcurrent");
             if(currenttotal)
             {
                   var ct=currenttotal.getAttribute("total");
-                  var t=price + Number(ct.replace(",",""));
+                  var t=price + Number(views.limpiarNumero(ct.replace(",","")));
                   // currenttotal.setAttribute("total",views.format(t,2,".",","));
                   currenttotal.innerHTML=`$ ${views.format(t,controller.decimals,".",",")}`;
             }
