@@ -1,5 +1,10 @@
 var last_sys_pk=0;
-var controller={
+var controller=
+{
+  gettoken(token)
+  {
+
+  },
 	get_commands:function() {
 		 var uri=`${url}pos/dinner/kdf/?cprod=${cprod}`;
         model.invoke_service(uri,null,function(data) {

@@ -559,17 +559,18 @@ module "lista de consultas"
     qv.iagente as 'ag',
     o.sys_pk pkorden,
     o.referencia id_orden,
-    trim(o.sys_dtcreated)created
+    trim(o.sys_dtcreated)created,
+    cp.codigo as cp_code,
+    cp.descripcion as cp_description
 from
     qventasserviciomesa qv
-    INNER JOIN orden o ON o.IVenta = qv.Sys_PK
-    INNER JOIN cproduccion cp ON o.ICProduccion = cp.Sys_PK
+    LEFT JOIN orden o ON o.IVenta = qv.Sys_PK
+    LEFT JOIN cproduccion cp ON o.ICProduccion = cp.Sys_PK
 WHERE
-    cp.Codigo = @cprod
+    (ifnull(@cprod,0)=0 OR cp.Codigo = @cprod)
     and (ifnull(@cuenta,0)=0 OR qv.sys_pk=@cuenta)
-    and (
-        ifnull(o.atendido,0) = 0
-    ) #<@where> GROUP BY o.sys_pk "
+    and ifnull(o.atendido,0) = IFNULL(@atendido,0)
+    #<@where> GROUP BY o.sys_pk "
 
 
     @kdf_last_order="select count(o.sys_pk) from orden o
@@ -583,7 +584,31 @@ WHERE
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
                         where orden.sys_pk=@orden AND orden.iventa=@iventa AND cp.codigo=@cprod and ifnull(orden.`atendido`,0)=0"
-   
+   @dventas_orden="SELECT
+        p.codigo AS sku,
+        p.sys_pk,
+        p.ilinea AS linea,
+        0 AS pkdorden,
+        0 AS pkorden,
+        dv.sys_timestamp,
+        dv.cantidad AS quantity,
+        p.descripcion AS description,
+        IFNULL(dv.notas, '') AS notes,
+        dv.precio,
+        dv.descuento1 AS d1,
+        dv.descuento2 AS d2,
+        0 AS tiempo,
+        cfg.i1venta,
+        cfg.i2venta,
+        cfg.i3venta,
+        cfg.i4venta
+    FROM dventa dv
+    INNER JOIN producto p
+        ON dv.iproducto = p.Sys_PK
+    INNER JOIN cfgimpuesto cfg
+        ON p.Impuestos = cfg.Sys_PK
+    WHERE dv.fk_venta_detalle = @cuenta
+    AND p.IClase <> 2;"
    @kds.updateventa="update venta set StatusAdministrativo=@StatusAdministrativo where sys_pk=@idkdf"
 
    @kds.updateorder="update orden o inner join cproduccion cp on o.icproduccion=cp.sys_pk
