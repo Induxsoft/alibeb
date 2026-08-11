@@ -7,15 +7,17 @@ div(class="info-total" id="info-vnt" style="background-color:#FFF;")
         {
             div(class="flex-grow-1")
             {
-                p(id="name_table" style="height: 10%;"){"---"}
-                label(class="w-100"){""label(id="lblticket"){"---"} }
+                p(id="name_table" class="p-0 m-0"){"---"}
+                // label(class="w-100"){""}
+                label(id="lblticket"){"---"} 
             }
             div(class="mt-2 just-mgn-4 d-flex just-cont-end just-itm-center" ){""h3(id="lbltotal" style="color:var(--purple);"){"$ 0.00"} }
         }
 
-        div(class="d-flex justify-content-end")
+        div(class="d-flex justify-content-between")
         {
-            div(class="")
+            button(class="btn btn-link collapsed" type="button" "data-bs-toggle"="collapse" "data-bs-target"="#collapseTotales" "aria-expanded"="false" "aria-controls"="collapseTotales"){$"Totales"}
+            div(id="collapseTotales" class="collapse" "aria-labelledby"="headingTotales")
             {
                 small(class="d-block text-end" id="lbl_subtotal"){"---"}
                 small(class="d-block text-end" id="lbl_descuento"){"---"}
