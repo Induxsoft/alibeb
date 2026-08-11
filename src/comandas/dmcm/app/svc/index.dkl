@@ -253,7 +253,6 @@ module "index.dkl"
 				else if @@(params,"$entity") == "acces-config"{ref data=access.config(db,params,postData)}
 				else
 				{
-					do exist.table(db,params,postData)
 					ref data=open.table(db,params,postData)
 				}
 			}

@@ -109,7 +109,7 @@ module "lista de consultas"
     @getordennew="select sys_pk from orden where sys_guid=@sys_guid" 
 
     @block="select f.sys_pk,f.cancelado,f.fecha,f.folio,f.block from foliosdocumentos f where f.sys_guid=@sys_guid"
-    @blockdoc="SELECT serie FROM blockdocumentos WHERE sys_pk=6;"
+    @blockdoc="SELECT serie FROM blockdocumentos WHERE sys_pk=@block;"
 
     @getdorden="select d.iproducto,d.precio precio, sum(d.cantidad) cantidad, sum(d.d1) d1, sum(d.d2) d2,d.sys_pk dorden
                 from dorden d
@@ -561,17 +561,18 @@ module "lista de consultas"
     o.referencia id_orden,
     trim(o.sys_dtcreated)created,
     cp.codigo as cp_code,
-    cp.descripcion as cp_description
+    cp.descripcion as cp_description,
+    ifnull(o.atendido,0)atendido
 from
     qventasserviciomesa qv
-    LEFT JOIN orden o ON o.IVenta = qv.Sys_PK
-    LEFT JOIN cproduccion cp ON o.ICProduccion = cp.Sys_PK
+    INNER JOIN orden o ON o.IVenta = qv.Sys_PK
+    INNER JOIN cproduccion cp ON o.ICProduccion = cp.Sys_PK
 WHERE
-    (ifnull(@cprod,0)=0 OR cp.Codigo = @cprod)
+    (ifnull(@cprod,'')='' OR cp.Codigo = @cprod)
     and (ifnull(@cuenta,0)=0 OR qv.sys_pk=@cuenta)
-    and ifnull(o.atendido,0) = IFNULL(@atendido,0)
-    #<@where> GROUP BY o.sys_pk "
-
+    and IF(@atendido IS NULL,ifnull(o.atendido,0) = 0,TRUE)
+    #<@where> GROUP BY o.sys_pk 
+    ORDER BY o.sys_pk DESC"
 
     @kdf_last_order="select count(o.sys_pk) from orden o
                     inner join cproduccion cp on cp.sys_pk=o.icproduccion
@@ -583,7 +584,11 @@ WHERE
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         INNER JOIN cproduccion cp ON orden.ICProduccion=cp.Sys_PK
-                        where orden.sys_pk=@orden AND orden.iventa=@iventa AND cp.codigo=@cprod and ifnull(orden.`atendido`,0)=0"
+                        where orden.sys_pk=@orden 
+                        AND orden.iventa=@iventa 
+                        AND cp.codigo=@cprod 
+                        and IF(@atendido IS NULL,ifnull(orden.atendido,0) = 0,TRUE)"
+
    @dventas_orden="SELECT
         p.codigo AS sku,
         p.sys_pk,
@@ -679,7 +684,7 @@ WHERE
     @agente_mesero="select sys_pk from agente where codigo=@mesero"
     @folio_doc="SELECT ifnull(MAX(folio),0)+1 FROM foliosdocumentos WHERE BLOCK=6;"
     @ia_gente="SELECT sys_pk FROM agente WHERE codigo =@waiter"
-    @ic_cliente="SELECT sys_pk FROM cliente WHERE codigo=@cliente"
+    @ic_cliente="SELECT sys_pk FROM cliente WHERE codigo=ifnull(@cliente,'(pg)')"
     @max_venta="select max(sys_pk) from venta limit 1"
 
     //**************************************************************************************************************

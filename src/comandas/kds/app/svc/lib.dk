@@ -15,7 +15,10 @@ module "lib.dk"
         }
         return list_ords
     }
-    
+    pds.get.dventas::&db,&params
+    {
+        return dbr.list(db,@dventas_orden,params)
+    }
     #!
     kdf.get.ordenes::&db,&params
     {
@@ -24,17 +27,18 @@ module "lib.dk"
         for i=0;i<@count(list_commands)
         {
             ref item=@item(list_commands,i)
-            if @@(params,"$cprod") == ""{params<"cprod">:@@(item,"$cp_code")}
+            
             new p
             {
                 @"iventa":@@(item,"#sys_pk")
                 @"cprod":@@(params,"cprod")
                 @"orden":@@(item,"#pkorden")
             }
+            
+            if field.exist(params,"atendido"){p<"atendido">:@@(params,"$atendido")}
+            if @@(p,"$cprod") == ""{p<"cprod">:@@(item,"$cp_code")}
+            
             item<"orders*">:kds.get.ordenes_adcs(db,p)//get.ordenes(db,p)
-
-            if @@(params,"#detalle"){item<"dventas*">:dbr.list(db,@dventas_orden,params)}
-
         }
         return list_commands
     }

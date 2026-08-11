@@ -705,7 +705,7 @@ var views=
                                     </div>
                                     <div class="" id="detail-indications_${uuid}"></div>
                                     <div class="d-flex justify-content-end" style="grid-column: 1 / 3;">
-                                          <button class="btn btn-sm" id="cant_prods_variables_${uuid}" onclick="views.load_variables('${uuid}')">${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </button>
+                                          <button class="btn btn-sm ${sku.variables ?"":"d-none"}" id="cant_prods_variables_${uuid}" onclick="views.load_variables('${uuid}')">${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </button>
                                     </div>
                               </div>
                         <small class="list-btns">
@@ -908,6 +908,7 @@ var views=
             var html="";
             var html_select="";
             list_requireds=[];
+            let adics_checkeds=[];
 
             if(!options)options=[];
             this._options=options;
@@ -939,10 +940,13 @@ var views=
                                                 {
                                                       elem.options.forEach(function(el,i){
                                                             var values_list=el.values;
-                                                            values_list.forEach(function(e,ind){
-                                                                  if(val.text.replace(/ /g,"")==e.text.replace(/ /g,""))
+                                                            values_list.forEach(function(e,ind)
+                                                            {
+                                                                  let _sku=val.text.replace(/ /g,"").trim();
+                                                                  if(_sku==e.text.replace(/ /g,"").trim())
                                                                   {
                                                                         checked=true;
+                                                                        adics_checkeds.push(e);
                                                                         return false;
                                                                   }
                                                             });
@@ -963,13 +967,13 @@ var views=
                                     html_val+=`<div class="p-0 m-0 div-check_${itm.name.replace(/ /g,"")}">
                                                 <div class="d-flex aling-items-center gap-2 form-check ">
                                                       <div>
-                                                      <input style="border-radius: 0 !important;width: 1.5rem;height: 1.5rem;" class="form-check-input" type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" id="${val.text.replace(/ /g,"")}" value="${val.text}"
+                                                      <input id="check_${idquantity}" style="border-radius: 0 !important;width: 1.5rem;height: 1.5rem;" class="form-check-input" type="checkbox" ${check}="true" sku="${sku}" amount="${views.format(val.amount,controller.decimals_backend,".",",")}" data-id="${val.text.replace(/ /g,"")}" value="${val.text}"
                                                        onchange="
                                                        views.show_element('div_${idquantity}',this.checked)
                                                        views.show_element('${idquantity}',this.checked)">
                                                       </div>
                                                       <div>
-                                                      <label class="fw-bold" for="${val.text.replace(/ /g,"")}">${val.text}</label><br>
+                                                      <label class="fw-bold" for="check_${idquantity.replace(/ /g,"")}">${val.text}</label><br>
                                                       <small style="font-size: smaller;">$ ${views.format(val.amount,controller.decimals_backend,".",",")}</small><br>
                                                       <small class="fw-bold d-none" style="font-size: smaller;" id="total_${idquantity}">$ ${views.format(val.amount,controller.decimals_backend,".",",")}</small>
                                                       </div>
@@ -1095,7 +1099,21 @@ var views=
                         }
                   }
             });
+            console.log(adics_checkeds)
+            // verificar seleccionados
+            adics_checkeds.forEach(e => 
+            {
+                  let idquantity="quantity_"+e.sku.replace(/ /g,"").trim();
+                  let check_idquantity=`check_${idquantity}`;
 
+                  let element=document.getElementById(idquantity);
+                  let check_element=document.getElementById(check_idquantity);
+                  
+                  if(check_element)this.trigger(check_element,"change");
+                  if(element)element.value=e.quantity??1;
+                  this.total_adics("total_adics",idquantity,true);
+            });
+            
             var btnacept=document.querySelector("#btn_addcs");
             btnacept.setAttribute("onclick",`controller.add_indications("${uuid}")`);
       },
@@ -1343,6 +1361,8 @@ var views=
             var btncobrar=document.getElementById("btn-cobrar");
             if(btncobrar)btncobrar.classList.add("disabled");
 
+            let btndetalle=document.getElementById("btn-detalles");
+
             re_print.setAttribute("onclick",`controller.reprint("${data.sys_pk}")`);
             // btncancel.setAttribute("onclick",`controller.cancelAccount("${data.sys_pk}")`);
             btncortesia.setAttribute("onclick",`controller.cortesia("${data.sys_pk}")`);
@@ -1387,6 +1407,12 @@ var views=
                   let url=data_href + `&idt=${data.sys_pk}`;
                   btncobrar.setAttribute("onclick",`controller.close_table("${data.sys_pk}","${url}")`);
                   btncobrar.classList.remove("disabled");
+            }
+            if(btndetalle)
+            {
+                  let data_href=(btndetalle.getAttribute("data-href")??"");
+                  let url=data_href + `&cuenta=${data.sys_pk}`;
+                  btndetalle.setAttribute("href",`${url}`);
             }
             this.actionsDS(data);
             views.ActiveAnimation(false);

@@ -5,6 +5,28 @@ var controller=
   {
 
   },
+  close_view:function(idview,params="",_confirm=false,text="¿Esta seguro de querer salir de la aplicación?")
+  {
+    if(_confirm && !confirm(text))return;
+
+    if(idview=="login")
+    {
+      var uri=`${url}pos/dinner/token/?token=${token}`;
+      model.invoke_service(uri,null,function(data) 
+      {
+        token="";
+      },
+      function(error) {
+        alert(error.message);
+      },"PUT",false);
+    }
+    if(token!="")
+      params+="&dmtm_token="+token;
+    if(ws!="" && idview!="vw_workspace")
+      params+="&dm_scr="+ws;
+
+    window.location.href="./?view="+idview+params;
+  },
 	get_commands:function() {
 		 var uri=`${url}pos/dinner/kdf/?cprod=${cprod}`;
         model.invoke_service(uri,null,function(data) {

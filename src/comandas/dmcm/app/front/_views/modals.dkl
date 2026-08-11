@@ -10,7 +10,7 @@
     {
         form(method="post" id="formLogin" onsubmit="return false")
         {
-            h3{"Iniciar sesión"}
+            h3{"Autorización"}
             label( "for"=""){"Usuario:"}
             input(class="input-login" type="text" id="usuario" name="usuario" required="" placeholder="...."){""}
 
