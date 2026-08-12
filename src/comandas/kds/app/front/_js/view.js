@@ -1,35 +1,56 @@
-var views={
-	print_commands:function(data,auto=false,classid="content-commands",ishistory=false) {
-		var element=document.querySelector("."+classid);
+var views=
+{
+	InitInterval(){},
+	print_commands:function(data,auto=false,classid="content-commands",ishistory=false,isdetails=false) 
+	{
+		if(!classid.includes(".") && !classid.includes("#"))classid="."+classid;
+		var element=document.querySelector(classid);
+		if(!element)return;
 		var html="";
-		for (var i = 0; i < data.length; i++) {
+		for (var i = 0; i < data.length; i++) 
+		{
 			var itm=data[i];
 
 			var tmr=document.getElementById(`clock${itm.id_orden.replace(/ /g,"")}`);
 			views.remove_command(itm.sys_pk);
 
 			var orders=itm.orders;
+			var dventas=itm.dventas ??[];
 			var list_orders="";
-			for (var j=0; j < orders.length; j++) 
+			const resultado =orders;
+			for (var j=0; j < resultado.length; j++) 
 			{
-				var data_orders=orders[j];
+				var data_orders=resultado[j];
 
 				if(data_orders.pkorden>last_sys_pk && !ishistory)
 					last_sys_pk=data_orders.pkorden;
 				
-				var adcs=data_orders.adds;
+				var adcs=data_orders.adds??[];
 				var hadcs="";
+				let last_adic="";
 				for (var a =0; a<adcs.length; a++) 
 				{
 					var adds=adcs[a];
+					
+					if(adds.is_variable && !hadcs.includes("@__adics__"))
+					{
+						hadcs+=`<br><span class="fw-bold datails-adcs w-100 d-block" id="@__adics__">Adicionales</span>`;
+						last_adic="adics";
+					}
+					else if((last_adic == "adics" || last_adic=="") && !adds.is_variable)
+					{
+						hadcs+=`<span class="fw-bold datails-adcs w-100 d-block" id="@__vars__">Variables</span>`;
+						last_adic="vars";
+					}
+
 					hadcs+=`<div class="datails-adcs">
 							<small class="adcs">${adds.cantidad??1} - ${adds.descripcion}</small>
 						</div>`;
 				}
 				list_orders+=`<div class="details">
-						<label>${data_orders.quantity} ${data_orders.description}
-							<small class="order-time">${controller.lifetime(data_orders.tiempo)}</small>
-						</label>
+						<label class="w-100">${data_orders.quantity} ${data_orders.description}</label>
+						<small class="order-time">${controller.lifetime(data_orders.tiempo)}</small>
+
 						${hadcs}
 
 						<div class="order-notes"> 
@@ -61,19 +82,21 @@ var views={
 				</button>`;
 				hour="";
 			}
+			if(isdetails)btn="";
 			html+=`<div class="c-command c-command_${itm.pkorden}" id="c-command_${itm.pkorden}">
-			<div class="cmmd-table"><span class="fw-bold">Referencia:</span> ${itm.id_orden??""}</div>
-			<div class="cmmd-table"><span class="fw-bold">Cuenta:</span> ${itm.code}</div>
-			<div class="cmmd-ticket"><span class="fw-bold">Ticket:</span> ${itm.reference}</div>
+			${isdetails?`<small class="fw-bold" style="background: lightgray;">${itm.cp_description??""}</small>`:""}
+			<div class="cmmd-table"><span class="fw-bold">Referencia:</span> <span>${itm.id_orden??""} ${isdetails && itm.atendido?"<small style='background: greenyellow;'>(Completado)</small>":""}</span></div>
+			<div class="cmmd-table ${isdetails?"d-none":""}"><span class="fw-bold">Cuenta:</span> ${itm.code}</div>
+			<div class="cmmd-ticket ${isdetails?"d-none":""}"><span class="fw-bold">Ticket:</span> ${itm.reference}</div>
 			<div class="cmmd-numorder"><span class="fw-bold">Num. Orden:</span> ${itm.pkorden}</div>
 			<div class="cmmd-ticket">${itm.created}</div>
 			<div class="cmmd-ticket">${itm.served?itm.served:""}</div>
-				<div class="ctn-h">
+			<div class="ctn-h">
 				<div class="order-hours">
 					${hour}
 				</div>
 				${btn}
-				</div>
+			</div>
 			========================================
 			<div class="cmmd-body">
 				<div class="cmmd-details">
@@ -89,6 +112,36 @@ var views={
 			element.innerHTML+=html;
 		else
 			element.innerHTML=html;
+	},
+	printDventas(dventas,id_element,auto=false,title="Artículos")
+	{
+		if(!dventas || !id_element || dventas.length < 1)return;
+
+		let element=document.querySelector(id_element);
+		if(!element)return;
+
+		let html="";
+		let html_det="";
+		for (let i = 0; i < dventas.length; i++) 
+		{
+			const dv = dventas[i];
+			html_det+=`<label class="fw-100">${dv.quantity} ${dv.description}</label>`
+		}
+
+		html += `<div class="c-command c-command_165" id="c-command_165">
+			<div class="cmmd-table fw-bold text-center"><h4>${title}</h4></div>
+			========================================
+			<div class="cmmd-body">
+				<div class="cmmd-details">
+					<div class="details">
+						${html_det}
+					</div>
+				</div>
+			</div>
+		</div>`
+
+		if(!auto)element.innerHTML=html;
+		else element.innerHTML+=html;
 	},
 	remove_command:function(sys_pk)
 	{

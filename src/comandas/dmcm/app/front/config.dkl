@@ -6,8 +6,8 @@ module "config.dkl"
 	#include "cookies.dkl"
 
 	@SITE_INCLUDES="config.dk,lib.dk,lib.query.dk"
-	@path_absolute=path.concat("kande_comandas","dmcm/app/front")
-	@path_absolute_pds="kande_comandas/kds/app/front/"
+	@path_absolute=path.concat("comandas","dmcm/app/front")
+	@path_absolute_pds="comandas/kds/app/front/"
 	
 	@path_view=path.concat(@path_absolute,"_views")
 	@path_css=path.concat(@path_absolute,"_css")

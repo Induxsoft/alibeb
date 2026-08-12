@@ -2,8 +2,8 @@
 #!
 module ""
 {
-    #include "kande_comandas/list_query.dk"
-    #include "kande_comandas/kds/app/svc/lib.dk"
+    #include "comandas/list_query.dk"
+    #include "comandas/kds/app/svc/lib.dk"
     @model_js=path.concat(@path_absolute_pds,"_js/model.js")
 	@views_js=path.concat(@path_absolute_pds,"_js/view.js")
 	@driver_js=path.concat(@path_absolute_pds,"_js/controller.js")
