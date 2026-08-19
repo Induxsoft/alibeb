@@ -1077,6 +1077,9 @@ var controller=
         details:list_orders
       }
       var uri=`${url}pos/dinner/tables/${idtable}/`;
+
+      views.toggle(document.body,false,"","Procesando, por favor espere...");
+
       model.invoke_service(uri,data,function(data) 
       {
         var view=view_first;
@@ -1101,6 +1104,7 @@ var controller=
         controller.open_view(view,"&idt="+data.sys_pk);
       },
       function(error) {
+        views.toggle(document.body,true);
         alert(error.message);
       },"POST",false);
       

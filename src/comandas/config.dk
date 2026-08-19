@@ -68,4 +68,16 @@ module "config.dkl"
 	@accept_qnames=@true
 
 	new @config{@"connection":@@(@http_context,"$session/idp/qname")}
+
+	new @metodoDescuento
+	{
+		@"1":"sustraccion"
+		@"2":"division"
+	}
+
+	new @config_pos
+	{
+		@"def_referencia_temporal":"captura"
+		@"def_slot_promocional":"descuento2"
+	}
 }

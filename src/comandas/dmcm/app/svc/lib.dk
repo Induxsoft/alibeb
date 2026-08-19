@@ -7,6 +7,8 @@ module "lib.dk"
     #include "inventario/movimientos.dkh"
     #include "ventas/procesos.dkh"
     #include "cxc/movimientos.dkh"
+    #include "promociones.motor.dk"
+
     ref lib_numeros = _import_library("induxsoft_dkl_NumeroAletrasCorregido.dll")
 
     do _map_function(lib_numeros,"induxsoft_dkl_NumeroAletrasCorregido.NumerosEnLetras","ParteEntera","Int2Ltr","System.Decimal","$")
@@ -25,6 +27,267 @@ module "lib.dk"
     
 
     //#region PRCESOS
+    updateAmounts::&db,vnt_sys_pk
+    {
+        //#region updateAmounts()
+        new params { @"_entity_id": vnt_sys_pk }
+        ref amounts = dbr.rec(db,@qry_imp_venta,params)
+        do field.remove(amounts,"total")
+        do dbr.update(db,"venta",amounts,ftext("sys_pk = @_entity_id"),params)
+    }
+    promociones_activas::&db
+    {
+        sql="SELECT *
+        FROM promocion p
+        WHERE p.activa = 1
+        AND (p.fecha_inicio IS NULL OR p.fecha_inicio <= NOW())
+        AND (p.fecha_fin IS NULL OR p.fecha_fin >= NOW())
+        AND (
+                (DAYOFWEEK(CURDATE()) = 1 AND p.domingo = 1)
+            OR (DAYOFWEEK(CURDATE()) = 2 AND p.lunes = 1)
+            OR (DAYOFWEEK(CURDATE()) = 3 AND p.martes = 1)
+            OR (DAYOFWEEK(CURDATE()) = 4 AND p.miercoles = 1)
+            OR (DAYOFWEEK(CURDATE()) = 5 AND p.jueves = 1)
+            OR (DAYOFWEEK(CURDATE()) = 6 AND p.viernes = 1)
+            OR (DAYOFWEEK(CURDATE()) = 7 AND p.sabado = 1)
+        )
+        AND (
+                (MONTH(CURDATE()) = 1  AND p.enero = 1)
+            OR (MONTH(CURDATE()) = 2  AND p.febrero = 1)
+            OR (MONTH(CURDATE()) = 3  AND p.marzo = 1)
+            OR (MONTH(CURDATE()) = 4  AND p.abril = 1)
+            OR (MONTH(CURDATE()) = 5  AND p.mayo = 1)
+            OR (MONTH(CURDATE()) = 6  AND p.junio = 1)
+            OR (MONTH(CURDATE()) = 7  AND p.julio = 1)
+            OR (MONTH(CURDATE()) = 8  AND p.agosto = 1)
+            OR (MONTH(CURDATE()) = 9  AND p.septiembre = 1)
+            OR (MONTH(CURDATE()) = 10 AND p.octubre = 1)
+            OR (MONTH(CURDATE()) = 11 AND p.noviembre = 1)
+            OR (MONTH(CURDATE()) = 12 AND p.diciembre = 1)
+        )
+        ORDER BY p.prioridad ASC;"
+        ref promos=dbr.list(db,sql,@null)
+        ref lpromos=list.create()
+
+        for i = 0; i < @count(promos)
+        {
+            ref promo=@item(promos,i)
+            ref pm=from.json(@@(promo,"$json_config"))
+            pm<"id">:@@(promo,"#sys_pk")
+
+            do list.add(lpromos,pm)
+        }
+        return lpromos
+    }
+    productos_x_linea::&db,fkventa
+    {
+        new p{@"venta":fkventa}
+
+        if not(isset("@total_venta")){@total_venta= 0}
+        sql="SELECT SUM(dv.cantidad)cantidad,
+        dv.precio,
+        (SUM(dv.cantidad) * dv.precio)subtotal,
+        dv.descuento1,dv.descuento2,TRIM(dv.sys_dtcreated)fecha_captura,
+        JSON_OBJECT(
+                'id', p.sys_pk,
+                'nombre', p.descripcion,
+                'linea', JSON_OBJECT(
+                    'id', l.sys_pk,
+                    'nombre', l.descripcion
+                ),
+                'marca',JSON_OBJECT(
+                    'id', m.sys_pk,
+                    'nombre', m.descripcion
+                ),
+                'depto',JSON_OBJECT(
+                    'id', d.sys_pk,
+                    'nombre', d.descripcion
+                )
+            ) AS producto,
+            dv.sys_pk as id,
+            l.sys_pk as id_linea,
+            p.sys_pk as id_producto
+        FROM linea l
+        INNER JOIN producto p ON l.sys_pk=p.ilinea
+        INNER JOIN dventa dv ON p.sys_pk=dv.iproducto
+        INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+        LEFT JOIN marca m ON p.imarca=m.sys_pk
+        LEFT JOIN departamento d ON p.idepartamento=d.sys_pk
+        WHERE v.sys_pk=@venta
+        GROUP BY dv.sys_dtcreated,l.sys_pk,p.sys_pk;"
+
+        ref dventas=dbr.list(db,ftext(sql),p)
+        for i = 0; i < @count(dventas)
+        {
+            ref dventa=@item(dventas,i)
+            ref producto=from.json(@@(dventa,"$producto"))
+
+            ref grupo=dbr.rec(db,"SELECT gp.sys_pk AS id,gp.sys_pk AS codigo,gp.nombre FROM grupoproductos gp
+                            INNER JOIN grupoproductos_producto_ gp_ ON gp.sys_pk=gp_.igrupos
+                            WHERE gp_.iproductos=@id
+                            AND ifnull(gp.sys_deleted,0)=0
+                            ORDER BY gp.sys_pk DESC;",producto)
+            
+            if not(isnull(grupo)){producto<"grupo*">:grupo}
+
+            if @@(producto,"#depto/id")< 1{do field.remove(producto,"depto")}
+            if @@(producto,"#marca/id")< 1{do field.remove(producto,"marca")}
+
+            dventa<"producto*">:producto
+            @total_venta= @total_venta + @@(dventa,"#subtotal")
+        }
+
+        ref venta=dbr.rec(db,"SELECT v.sys_pk id,v.sys_guid,v.referencia,
+        (v.subtotal - (v.descuento1 + v.descuento2)) + v.impuesto1+v.impuesto2 + v.impuesto3 + v.impuesto4 AS total,
+        v.subtotal,
+        v.descuento1,v.descuento2,v.impuesto1,v.impuesto2,v.impuesto3,v.impuesto4,v.importeadicional
+        FROM venta v WHERE v.sys_pk=@venta",p)
+
+        if isnull(venta){do rise_error(500,"No se encontró la venta indicado")}
+
+        ref cliente=ifnull(dbr.rec(db,"SELECT c.sys_pk id,c.codigo,c.nombre,c.tipo AS itipo FROM cliente c
+                        INNER JOIN venta v ON c.sys_pk=v.icliente
+                        WHERE IFNULL(c.sys_deleted,0)=0
+                        AND v.sys_pk=@venta",p),record.create())
+
+        cliente<"tipo*">:dbr.rec(db,"SELECT t.sys_pk AS id,t.codigo,t.descripcion AS nombre FROM tipocliente t WHERE t.sys_pk=@itipo;",cliente)
+
+        ref cgrupo=dbr.rec(db,"SELECT gc.sys_pk AS id,gc.sys_pk AS codigo,gc.nombre FROM grupoclientes gc
+                        INNER JOIN cliente_grupoclientes_ cg ON gc.sys_pk=cg.igrupos
+                        WHERE IFNULL(gc.sys_deleted,0)=0
+                        AND cg.iclientes=@id
+                            ORDER BY gc.sys_pk desc;",cliente)
+
+        if not(isnull(cgrupo)){cliente<"grupo*">:cgrupo}
+
+        venta<"lineas*">:dventas
+        venta<"cliente*">:cliente
+        return venta
+    }
+    apply_descuento::&db,&dventa,&linea,venta
+    {
+        ref producto=@@(linea,"&producto")
+        
+        _impuesto=dbr.num(db,"select impuestos from producto where sys_pk=@id",producto)
+        ref dt_imp= GetDataImpuestos(db,@@(linea,"#precio"),@@(dventa,"#cantidad"),@@(linea,"#descuento1"),@@(linea,"#descuento2"),_impuesto)
+        
+        descuento1=@@(linea,"#descuento1")
+        descuento2=@@(linea,"#descuento2")
+        new reg_dventa
+        {
+            @"impuesto1":@@(dt_imp,"#impuesto1")
+            @"impuesto2":@@(dt_imp,"#impuesto2")
+            @"impuesto3":@@(dt_imp,"#impuesto3")
+            @"impuesto4":@@(dt_imp,"#impuesto4")
+            @"descuento1":descuento1
+            @"descuento2":descuento2
+            // @"descuento1*":dbr.sql(ftext("IFNULL(descuento1,0) + #<descuento1>"))
+            // @"descuento2*":dbr.sql(ftext("IFNULL(descuento2,0) + #<descuento2>"))
+        }
+        do dbr.update(db,"dventa",reg_dventa,"sys_pk=@sys_pk",dventa)
+    }
+    get_dventas_captura::&db,&linea
+    {
+        sql="SELECT dv.sys_pk,dv.cantidad FROM dventa dv 
+        INNER JOIN producto p ON dv.iproducto=p.sys_pk
+        WHERE dv.sys_dtcreated=@fecha_captura 
+        AND p.ilinea=@id_linea
+        AND p.sys_pk=@id_producto"
+
+        return dbr.list(db,sql,linea)
+    }
+    desc_x_unidad::cant_reg,descuento_total,cantidad_total
+    {
+        return cant_reg * div(descuento_total,cantidad_total)
+    }
+    apply_descuento_create_traza::&db,&trazas,&lineas,venta,slot_promocional
+    {
+        if @count(trazas) < 1{return}
+
+        for i = 0; i < @count(trazas)
+        {
+            ref traza=@item(trazas,i)
+            ref linea=@item(lineas,@@(traza,"#linea_idx"))
+            
+            tipo_aplicacion=dbr.num(db,"select id from ctipoaplicacionpromocion where trim(lower(const))=trim(lower(@tipo))",traza)
+            fk_promocion=dbr.num(db,"select sys_pk from promocion where codigo=@promocion",traza)
+            ref dventas=get_dventas_captura(db,linea)
+
+            for j = 0; j < @count(dventas)
+            {
+                ref dventa=@item(dventas,j)
+                monto=desc_x_unidad(@@(dventa,"#cantidad"),@@(linea,"#"+slot_promocional),@@(linea,"#cantidad"))
+                // traza<"monto">:monto
+
+                do apply_descuento(db,dventa,linea,venta)
+
+                ref now=dbr.sql("now()")
+                new trazapromocion
+                {
+                    @"sys_guid":uuid()
+                    @"sys_dtcreated*":now
+                    @"sys_timestamp*":now
+                    @"sys_recver":0
+
+                    @"fk_venta":venta
+                    @"fk_dventa":@@(dventa,"#sys_pk")
+                    @"fk_promocion":fk_promocion
+
+                    @"tipo_aplicacion":tipo_aplicacion
+                    @"slot":slot_promocional
+                    @"monto":monto
+
+                    @"parametros":to.json(traza)
+                    @"fecha_aplicacion*":now
+                }
+                do dbr.insert(db,"trazapromocion",trazapromocion)
+            }
+        }
+
+        do updateAmounts(db,venta)
+    }
+    apply_promo::&db,&params
+    {
+        ref promos=promociones_activas(db)
+        
+        if @count(promos) < 1{return}
+
+        ref venta=productos_x_linea(db,@@(params,"#venta"))
+
+        metodo=parse.num(GetVars("FXCA021"))
+        metodo_desc=trim(@@(@metodoDescuento,"$"+str(metodo)))
+        if metodo_desc == ""{metodo_desc=@@(@metodoDescuento,"$1")}
+
+        referencia_temporal=trim(GetVars("ventas_promo_referencia_temporal"))
+        if referencia_temporal == ""{referencia_temporal=@@(@config_pos,"$def_referencia_temporal")}
+
+        slot_promocional=trim(GetVars("ventas_slot_promocional"))
+        if slot_promocional == ""{slot_promocional=@@(@config_pos,"$def_slot_promocional")}
+
+        new configs 
+        {
+            @"referencia_temporal":referencia_temporal //"captura"
+            @"slot_promocional": slot_promocional //"descuento2"
+            @"decimales_redondeo": @@(@config_default,"#decimal_money")
+            @"metodoDescuento": metodo_desc//"sustraccion"
+        }
+        @flag_venta_total=@false
+        
+        /*
+         * Summary:
+         * aplicar promociones por productos y condiciones
+         * guardar traza
+        */
+        ref promo_productos = promociones.motor.calcular_promociones_productos(venta, promos, configs)
+        do apply_descuento_create_traza(db,@@(promo_productos,"&traza"),@@(promo_productos,"&venta/lineas"),@@(params,"#venta"),@@(configs,"$slot_promocional"))
+        /*
+         * Summary:
+         * aplicar promociones por venta total
+        */
+        ref promo_total = promociones.motor.calcular_promociones_total(venta, promos, configs, @total_venta)
+        @flag_venta_total=@true
+        do apply_descuento_create_traza(db,@@(promo_total,"&traza"),@@(promo_total,"&venta/lineas"),@@(params,"#venta"),@@(configs,"$slot_promocional"))
+    }
     get_config::&db,cconsumo
     {
         cconsumo >> p
@@ -3323,6 +3586,9 @@ module "lib.dk"
         totales<"sys_pk">:@@(dataVenta,"#sys_pk")
         //se va a actualizar con sql directo primero meterlo en dventa ,despues actualizar los totales
         do dbr.execute(db,@updateventa,totales)
+
+        p<"venta">:@@(dataVenta,"#sys_pk")
+        do apply_promo(db,p)
     }
     insert.dventa::&db,&dventa,&dtventa
     {
