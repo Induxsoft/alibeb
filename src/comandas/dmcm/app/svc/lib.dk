@@ -3096,6 +3096,7 @@ module "lib.dk"
     
     execute.command::&db,&params,&postData
     {
+        do getVarsConfig()
         if not(isset("@__from_sise")) { @__from_sise = @false }
         if not(@__from_sise)
         {
