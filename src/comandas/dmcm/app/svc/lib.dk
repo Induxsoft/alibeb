@@ -334,14 +334,12 @@ module "lib.dk"
         */
         ref promo_productos = promociones.motor.calcular_promociones_productos(venta, promos, configs)
         do apply_descuento_create_traza(db,@@(promo_productos,"&traza"),@@(promo_productos,"&venta/lineas"),@@(params,"#venta"),@@(configs,"$slot_promocional"))
-        
         /*
          * Summary:
          * aplicar promociones por venta total
         */
         ref promo_total = promociones.motor.calcular_promociones_total(venta, promos, configs, @total_venta)
         do apply_descuento_create_traza(db,@@(promo_total,"&traza"),@@(promo_total,"&venta/lineas"),@@(params,"#venta"),@@(configs,"$slot_promocional"))
-
         /*
          * Summary:
          * - guardar datos de la promoción

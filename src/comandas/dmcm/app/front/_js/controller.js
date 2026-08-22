@@ -1202,13 +1202,12 @@ var controller=
           
           console.log(promo_productos,venta_producto);
 
-          if(traza.length < 1 && obsequios.length<1 && notificaciones.length < 1)
+          if(traza.length < 1 && obsequios.length<1) //&& notificaciones.length < 1
           {
             action(data); 
             return;
           }
 
-          views.toggle(document.body,true);
           btn_promos.onclick=()=>
           {
             action(data);

@@ -2445,7 +2445,8 @@ function pintarPromociones(promociones, venta) {
       if(obsequios.length < 1)section_obsequios?.classList?.add("d-none");
       if(notificaciones.length < 1)section_notificaciones?.classList?.add("d-none");
 
-    pintarProductosDescuento(
+
+    let cantida_encontradas=pintarProductosDescuento(
         trazas,
         ventaData?.lineas || []
     );
@@ -2457,6 +2458,13 @@ function pintarPromociones(promociones, venta) {
     pintarNotificaciones(
         notificaciones
     );
+
+    if(cantida_encontradas < 1 && obsequios.length < 1)
+      {
+            document.getElementById("btn_promos")?.click();
+      }
+
+      return cantida_encontradas;
 }
 
 /**
@@ -2576,7 +2584,7 @@ function pintarProductosDescuento(trazas, lineasVenta) {
             </div>
         `;
 
-        return;
+        return 0;
     }
 
 
@@ -2706,6 +2714,7 @@ function pintarProductosDescuento(trazas, lineasVenta) {
 
 
     contenedor.innerHTML = html;
+    return productos.length;
 }
 
 /**
@@ -2909,12 +2918,17 @@ function escapeHtml(valor) {
 }
 function mostrarModalPromociones(promociones, venta) {
 
-    pintarPromociones(promociones, venta);
+    let c=pintarPromociones(promociones, venta);
 
     const modalElement =
         document.getElementById("modalPromociones");
 
-    controller.showModal("modalPromociones");
+    if(c>0 || promociones.obsequios?.length > 0)
+    {
+      controller.showModal("modalPromociones");
+      views.toggle(document.body,true);
+    }
+    else document.getElementById("btn_promos")?.click();
 }
 setTimeout(()=>
 {
