@@ -852,10 +852,83 @@ var controller=
         alert(error.message);
       },"GET",false);
     },
+    bloquearTab(e) 
+    {
+      if (e.key === 'Tab') {
+          e.preventDefault();
+          e.stopPropagation();
+      }
+    },
+    activarFocusTrap(modal) 
+    {
+        document.activeElement?.blur();
+        const selector = `
+            a[href],
+            button:not([disabled]),
+            input:not([disabled]),
+            select:not([disabled]),
+            textarea:not([disabled]),
+            [tabindex]:not([tabindex="-1"]),
+            [onclick]
+        `;
+
+        const elementos = [...modal.querySelectorAll(selector)];
+        
+        if (!elementos.length) {
+            modal.focus();
+            return;
+        }
+
+        const primero = elementos[0];
+        const ultimo = elementos[elementos.length - 1];
+
+        function manejarTab(e) {
+
+            if (e.key !== 'Tab')
+                return;
+
+            if (e.shiftKey) {
+
+                // Shift + Tab desde el primero
+                if (document.activeElement === primero) {
+                    e.preventDefault();
+                    ultimo.focus();
+                }
+
+            } else {
+
+                // Tab desde el último
+                if (document.activeElement === ultimo) {
+                    e.preventDefault();
+                    primero.focus();
+                }
+            }
+        }
+
+        document.addEventListener('keydown', manejarTab, true);
+
+        primero.focus();
+
+        return () => {
+            document.removeEventListener('keydown', manejarTab, true);
+        };
+    },
+    toggle_backdrop()
+    {
+      let backdrop=document.getElementById("backdrop");
+      if(!backdrop)return;
+
+      backdrop.classList.toggle("backdrop");
+    },
+    liberarFocusTrap:null,
     show_modal:function(id)
     {
       var modal=document.querySelector(id);
       modal.classList.remove("hidde_control");
+      this.toggle_backdrop();
+      this.activarFocusTrap(modal);
+      // Activar bloqueo de teclado
+        document.addEventListener('keydown', this.bloquearTab, true);
     },
     hide_modal:function(id)
     {
@@ -867,6 +940,18 @@ var controller=
       num_people.value="2";
       notas.value="";
       modal.classList.add("hidde_control");
+      modal.focus();
+      this.toggle_backdrop();
+      if(this.liberarFocusTrap)
+      {
+        this.liberarFocusTrap();
+        this.liberarFocusTrap=null;
+      }
+      document.removeEventListener('keydown', this.bloquearTab, true);      
+      if(id == "#modal-select-products" && this.foodbev_last_line_selected)
+      {
+        data_foodbev=this.foodbev_last_line_selected;
+      }
     },
     showModal:function(idmodal)
     {
@@ -1029,6 +1114,7 @@ var controller=
       var barra=document.querySelector(".barr-atr");
       barra.style.display="none";
     },
+    foodbev_last_line_selected:null,
     foodbev:function(elem,prodc="",line="",linedescrition="",sku="")
     {
       if(prodc!="")$prodc=prodc;
@@ -1044,6 +1130,7 @@ var controller=
       var uri=`${url}pos/dinner/foodbev/?prodc=${$prodc}&line=${$line}&cc=${$cc}&idt=${controller.getData?.idt??0}`;
       model.invoke_service(uri,null,function(data) 
       {
+        controller.foodbev_last_line_selected=data.foodbev;
         views.Print_Indicaciones(data.line);
         views.print_foodbev(data.foodbev,data.line.description);
         var food=document.querySelector("#foodbev_"+sku);
@@ -1082,26 +1169,53 @@ var controller=
 
       model.invoke_service(uri,data,function(data) 
       {
-        var view=view_first;
-        var id_table=data.sys_pk;
+        let btn_promos=document.getElementById("btn_promos");
 
-        if(data.servicio)
+        let action=(data)=>
         {
-          if(data.servicio=="FF")view="cobrar";
-          else if(data.servicio=="DS")view="fpagos";
+          var view=view_first;
+          var id_table=data.sys_pk;
+
+          if(data.servicio)
+          {
+            if(data.servicio=="FF")view="cobrar";
+            else if(data.servicio=="DS")view="fpagos";
+          }
+          controller.open_view(view,"&idt="+data.sys_pk);
         }
-        //se comento para que despues de comandar se redirija a la vista de las mesas cuando sea en movil
-        // if(controller.ismobile())
-        // {
-        //   view=view_second;
-        //   var currenttotal=document.querySelector("#totalcurrent");
-        //   var namem=document.querySelector("#name_m");
-        //   var ticket=document.querySelector("#name_ticket");
-        //   var params="&idt="+data.sys_pk;
-        //   controller.open_view(view,params);
-        //   return;
-        // }
-        controller.open_view(view,"&idt="+data.sys_pk);
+
+        if(data.promociones && Object.keys(data.promociones).length > 0)
+        {
+          
+          let promo_productos=data.promociones.producto??{};
+          let promo_ventatotal=data.promociones.ventatotal??{};
+
+          let venta_producto=promo_productos.venta??{};
+          
+          promo_productos.traza=[...promo_productos.traza??[],...promo_ventatotal.traza??[]];
+          promo_productos.obsequios=[...promo_productos.obsequios??[],...promo_ventatotal.obsequios??[]];
+          promo_productos.notificaciones=[...promo_productos.notificaciones??[],...promo_ventatotal.notificaciones??[]];
+
+          let traza=promo_productos.traza??[];
+          let obsequios=promo_productos.obsequios??[];
+          let notificaciones=promo_productos.notificaciones??[];
+          
+          console.log(promo_productos,venta_producto);
+
+          if(traza.length < 1 && obsequios.length<1 && notificaciones.length < 1)
+          {
+            action(data); 
+            return;
+          }
+
+          views.toggle(document.body,true);
+          btn_promos.onclick=()=>
+          {
+            action(data);
+          }
+          mostrarModalPromociones(promo_productos,venta_producto);
+        }
+        else action(data); 
       },
       function(error) {
         views.toggle(document.body,true);
@@ -1365,26 +1479,33 @@ var controller=
     {
       controller.new_command(data.sys_guid,data.sys_pk,data.code,data.reference,data.balance,linea,sku);
     },
-    quit_prod:function(idt,sku,pkproducto,pkdorden)
+    quit_prod:function(idt,sku,pkproducto,pkdorden,dventa=0)
     {
       var rs=confirm("¿Esta seguro que desea eliminar el elemento seleccionado?");
       if(!rs)
         return;
 
-      var data={
+      var data=
+      {
         sku:sku,
         pkdorden:pkdorden,
         producto:pkproducto,
-        action:"uptorder"
+        action:"uptorder",
+        dventa:dventa
       }
       
       // return;
+      views.toggle(document.body,false,"","Procesando, por favor espere...");
       var uri=`${url}pos/dinner/foodbev/${idt}/`;
-      model.invoke_service(uri,data,function(data) {
+      model.invoke_service(uri,data,function(data) 
+      {
         views.print_ordenes(data);
+        views.toggle(document.body,true);
       },
-      function(error) {
+      function(error) 
+      {
         alert(error.message);
+        views.toggle(document.body,true);
       },"PATCH",false);
     },
     time:function(e)
@@ -1696,18 +1817,20 @@ var controller=
       let reserved=list_orders.filter(f=> f.sku.sys_pk == Number(producto)).length;
       var uri=`${url}pos/dinner/validate_existence/?prod=${producto}&cc=${$cc}&reserved=${reserved}`;
       //////////////////////////////////
-
+      views.toggle(document.body,false,"","Verificando existencias, por favor espere...");
       return new Promise((resolve)=>
       {
         views.ActiveAnimation(true);
         model.invoke_service(uri,null,function(data) 
         {
+          views.toggle(document.body,true);
           views.ActiveAnimation(false);
           resolve(true);
         },
         function(error) 
         {
           alert(error.message);
+          views.toggle(document.body,true);
           views.ActiveAnimation(false);
           resolve(false);
         },"GET",false);
@@ -1757,6 +1880,10 @@ var controller=
       views.search_prod.value="";
       views.search_prod.focus();
       data_foodbev=[];
+      if(this.foodbev_last_line_selected)
+      {
+        data_foodbev=this.foodbev_last_line_selected;
+      }
     },
     loadTickets(action="",params="")
     {

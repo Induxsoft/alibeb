@@ -185,10 +185,13 @@ module "lib.dk"
             // @"descuento2*":dbr.sql(ftext("IFNULL(descuento2,0) + #<descuento2>"))
         }
         do dbr.update(db,"dventa",reg_dventa,"sys_pk=@sys_pk",dventa)
+
+        reg_dventa<"id_dventa">:@@(dventa,"$id_dventa")
+        do dbr.execute(db,"UPDATE dorden set d1=@descuento1,d2=@descuento2 where sys_guid=@id_dventa",reg_dventa)
     }
     get_dventas_captura::&db,&linea
     {
-        sql="SELECT dv.sys_pk,dv.cantidad FROM dventa dv 
+        sql="SELECT dv.sys_pk,dv.cantidad,dv.sys_guid id_dventa FROM dventa dv 
         INNER JOIN producto p ON dv.iproducto=p.sys_pk
         WHERE dv.sys_dtcreated=@fecha_captura 
         AND p.ilinea=@id_linea
@@ -216,6 +219,7 @@ module "lib.dk"
             for j = 0; j < @count(dventas)
             {
                 ref dventa=@item(dventas,j)
+                
                 monto=desc_x_unidad(@@(dventa,"#cantidad"),@@(linea,"#"+slot_promocional),@@(linea,"#cantidad"))
                 // traza<"monto">:monto
 
@@ -246,10 +250,46 @@ module "lib.dk"
 
         do updateAmounts(db,venta)
     }
+    ref @data_promocion=@null
+    /*
+    * Summary:
+    - db -> referencia a la base de datos
+    - data objecto
+    new data
+    {
+        @"producto":{}
+        @"ventatotal":{}
+    }
+    - venta sys_pk de la tabla venta
+    */
+
+    save_data_promocion::&db,venta,&data,&promociones
+    {
+        venta >> p
+
+        do dbr.execute(db,"DELETE FROM detailpromocion where fk_venta=@venta",p)
+
+        new detailpromocion
+        {
+            @"sys_guid":uuid()
+            @"sys_dtcreated*":dbr.sql("now()")
+            @"sys_timestamp*":dbr.sql("now()")
+            @"sys_recver": 0
+
+            @"fk_venta":venta
+            @"data_promocion":to.json(data)
+            @"promociones":to.json(promociones)
+        }
+
+        do dbr.insert(db,"detailpromocion",detailpromocion)
+    }
+    field_descuento_orden::slot_promocional
+    {
+        return ifstr(tolower(trim(slot_promocional)) == "descuento2","d2","d1")
+    }
     apply_promo::&db,&params
     {
         ref promos=promociones_activas(db)
-        
         if @count(promos) < 1{return}
 
         ref venta=productos_x_linea(db,@@(params,"#venta"))
@@ -271,8 +311,22 @@ module "lib.dk"
             @"decimales_redondeo": @@(@config_default,"#decimal_money")
             @"metodoDescuento": metodo_desc//"sustraccion"
         }
-        @flag_venta_total=@false
-        
+
+        /*
+         * Summary:
+         * - Actualizar campo de slot en la dventa
+         * - Eliminar trazas y detalles de promoción de la venta indicada
+        */
+        field_descuento_ord=field_descuento_orden(slot_promocional)
+
+        do dbr.execute(db,"UPDATE dorden d
+        INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk
+        SET d."+field_descuento_ord+"=0
+        WHERE o.iventa=@venta;",params)
+        do dbr.execute(db,"UPDATE dventa SET "+slot_promocional+"=0 WHERE fk_venta_detalle=@venta",params)
+        do dbr.execute(db,"DELETE FROM trazapromocion WHERE fk_venta=@venta",params)
+        do dbr.execute(db,"DELETE FROM detailpromocion WHERE fk_venta=@venta",params)
+
         /*
          * Summary:
          * aplicar promociones por productos y condiciones
@@ -280,13 +334,29 @@ module "lib.dk"
         */
         ref promo_productos = promociones.motor.calcular_promociones_productos(venta, promos, configs)
         do apply_descuento_create_traza(db,@@(promo_productos,"&traza"),@@(promo_productos,"&venta/lineas"),@@(params,"#venta"),@@(configs,"$slot_promocional"))
+        
         /*
          * Summary:
          * aplicar promociones por venta total
         */
         ref promo_total = promociones.motor.calcular_promociones_total(venta, promos, configs, @total_venta)
-        @flag_venta_total=@true
         do apply_descuento_create_traza(db,@@(promo_total,"&traza"),@@(promo_total,"&venta/lineas"),@@(params,"#venta"),@@(configs,"$slot_promocional"))
+
+        /*
+         * Summary:
+         * - guardar datos de la promoción
+        */
+        ref @data_promocion=record.create()
+        using @data_promocion
+        {
+            @"producto*":promo_productos
+            @"ventatotal*":promo_total
+            @"configs*":configs
+        }
+
+        do save_data_promocion(db,@@(params,"#venta"),@data_promocion,promos)
+
+        @data_promocion<"promociones*">:promos
     }
     get_config::&db,cconsumo
     {
@@ -2408,7 +2478,7 @@ module "lib.dk"
     {
         if trim(@@(params,"$sql"))==""{sql=@list_ordenes}
         else{sql=@@(params,"$sql")}
-
+        
         ref ordenes=dbr.list(db,sql,params)
 
         ref data=list.create()
@@ -2447,7 +2517,21 @@ module "lib.dk"
 
                 @"_precio":@@(rsource,"#precio") //sin impuesto
                 @"_total":(@@(rsource,"#precio")*@@(rsource,"#cantidad")) - (@@(rsource,"#d1") + @@(rsource,"#d2")) //sin impuesto
+                @"dventa":@@(rsource,"#dventa")
             }
+
+            if @@(rsource,"#dventa") < 1 && trim(@@(rsource,"$id_dventa")) !=""
+            {
+                rsource<"dventa">:dbr.num(db,"SELECT sys_pk FROM dventa WHERE sys_guid=@id_dventa",rsource)
+            }
+            params<"dventa">:@@(rsource,"#dventa")
+
+            ref promociones=dbr.list(db,"SELECT t.*,p.nombre,p.codigo,ta.const tipo_aplicacion FROM trazapromocion t 
+            INNER JOIN promocion p ON t.fk_promocion=p.sys_pk
+            INNER JOIN ctipoaplicacionpromocion ta ON t.tipo_aplicacion=ta.id
+            WHERE t.fk_dventa=@dventa AND t.fk_venta=@iventa;",params)
+
+            row<"promociones*">:promociones
 
             do list.add(data,row)
         }
@@ -3148,7 +3232,11 @@ module "lib.dk"
         do dbr.commit(db)
 
         new p{@"id_table":@@(params,"$id_table")}
-        return dbr.rec(db,@dataventa,p)
+        ref detalle_venta=ifnull(dbr.rec(db,@dataventa,p),record.create())
+
+        detalle_venta<"promociones*">:@data_promocion
+
+        return detalle_venta
 
         exception
         {
@@ -3558,10 +3646,10 @@ module "lib.dk"
         ref now=now()
         new p{@"id_table":@@(postData,"id_table")}
         ref dataVenta=dbr.rec(db,@dataventa,p)
-
+        // do rise_error(0,"1")
         //eliminar todos datos de dventa de acuerdo a la mesa(venta) clase=2
         do dbr.execute(db,@deletedventa,dataVenta)
-
+        
         ialmacen=dbr.num(db,"SELECT cc.ialmacen FROM cconsumo cc WHERE cc.sys_pk=@cc;",postData)
         if ialmacen < 1{ialmacen= 1 }
         new dventa
@@ -3596,13 +3684,17 @@ module "lib.dk"
         for i=0;i<list.count(dtventa)
         {
             ref dv=@item(dtventa,i)
+
+            sys_guid=toupper(uuid())
             if @@(dv,"#dorden") > 0
             {
+                sys_guid=@@(dv,"$sys_guid")
                 dv<"precio">:@@(dv,"#precio") + dbr.num(db,"SELECT ifnull(sum(IFNULL(d.cantidad,0) * IFNULL(d.precio,0)),0) FROM dadicionales d WHERE d.fk_dorden_adicionales=@dorden;",dv)
             }
+
             using dventa
             {
-                @"Sys_GUID":toupper(uuid())
+                @"Sys_GUID":sys_guid
                 @"cantidad":@@(dv,"#cantidad")
                 @"precio":@@(dv,"#precio")
                 @"iproducto":@@(dv,"iproducto")
@@ -3633,14 +3725,15 @@ module "lib.dk"
 
         new data
         {
-            @"id_table":@@(dataVenta,"sys_pk")
-            @"producto":@@(postData,"producto")
-            @"pkdorden":@@(postData,"pkdorden")
+            @"id_table":@@(dataVenta,"#sys_pk")
+            @"producto":@@(postData,"#producto")
+            @"pkdorden":@@(postData,"#pkdorden")
+            @"dventa":@@(postData,"#dventa")
         }
         quantity=1
         ref dorden=dbr.rec(db,@getdorden_prod,data)
-        if isnull(dorden){ref dorden=dbr.rec(db,"SELECT d.cantidad,d.precio FROM dventa d WHERE d.iproducto=@producto AND d.fk_venta_detalle=@id_table;",data)}
-
+        if isnull(dorden){ref dorden=dbr.rec(db,"SELECT d.cantidad,d.precio FROM dventa d WHERE d.iproducto=@producto AND d.fk_venta_detalle=@id_table AND IF(IFNULL(@dventa,0)> 0,d.sys_pk=@dventa,true);",data)}
+        
         using data{@"pkorden":@@(dorden,"pkorden")}
         quantitycurrent=@@(dorden,"#cantidad")
         using data{@"cantidad":quantitycurrent - quantity}
@@ -3653,7 +3746,7 @@ module "lib.dk"
                 do dbr.execute(db,@updatedorden,data)
                 ref dv=dbr.rec(db,@getquantitydv,data)
                 cantidadv=@@(dv,"#cantidad")
-
+                
                 if cantidadv > 1
                 {
                     using data{@"cantidad":cantidadv - 1}
@@ -3684,7 +3777,6 @@ module "lib.dk"
 
                 do dbr.execute(db,@deletedvt,data)
                 do updateinsert.ventaDventa(db,p)      
-                
             }
             if update
             {
@@ -3694,9 +3786,12 @@ module "lib.dk"
                 do dbr.execute(db,@updateventa,totales)
             }
         
-        postData<"id_table">:@@(dataVenta,"sys_pk")
+        postData<"id_table">:@@(dataVenta,"#sys_pk")
+        p<"venta">:@@(dataVenta,"#sys_pk")
+        do apply_promo(db,p)
+
         ref data_order=get.mesa(db,postData)
-        
+        data_order<"promociones*">:@data_promocion
         do dbr.commit(db)
 
         

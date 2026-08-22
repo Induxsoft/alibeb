@@ -102,7 +102,9 @@ module "lista de consultas"
     @dataorden="select importe from orden where iventa=@sys_pk"
     @datadorden="select sys_pk from dorden where sys_guid=@sys_guid"
 
-    @deletedventa="delete dventa from dventa inner join producto on dventa.iproducto=producto.sys_pk where producto.iclase=2 and dventa.fk_venta_detalle=@sys_pk"
+    @deletedventa="
+    delete from trazapromocion t where t.fk_venta=@sys_pk;
+    delete dventa from dventa inner join producto on dventa.iproducto=producto.sys_pk where producto.iclase=2 and dventa.fk_venta_detalle=@sys_pk"
 
     @dataadds="select p.sys_pk,p.iclase,p.itipo,p.idivisa,p.unidad,p.impuestos,p.padic1,p.padic2,p.padic3,p.padic4,p.padic5 from producto p where p.codigo=@sku"
 
@@ -111,13 +113,14 @@ module "lista de consultas"
     @block="select f.sys_pk,f.cancelado,f.fecha,f.folio,f.block from foliosdocumentos f where f.sys_guid=@sys_guid"
     @blockdoc="SELECT serie FROM blockdocumentos WHERE sys_pk=@block;"
 
-    @getdorden="select d.iproducto,d.precio precio, sum(d.cantidad) cantidad, sum(d.d1) d1, sum(d.d2) d2,d.sys_pk dorden
+    @getdorden="select d.sys_guid,d.iproducto,d.precio precio, sum(d.cantidad) cantidad, sum(d.d1) d1, sum(d.d2) d2,d.sys_pk dorden
                 from dorden d
                 inner join orden o on o.sys_pk=d.fk_orden_detalle
                 inner join venta v on o.iventa=v.sys_pk
                 inner join producto p on d.iproducto=p.sys_pk
                 where v.sys_pk=@sys_pk and p.iclase=2
-                group by d.iproducto, d.precio;"
+                group by d.iproducto, d.precio
+                AND IF(IFNULL(@dorden,0)> 0,d.sys_pk=@dorden,true);"
 
     @totaldventa="select ifnull(sum(dv.precio*dv.cantidad),0) subtotal, ifnull(sum(dv.descuento1),0)d1,ifnull(sum(dv.descuento2),0)d2,ifnull(sum(dv.impuesto1),0)i1,ifnull(sum(dv.impuesto2),0)i2,
                 ifnull(sum(dv.impuesto3),0)i3,ifnull(sum(dv.impuesto4),0)i4 from dventa dv inner join producto p on dv.iproducto=p.sys_pk where dv.fk_venta_detalle=@sys_pk" 
@@ -131,13 +134,23 @@ module "lista de consultas"
                 dv.impuesto2=@i2, 
                 dv.impuesto3=@i3, 
                 dv.impuesto4=@i4 
-                where dv.iproducto=@producto AND v.sys_pk=@id_table" //
+                where dv.iproducto=@producto AND v.sys_pk=@id_table
+                AND dv.sys_pk=@dventa;" //
 
     @updatedorden="update dorden d INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk 
                     set d.cantidad=@cantidad where d.iproducto=@producto AND o.iventa=@id_table AND d.sys_pk=@pkdorden;"
 
-    @deletedvt="delete dv from dventa dv INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
-                where dv.iproducto=@producto AND v.sys_pk=@id_table"
+    @deletedvt="
+                delete t from dventa dv 
+                INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+                INNER JOIN trazapromocion t ON t.fk_dventa=dv.sys_pk
+                where dv.iproducto=@producto AND v.sys_pk=@id_table
+                AND IF(IFNULL(@dventa,0)> 0,dv.sys_pk=@dventa,true);
+
+                delete dv from dventa dv 
+                INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
+                where dv.iproducto=@producto AND v.sys_pk=@id_table
+                AND IF(IFNULL(@dventa,0)> 0,dv.sys_pk=@dventa,true);"
 
     @getdorden_prod="SELECT d.cantidad,o.sys_pk as pkorden,d.precio FROM dorden d INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk
                     WHERE d.iproducto=@producto AND o.iventa=@id_table AND d.sys_pk=@pkdorden;"
@@ -152,7 +165,8 @@ module "lista de consultas"
     FROM dventa dv 
     INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
     INNER JOIN producto p ON dv.iproducto=p.sys_pk
-    WHERE v.sys_pk=@id_table AND dv.IProducto=@producto"
+    WHERE v.sys_pk=@id_table AND dv.IProducto=@producto
+    AND IF(IFNULL(@dventa,0)> 0,dv.sys_pk=@dventa,true);"
 
     @list_mesas_zona="select 0 as 'sys_pk',0 as 'occupied_seats','' as 'sys_guid',d.id as 'code',coalesce(d.mesero,'') as 'waiter' ,d.personas as 'available_seats' 
                         from dmnsmesa d 
@@ -354,7 +368,10 @@ module "lista de consultas"
 
     @_list_dorden="select producto.codigo AS sku,producto.sys_pk,producto.ilinea as linea,dorden.sys_pk as pkdorden,dorden.fk_orden_detalle AS pkorden, dorden.sys_timestamp, 
                         dorden.cantidad,producto.descripcion,dorden.especificaciones,dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
-                        cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta,producto.unidad  from (dorden inner join (orden inner join 
+                        cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta,producto.unidad,
+                        0 dventa,
+                        dorden.sys_guid as id_dventa
+                        from (dorden inner join (orden inner join 
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         where (orden.iventa=@iventa or orden.sys_pk=@_orden)"
@@ -363,7 +380,9 @@ module "lista de consultas"
                         cfg.i2venta,
                         cfg.i3venta,
                         cfg.i4venta,
-                        p.unidad
+                        p.unidad,
+                        dv.sys_pk dventa,
+                        dv.sys_guid as id_dventa
                         FROM dventa dv INNER JOIN producto p ON dv.iproducto=p.Sys_PK 
                         INNER JOIN cfgimpuesto cfg ON p.Impuestos=cfg.Sys_PK 
                         WHERE dv.fk_venta_detalle=@iventa AND p.IClase<>2;"

@@ -96,7 +96,16 @@ var prn_ticket=
             let importe=model_prn.TextLength("$ "+views.format(row.total??0,controller.decimals,".",","),"importe");
 
             eposprn.printText(`${desc}${cantidad}${unidad}${importe}`);
+            if(row.promociones && row.promociones?.length > 0)
+            {
+                printer.printText(`     Promociones`);
 
+                for (let a = 0; a < row.promociones.length; a++) 
+                {
+                    const p = row.promociones[a];
+                    printer.printText(`     - ${p.tipo_aplicacion.trim()}  ${p.codigo}  $ ${controller.RoundTo(p.monto??0,controller.decimals)}`);
+                }
+            }
             if(row.adds && row.adds?.length > 0)
             {
                 eposprn.printText(`     Adicionales`);

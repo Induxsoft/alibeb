@@ -129,7 +129,7 @@ module "index.dkl"
 		ref data=@null
 		@DecimalesEnImportes=parse.num(dbr.vars.get(db,"FXCA001"))
 		@validar_existencia=parse.bool(dbr.vars.get(db,"pos_afectar_existencias"))
-		
+		do getVarsConfig()
 		switch method
 		{
 			case "GET"

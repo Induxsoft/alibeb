@@ -1,6 +1,7 @@
 
 #$
 // **********************modal*********************
+    div(class="" id="backdrop"){$""}
 	div(id="loadings" class="loadings")
     {
         $""
@@ -533,7 +534,7 @@ div(id="modal-select-repartidor" class="show_modal_center open-table hidde_contr
 }
 
 //seleccionar productos
-div(id="modal-select-products" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important")
+div(id="modal-select-products" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important;z-index: 1000;")
 {
     div(class="d-flex" onclick="controller.hide_modal(\'#modal-select-products\');")
     {
@@ -638,4 +639,154 @@ div(id="modal-change-client" class="show_modal_center open-table hidde_control m
             button(class="btn rounded-0" type="button" onclick="controller.hide_modal(\'#modal-change-client\');"){$"Cerrar"}
         }
     }
+}
+//modal de promociones
+div
+{
+    $'<!-- Modal de promociones de la venta -->
+    <div class="modal fade" id="modalPromociones" tabindex="-1"
+        aria-labelledby="modalPromocionesLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+
+            <div class="modal-content promociones-modal">
+
+                <!-- HEADER -->
+                <div class="modal-header promociones-header">
+                    <div>
+                        <h5 class="modal-title mb-1" id="modalPromocionesLabel">
+                            Promociones de la venta
+                        </h5>
+                        <small id="promocionesVentaReferencia" class="text-white-50"></small>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close btn-close-white d-none"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar">
+                    </button>
+                </div>
+
+
+                <!-- BODY -->
+                <div class="modal-body">
+
+                    <!-- =====================================================
+                        1. PRODUCTOS CON DESCUENTO
+                        ===================================================== -->
+                    <section class="promo-section promo-descuentos">
+
+                        <div class="promo-section-header">
+                            <div class="promo-section-icon">
+                                <i class="bi bi-tags-fill"></i>
+                            </div>
+
+                            <div>
+                                <h6 class="promo-section-title">
+                                    Productos con descuento
+                                </h6>
+
+                                <small class="promo-section-subtitle">
+                                    Productos beneficiados por promociones
+                                </small>
+                            </div>
+
+                            <span id="promocionesCantidadDescuentos"
+                                class="badge rounded-pill promo-badge ms-auto">
+                                0
+                            </span>
+                        </div>
+
+                        <div id="promocionesProductos"
+                            class="promo-section-content">
+                            <!-- JS -->
+                        </div>
+
+                    </section>
+
+
+                    <!-- =====================================================
+                        2. OBSEQUIOS
+                        ===================================================== -->
+                    <section class="promo-section promo-obsequios">
+
+                        <div class="promo-section-header">
+                            <div class="promo-section-icon">
+                                <i class="bi bi-gift-fill"></i>
+                            </div>
+
+                            <div>
+                                <h6 class="promo-section-title">
+                                    Obsequios
+                                </h6>
+
+                                <small class="promo-section-subtitle">
+                                    Productos que puedes recibir
+                                </small>
+                            </div>
+
+                            <span id="promocionesCantidadObsequios"
+                                class="badge rounded-pill promo-badge ms-auto">
+                                0
+                            </span>
+                        </div>
+
+                        <div id="promocionesObsequios"
+                            class="promo-section-content">
+                            <!-- JS -->
+                        </div>
+
+                    </section>
+
+
+                    <!-- =====================================================
+                        3. NOTIFICACIONES
+                        ===================================================== -->
+                    <section class="promo-section promo-notificaciones">
+
+                        <div class="promo-section-header">
+                            <div class="promo-section-icon">
+                                <i class="bi bi-info-circle-fill"></i>
+                            </div>
+
+                            <div>
+                                <h6 class="promo-section-title">
+                                    Notificaciones
+                                </h6>
+
+                                <small class="promo-section-subtitle">
+                                    Información relacionada con promociones
+                                </small>
+                            </div>
+
+                            <span id="promocionesCantidadNotificaciones"
+                                class="badge rounded-pill promo-badge ms-auto">
+                                0
+                            </span>
+                        </div>
+
+                        <div id="promocionesNotificaciones"
+                            class="promo-section-content">
+                            <!-- JS -->
+                        </div>
+
+                    </section>
+
+                </div>
+
+
+                <!-- FOOTER -->
+                <div class="modal-footer promociones-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            _data-bs-dismiss="modal" id="btn_promos">
+                        Cerrar
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+    </div>'
 }

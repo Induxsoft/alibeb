@@ -127,7 +127,16 @@ var prn_generic=
         {
             const row = list_dorden[i];
             printer.printText(`${row.description}  ${controller.RoundTo(row.quantity??0,controller.decimals)}  ${row.unidad??""}  $ ${views.format(row.total,controller.decimals,".",",")}`);
-            
+            if(row.promociones && row.promociones?.length > 0)
+            {
+                printer.printText(`     Promociones`);
+
+                for (let a = 0; a < row.promociones.length; a++) 
+                {
+                    const p = row.promociones[a];
+                    printer.printText(`     - ${p.tipo_aplicacion.trim()}  ${p.codigo}  $ ${controller.RoundTo(p.monto??0,controller.decimals)}`);
+                }
+            }
             if(row.adds && row.adds?.length > 0)
             {
                 printer.printText(`     Adicionales`);

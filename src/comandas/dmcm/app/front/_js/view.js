@@ -659,6 +659,7 @@ var views=
                         total:0,
                         _priceProd_:views.format(itm.price * 1,controller.decimals_backend,".",","),
                   }
+                  
                   //validar existencias
                   if(itm.validar_existencia)
                   {
@@ -1316,6 +1317,7 @@ var views=
             {
                   var itm=data.orders[i];
                   total+=itm.total;
+
                   var description=`<b>${itm.description}</b>`;
                   if (Number(itm.time)!=0)
                         description+=` ${controller.lifetime(itm.time)} Tiempo.`;
@@ -1325,6 +1327,14 @@ var views=
                         description+=`</br>${itm.notes}`;
                   description+=`</br><label class="fsz-12" style="color:#888;">${itm.created}</label>`;
 
+                  if(itm.promociones)
+                  {
+                        for (let a = 0; a < itm.promociones.length; a++) 
+                        {
+                              const p = itm.promociones[a];
+                              description+=`<p class="text-warning" style="font-size: small;">Promoción (${p.tipo_aplicacion.trim()}) ${p.codigo} $ ${views.format(p.monto??0,controller.decimals,".",",")}</p><br>`
+                        }
+                  }
                   html+=`<tr>
                         <td style="padding-bottom: 16px;">
                               <div class="cellgrid">
@@ -1336,7 +1346,7 @@ var views=
                                     <div class="text-center">
                                           ${itm.quantity}
                                     </div>
-                                    <div class="divminus" onclick='controller.quit_prod("${data.sys_guid}","${itm.sku}",${itm.sys_pk},${itm.pkdorden})'>
+                                    <div class="divminus" onclick='controller.quit_prod("${data.sys_guid}","${itm.sku}",${itm.sys_pk},${itm.pkdorden},${itm.dventa??0})'>
                                           <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-dash" viewBox="0 0 16 16">
                                                 <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
                                           </svg>
@@ -2234,7 +2244,8 @@ document.addEventListener('keydown', function(event)
       if (event.key === 'Enter') 
       {
             const row = rows[selectedIndex];
-
+            if(!row)return;
+            
             const id = row.cells[0].innerText;
             const nombre = row.cells[1].innerText;
             
@@ -2392,6 +2403,519 @@ function setRemainingHeight(parentId, targetId)
     target.style.height = `${Math.max(0, availableHeight)}px`;
 }
 
+/**
+ * Pinta el modal completo.
+ *
+ * promociones:
+ * {
+ *   traza: [],
+ *   obsequios: [],
+ *   notificaciones: []
+ * }
+ *
+ * venta:
+ * {
+ *   venta: {
+ *      referencia,
+ *      lineas: []
+ *   }
+ * }
+ */
+function pintarPromociones(promociones, venta) {
+
+    const ventaData = venta?.venta || venta;
+
+    document.getElementById("promocionesVentaReferencia").textContent =
+        ventaData?.referencia
+            ? `Venta ${ventaData.referencia}`
+            : "";
+      let section_descuentos=document.querySelector(".promo-descuentos");
+      let section_obsequios=document.querySelector(".promo-obsequios");
+      let section_notificaciones=document.querySelector(".promo-notificaciones");
+
+      let trazas=promociones?.traza || [];
+      let obsequios=promociones?.obsequios || [];
+      let notificaciones=promociones?.notificaciones || [];
+
+      section_descuentos?.classList?.remove("d-none");
+      section_obsequios?.classList?.remove("d-none");
+      section_notificaciones?.classList?.remove("d-none");
+
+      if(trazas.length < 1)section_descuentos?.classList?.add("d-none");
+      if(obsequios.length < 1)section_obsequios?.classList?.add("d-none");
+      if(notificaciones.length < 1)section_notificaciones?.classList?.add("d-none");
+
+    pintarProductosDescuento(
+        trazas,
+        ventaData?.lineas || []
+    );
+
+    pintarObsequios(
+        obsequios
+    );
+
+    pintarNotificaciones(
+        notificaciones
+    );
+}
+
+/**
+ * Pinta únicamente los productos que:
+ *
+ * 1. Aparecen en traza.
+ * 2. Tienen una linea_idx válida.
+ * 3. Corresponden a una línea de venta.
+ * 4. El producto existe en list_orders.
+ */
+function pintarProductosDescuento(trazas, lineasVenta) {
+
+    const contenedor =
+        document.getElementById("promocionesProductos");
+
+    const badge =
+        document.getElementById("promocionesCantidadDescuentos");
+
+    contenedor.innerHTML = "";
+
+    /*
+     * Primero relacionamos las trazas con las líneas de venta.
+     */
+    const productos = [];
+
+    for (const traza of trazas) {
+
+        const lineaIdx = Number(traza.linea_idx);
+
+        /*
+         * linea_idx se considera índice de línea.
+         * Si en tu estructura realmente es el índice del array
+         * y empieza en 0, puedes quitar el -1.
+         */
+        const linea = lineasVenta[lineaIdx];
+
+        if (!linea || !linea.producto) {
+            continue;
+        }
+
+        const productoId = Number(linea.producto.id);
+
+        /*
+         * Solo mostrar productos que estén en list_orders.
+         */
+        const existeEnOrders = list_orders?.some(order =>
+            Number(order?.sku?.pkprod) === productoId
+        );
+
+        if (!existeEnOrders) {
+            continue;
+        }
+
+        productos.push({
+            lineaIdx: lineaIdx,
+
+            lineaId: Number(
+                linea.id_linea ??
+                linea.producto?.linea?.id ??
+                0
+            ),
+
+            lineaNombre:
+                linea.producto?.linea?.nombre ||
+                "Sin línea",
+
+            productoId: productoId,
+
+            nombre:
+                linea.producto.nombre ||
+                "Producto",
+
+            cantidad:
+                Number(traza?.parametros?.unidadesGratisEnLinea || 0),
+
+            precio:
+                Number(linea.precio || 0),
+
+            descuento:
+                Number(traza.monto || 0),
+
+            promocion:
+                traza.promocion || "",
+
+            tipo:
+                traza.tipo || "descuento"
+        });
+    }
+
+
+    /*
+     * Ordenar primero por línea y después por producto.
+     */
+    productos.sort((a, b) => {
+
+        if (a.lineaId !== b.lineaId) {
+            return a.lineaId - b.lineaId;
+        }
+
+        return a.nombre.localeCompare(
+            b.nombre,
+            "es",
+            { sensitivity: "base" }
+        );
+    });
+
+
+    badge.textContent = productos.length;
+
+
+    if (productos.length === 0) {
+
+        contenedor.innerHTML = `
+            <div class="promo-empty">
+                <i class="bi bi-tag"></i>
+                No hay productos con descuento.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    /*
+     * Agrupamos por línea para poder mostrar
+     * visualmente los productos ordenados.
+     */
+    const grupos = new Map();
+
+    for (const producto of productos) {
+
+        if (!grupos.has(producto.lineaId)) {
+            grupos.set(producto.lineaId, {
+                nombre: producto.lineaNombre,
+                productos: []
+            });
+        }
+
+        grupos.get(producto.lineaId)
+            .productos
+            .push(producto);
+    }
+
+
+    let html = "";
+
+    for (const [lineaId, grupo] of grupos) {
+
+        html += `
+            <div class="mb-3">
+
+                <div class="d-flex align-items-center mb-1 px-1">
+                    <span class="small fw-semibold text-secondary">
+                        <i class="bi bi-box-seam me-1"></i>
+                        ${escapeHtml(grupo.nombre)}
+                    </span>
+
+                    <span class="small text-muted ms-2">
+                        ${grupo.productos.length}
+                        producto${grupo.productos.length !== 1 ? "s" : ""}
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table promo-product-table mb-0">
+
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">Cant.</th>
+                                <th class="text-end">Precio</th>
+                                <th>Promoción</th>
+                                <th class="text-end">Descuento</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+        `;
+
+
+        for (const producto of grupo.productos) {
+
+            const descuentoPorUnidad =
+                producto.cantidad > 0
+                    ? producto.descuento / producto.cantidad
+                    : 0;
+
+
+            html += `
+                <tr>
+
+                    <td>
+                        <div class="product-name">
+                            ${escapeHtml(producto.nombre)}
+                        </div>
+
+                        <span class="product-line">
+                            Línea ${producto.lineaId}
+                            · ID ${producto.productoId}
+                        </span>
+                    </td>
+
+                    <td class="text-end">
+                        ${formatearNumero(producto.cantidad)}
+                    </td>
+
+                    <td class="text-end product-price">
+                        ${formatearMoneda(producto.precio)}
+                    </td>
+
+                    <td>
+                        <span class="promo-tag">
+                            ${escapeHtml(producto.promocion)}
+                        </span>
+                    </td>
+
+                    <td class="text-end">
+                        <div class="product-total-discount">
+                            -${formatearMoneda(producto.descuento)}
+                        </div>
+
+                        ${
+                            producto.cantidad > 1
+                                ? `
+                                    <div class="small text-muted">
+                                        -${formatearMoneda(descuentoPorUnidad)} / ud.
+                                    </div>
+                                  `
+                                : ""
+                        }
+                    </td>
+
+                </tr>
+            `;
+        }
+
+
+        html += `
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        `;
+    }
+
+
+    contenedor.innerHTML = html;
+}
+
+/**
+ * Pinta el módulo de obsequios.
+ */
+function pintarObsequios(obsequios) {
+
+    const contenedor =
+        document.getElementById("promocionesObsequios");
+
+    const badge =
+        document.getElementById("promocionesCantidadObsequios");
+
+    contenedor.innerHTML = "";
+
+    badge.textContent = obsequios.length;
+
+
+    if (obsequios.length === 0) {
+
+        contenedor.innerHTML = `
+            <div class="promo-empty">
+                <i class="bi bi-gift"></i>
+                No hay obsequios disponibles.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    let html = "";
+
+
+    for (const obsequio of obsequios) {
+
+        const candidatos =
+            obsequio.producto_candidatos || [];
+
+
+        html += `
+            <div class="obsequio-card">
+
+                <div class="obsequio-header">
+
+                    <i class="bi bi-gift-fill obsequio-icon"></i>
+
+                    <span class="obsequio-promocion">
+                        ${escapeHtml(obsequio.promocion || "Obsequio")}
+                    </span>
+
+                    <span class="badge bg-primary ms-auto">
+                        ${Number(obsequio.porcentajeDescuento || 0)}%
+                    </span>
+
+                </div>
+        `;
+
+
+        for (const producto of candidatos) {
+
+            html += `
+                <div class="obsequio-producto">
+
+                    <div>
+                        <div class="obsequio-producto-nombre">
+                            ${escapeHtml(producto.nombre || "Producto")}
+                        </div>
+
+                        <div class="obsequio-producto-precio">
+                            Precio:
+                            ${formatearMoneda(producto.precio || 0)}
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+
+                        ${
+                            Number(obsequio.porcentajeDescuento) === 100
+                                ? `
+                                    <span class="obsequio-descuento">
+                                        GRATIS
+                                    </span>
+                                  `
+                                : `
+                                    <span class="obsequio-descuento">
+                                        ${Number(obsequio.porcentajeDescuento || 0)}% descuento
+                                    </span>
+                                  `
+                        }
+
+                        ${
+                            obsequio.unidadesNoReclamadas != null
+                                ? `
+                                    <div class="small text-muted">
+                                        Disponibles:
+                                        ${obsequio.unidadesNoReclamadas}
+                                    </div>
+                                  `
+                                : ""
+                        }
+
+                    </div>
+
+                </div>
+            `;
+        }
+
+
+        html += `
+            </div>
+        `;
+    }
+
+
+    contenedor.innerHTML = html;
+}
+
+/**
+ * Pinta el módulo de notificaciones.
+ */
+function pintarNotificaciones(notificaciones) {
+
+    const contenedor =
+        document.getElementById("promocionesNotificaciones");
+
+    const badge =
+        document.getElementById("promocionesCantidadNotificaciones");
+
+    contenedor.innerHTML = "";
+
+    badge.textContent = notificaciones.length;
+
+
+    if (notificaciones.length === 0) {
+
+        contenedor.innerHTML = `
+            <div class="promo-empty">
+                <i class="bi bi-check-circle"></i>
+                No hay notificaciones.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    let html = "";
+
+
+    for (const mensaje of notificaciones) {
+
+        html += `
+            <div class="promo-notificacion">
+
+                <i class="bi bi-info-circle-fill promo-notificacion-icon"></i>
+
+                <div>
+                    ${escapeHtml(String(mensaje))}
+                </div>
+
+            </div>
+        `;
+    }
+
+
+    contenedor.innerHTML = html;
+}
+function formatearMoneda(valor) {
+
+    return Number(valor || 0).toLocaleString("es-MX", {
+        style: "currency",
+        currency: "MXN",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+
+function formatearNumero(valor) {
+
+    return Number(valor || 0).toLocaleString("es-MX", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+}
+
+
+/**
+ * Evita insertar directamente texto proveniente
+ * de productos/promociones dentro del HTML.
+ */
+function escapeHtml(valor) {
+
+    return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+function mostrarModalPromociones(promociones, venta) {
+
+    pintarPromociones(promociones, venta);
+
+    const modalElement =
+        document.getElementById("modalPromociones");
+
+    controller.showModal("modalPromociones");
+}
 setTimeout(()=>
 {
       if(debugVisible)abrirDebug(false);
