@@ -3,6 +3,8 @@
 module "terminal de mesero"
 {
 	ref getData=@@(@http_context,"&request/get")
+	@only_account_predef = parse.bool(dbr.vars.get(@database,"comandas.only_account_predef"))
+
 	#$
 	div(class="container-main d-lg-grid d-flex" id="container-main")
 	{
@@ -14,7 +16,7 @@ module "terminal de mesero"
 				{
 					div(class="card-header d-sm-flex d-block " style="align-items: center;" id="card_header_actions")
 					{
-						buttom(class="btn img mr-2 #<@@(@config_default,'$show_cuentas')> border-1-i" onclick="controller.show_modal(\'#open-table\');")
+						buttom(class="btn img mr-2 #<@@(@config_default,'$show_cuentas')> border-1-i" onclick="controller.openAccount(#<@only_account_predef>);")
 						{
 							svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"){path("fill-rule"="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z")}
 							span(class="vb m-width"){"Abrir cuenta"}
@@ -220,9 +222,9 @@ module "terminal de mesero"
 		}
 	}
 	
+	script(src="/_/dmcm/app/front/_js/select_account.js"){""}
 	script
-	{
-		$'
+	{$'
 		$(document).ready(function()
 		{
 			if("#<idt>"!="")
@@ -230,7 +232,5 @@ module "terminal de mesero"
 				views.table_selected="#<idt>";
 			}
 		});
-		'
-	}
+	'}
 }
-

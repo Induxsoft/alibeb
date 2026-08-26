@@ -12,6 +12,7 @@ module "index"
 	#include "uielements.dkl"
 	#include "dbr.vars.dkl"
 
+	ref @database = @@(@http_context,"&session/idp/database")
 	do getVarsConfig()
 	@name_company=@@(@config_default,"$pos_titulo_encabezado")
 	@as_company=@@(@config_default,"$pos_subtitulo_encabezado")

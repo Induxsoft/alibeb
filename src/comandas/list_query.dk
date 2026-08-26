@@ -4,7 +4,7 @@ module "lista de consultas"
 {
     @where=""
 
-	@flag="select d.bandera from dmnsmesa d where d.id=@code"
+	@flag="select ifnull(d.bandera,0) bandera from dmnsmesa d where d.id=@code"
 
 	@available="select d.personas from dmnsmesa d where d.id=@code"
 

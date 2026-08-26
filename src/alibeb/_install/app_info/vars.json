@@ -124,6 +124,26 @@
                         "showfield":"nombre"
                     }
                 }
+            },
+            {
+                "varname": "comandas.only_account_predef",
+                "vardefault": "0",
+                "varvalue": "0",
+                "varcaption": "Solo mesas predefinidas",
+                "varhelp": "Abrir solo mesas/cuentas predefinidas",
+                "vartype": "bool",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"list",
+                        "values":[
+                            {"value":"1", "text":"Sí"},
+                            {"value":"0", "text":"No"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"value"
+                    }
+                }
             }
         ]
     }

@@ -1390,6 +1390,50 @@ module "lib.dk"
     {
         return get.foodbev(db,params)
     }
+
+    get.cuentasDisponibles :: &db, &params
+    {
+        sql = "
+        WITH cuentas AS (
+            SELECT
+                v.fecha,
+                v.referencia,
+                v.dmnsmesa AS clave,
+                ((IFNULL(v.subtotal,0)
+                    - IFNULL(v.descuento1,0)
+                    - IFNULL(v.descuento2,0))
+                    + IFNULL(v.impuesto1,0)
+                    + IFNULL(v.impuesto2,0)
+                    + IFNULL(v.impuesto3,0)
+                    + IFNULL(v.impuesto4,0)
+                ) AS total,
+                IF(v.statusadministrativo = 1, 'open', 'close') AS `status`
+            FROM venta v
+            WHERE v.documento = 6
+            AND v.statusadministrativo IN (1, 2)
+            AND IFNULL(v.sys_info, '') = ''
+            AND IFNULL(v.dmnsmesa, '') <> ''
+        )
+
+        SELECT fecha, referencia, clave AS `key`, `status`, concat('$ ', format(total, 'C', 'es-MX')) AS amount
+        FROM cuentas
+
+        UNION ALL
+
+        SELECT NULL, '', d.id, 'free', '$ 0.00'
+        FROM dmnsmesa d
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM cuentas c
+            -- Secuencia de escape: \\\\ (DKL) => \\ (SQL)
+            WHERE c.clave REGEXP CONCAT('(^|\\\\+)', d.id, '($|\\\\+|-|\\\\|)')
+        )
+
+        ORDER BY `key`;
+        "
+        return dbr.list(db,sql,@null)
+    }
+
     GetDestinationByPhone :: &db, &params
     {
         return dbr.rec(db,"

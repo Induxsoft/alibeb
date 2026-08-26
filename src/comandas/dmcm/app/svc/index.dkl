@@ -224,6 +224,11 @@ module "index.dkl"
 						ref data=get.tickets_procesados(db,params)
 						break
 					}
+					case "load-accounts"
+					{
+						ref data = get.cuentasDisponibles(db,params)
+						break
+					}
 					case "precio-producto"
 					{
 						ref data=precio.producto(db,params)

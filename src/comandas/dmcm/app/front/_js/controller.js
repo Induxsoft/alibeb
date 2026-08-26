@@ -1675,6 +1675,50 @@ var controller=
       if (text.length < length) return text;
       return text. substring(0,length);
     },
+    openAccount(show_predefs=false)
+    {
+      if (!show_predefs) {
+        controller.show_modal('#open-table');
+        return;
+      }
+
+      views.toggle(document.body,false,"","Cargando, por favor espere...");
+
+      let uri = `${url}pos/dinner/load-accounts/`;
+      model.invoke_service(uri, null,
+        (data) => {
+          views.toggle(document.body,true);
+          this.showAccounts(data);
+        },
+        (error) => {
+          views.toggle(document.body,true);
+          if (error.message) alert(error.message);
+          else console.error(error);
+        },
+        "GET", false
+      );
+    },
+    showAccounts(data)
+    {
+      const accounts = {
+        keys: Array.isArray(data) ? data : [],
+        delimiter: "-",
+        delimiter_alt: "|",
+        concat_op: "+",
+        subaccount_label: "+Subcuenta"
+      };
+
+      select_account(accounts, function(item) {
+        if (item)
+        {
+          const cuenta = document.querySelector('#open-table #txttable');
+          cuenta.value = item.selectedkey;
+          cuenta.readOnly = true;
+          
+          controller.show_modal('#open-table');
+        }
+      });
+    },
     showDialogDS()
     {
       views.showDialogDS();
