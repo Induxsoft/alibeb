@@ -11,6 +11,7 @@ program "Ordenar comida a domicilio"
     #include "alibeb/sise/adapter/command-payload-adapter.dkh"
     #include "comandas/list_query.dk"
     #include "comandas/config.dk"
+    #include "comandas/lib.dk"
     #include "comandas/impuesto.dk"
     #include "comandas/dmcm/app/svc/lib.dk"
     
@@ -118,7 +119,7 @@ program "Ordenar comida a domicilio"
         ref_size = dbr.vars.getd(db, "ventas_fix_ref_size", 8)
         idivisa = parse.num(dbr.vars.get(db,"FXCA013")) // Divisa predeterminada
         tipocambio = dbr.num(db,ftext("SELECT tcambio FROM divisa WHERE sys_pk = #<idivisa>"),@null)
-        tipo = ifstr(isanyword(@@(data,"$tipo"),"recoge,FF"), "FF", "DS")
+        tipo = ifstr(isanyword(tolower(@@(data,"$tipo")),"recoge,ff"), "FF", "DS")
 
         // Generar referencia del ticket
         sql = ftext("SELECT sys_pk AS iblock, serie FROM blockdocumentos WHERE documento = #<@cTicket> AND activo LIMIT 1")
