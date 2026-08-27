@@ -2887,6 +2887,8 @@ module "lib.dk"
             // Tranferir conceptos a la cuenta reutilizable.
             sql = ftext("UPDATE dventa SET fk_venta_detalle = @reuse_pk WHERE fk_venta_detalle in(#<accounts_id>)")
             do dbr.execute(db,sql,params)
+            sql = ftext("UPDATE orden SET iventa = @reuse_pk WHERE iventa in(#<accounts_id>);")
+            do dbr.execute(db,sql,params)
             // Actualizar cuenta reutilizada.
             sql = ftext("
             SELECT
