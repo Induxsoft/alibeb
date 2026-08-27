@@ -1783,6 +1783,60 @@ var controller=
         alert(error.message);
       },"PATCH",false);
     },
+    joinAccounts(min=2, max=2, free=false)
+    {
+      views.toggle(document.body,false,"","Cargando, por favor espere...");
+
+      let uri = `${url}pos/dinner/load-accounts/`;
+      model.invoke_service(uri, null,
+        (data) => {
+          views.toggle(document.body,true);
+          
+          const cfg = {
+            keys: Array.isArray(data) ? data : [],
+            delimiter: "-",
+            delimiter_alt: "|",
+            concat_op: "+",
+            min: (min < 2) ? 2 : min,
+            max: (max < 2) ? 2 : max,
+            allow_free: Boolean(free)
+          };
+
+          join_accounts(cfg, function(res) { controller._joinAccounts(res) });
+        },
+        (error) => {
+          views.toggle(document.body,true);
+          if (error.message) alert(error.message);
+          else console.error(error);
+        },
+        "GET", false
+      );
+    },
+    _joinAccounts(d)
+    {
+      if (!d) return;
+      views.toggle(document.body,false,"","Procesando, por favor espere...");
+
+      let uri = `${url}pos/dinner/tables/`;
+      let body = Object.assign(d,{
+        action: "join",
+        waiter: waiter_key, //"#<@@(@waiter,'key')>",
+        cliente: "#<@code_publico_general>",
+        cc: $cc, //"#<@@(@waiter,'cc')>"
+      });
+
+      model.invoke_service(uri, body,
+        (data) => {
+          controller.resfresh_tables();
+        },
+        (error) => {
+          views.toggle(document.body,true);
+          if (error.message) alert(error.message);
+          else console.error(error);
+        },
+        "POST", false
+      );
+    },
     cortesia(id_table)
     {
       var uri=`${url}pos/dinner/tables/${id_table}/`;

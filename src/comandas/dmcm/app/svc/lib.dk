@@ -1396,7 +1396,8 @@ module "lib.dk"
         sql = "
         WITH cuentas AS (
             SELECT
-                v.fecha,
+                v.sys_pk,
+                trim(v.fecha) fecha,
                 v.referencia,
                 v.dmnsmesa AS clave,
                 ((IFNULL(v.subtotal,0)
@@ -1415,12 +1416,12 @@ module "lib.dk"
             AND IFNULL(v.dmnsmesa, '') <> ''
         )
 
-        SELECT fecha, referencia, clave AS `key`, `status`, concat('$ ', format(total, 'C', 'es-MX')) AS amount
+        SELECT sys_pk, fecha, referencia, clave AS `key`, `status`, concat('$ ', format(total, 'C', 'es-MX')) AS amount
         FROM cuentas
 
         UNION ALL
 
-        SELECT NULL, '', d.id, 'free', '$ 0.00'
+        SELECT NULL, NULL, '', d.id, 'free', '$ 0.00'
         FROM dmnsmesa d
         WHERE NOT EXISTS (
             SELECT 1
@@ -2670,11 +2671,17 @@ module "lib.dk"
 
         return corte
     }
+
     open.table::&db,&params,&data
     {
-        do dbr.begin(db)
-        data<"validate">:@false
+        start_transaction = @false
 
+        if not(dbr.in_transaction(db)) {
+            do dbr.begin(db)
+            start_transaction = @true
+        }
+        
+        data<"validate">:@false
         do VerifyToken(db,data)
 
         fastfoot=parse.bool(@@(params,"$fastfoot"))
@@ -2818,17 +2825,109 @@ module "lib.dk"
             do dbr.insert(db,"dmns_entrega",dmns_entrega)
         }
 
-        do dbr.commit(db)
-        
-        return get.mesa(db,params)
+        if start_transaction { do dbr.commit(db) }
 
+        return get.mesa(db,params)
         exception
         {
-            if dbr.in_transaction(db){do dbr.rollback(db)}
+            if start_transaction { do dbr.rollback(db) }
             do rise_error(99,last_error())
         }
     }
 
+    //#region joinAccounts
+    /**
+     * Une dos o más cuentas (venta).
+       - Todas las cuentas combinadas son canceladas.
+       - Se reutiliza la cuenta más reciente y todos los conceptos de las cuentas a unir pasan a formar parte de esta.
+       - Si se unen una cuenta abierta y otra libre, se reutiliza la cuenta abierta.
+       - Si se unen dos cuentas libres, se abre una nueva cuenta (venta).
+       - Solo queda abierta la cuenta resutilizada (o creada) con el nuevo 'id'.
+     *
+     * @param array data.accounts - Array de objetos donde cada elemento representa una cuenta a unir.
+     * @param integer data.accounts[i].sys_pk - Clave primaria de la cuenta.
+     * @param string data.accounts[i].key - Identificador de la cuenta.
+     * @param string data.new_key - Identificador de la nueva cuenta.
+     * @param string data.waiter - Código del mesero en sesión.
+     * @param string data.cliente - Código de "(Público general)".
+     * @param integer data.cc - Clave primaria del Centro de Consumo.
+     *
+     * @return get.mesa()
+     * ---
+     * Fecha: 26-08-2026
+     * Autor: Francisco Ávila
+     */
+    joinAccounts :: &db, &params, &data
+    {
+        do dbr.begin(db)
+
+        accounts_id = ""
+        reuse_pk = 0
+        new_key = trim(@@(data,"$new_key"))
+        
+        for i = 0; i < @count(@@(data,"&accounts"))
+        {
+            ref item = @item(@@(data,"&accounts"),i)
+            sys_pk = @@(item,"#sys_pk")
+            
+            if sys_pk > 0 {
+                accounts_id = accounts_id + ifstr(accounts_id!='',',','') + str(sys_pk)
+                if sys_pk > reuse_pk { reuse_pk = sys_pk }
+            }
+        }
+
+        if (reuse_pk > 0)
+        {
+            params<"reuse_pk"> : reuse_pk
+            params<"new_key"> : new_key
+
+            // Cancelar todas las cuentas
+            sql = ftext("UPDATE venta SET statusadministrativo = 99 WHERE sys_pk in(#<accounts_id>)")
+            do dbr.execute(db,sql,params)
+            // Tranferir conceptos a la cuenta reutilizable.
+            sql = ftext("UPDATE dventa SET fk_venta_detalle = @reuse_pk WHERE fk_venta_detalle in(#<accounts_id>)")
+            do dbr.execute(db,sql,params)
+            // Actualizar cuenta reutilizada.
+            sql = ftext("
+            SELECT
+                trim(now()) AS sys_timestamp,
+                1 AS statusadministrativo,
+                @new_key AS dmnsmesa,
+                sum(ifnull(dmnspersonas,0)) AS dmnspersonas,
+                trim(group_concat(ifnull(notas,'') SEPARATOR '\n')) AS notas
+            FROM venta
+            WHERE sys_pk in(#<accounts_id>)
+            ")
+            ref joined = dbr.rec(db,sql,params)
+            do dbr.update(db,"venta",joined,"sys_pk=@reuse_pk",params)
+            do updateAmounts(db,reuse_pk)
+
+            params<"id_table"> : reuse_pk
+            ref result = get.mesa(db,params)
+        }
+        else
+        {
+            new account
+            {
+                @"table": new_key
+                @"num_people": 0
+                @"notas": ""
+                @"waiter": @@(data,"$waiter")
+                @"cliente": @@(data,"$cliente")
+                @"cc": @@(data,"$cc")
+            }
+            ref result = open.table(db,params,account)
+        }
+
+        do dbr.commit(db)
+        return result
+
+        exception
+        {
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
+            do rise_error(500, last_error())
+        }
+    }
     
     exist.table::&db,&params,&data
     {

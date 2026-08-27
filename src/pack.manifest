@@ -1,6 +1,6 @@
 {
 	"id":"alibeb",
 	"installable":["alibeb"],
-	"version":"1.0.100",
-	"schema_ver":"1.0.12"
+	"version":"1.0.101",
+	"schema_ver":"1.0.13"
 }

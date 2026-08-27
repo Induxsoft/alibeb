@@ -3,7 +3,15 @@
 module "terminal de mesero"
 {
 	ref getData=@@(@http_context,"&request/get")
+	
 	@only_account_predef = parse.bool(dbr.vars.get(@database,"comandas.only_account_predef"))
+	@join_accounts = parse.bool(dbr.vars.get(@database,"comandas.join_accounts"))
+	@min_to_join = parse.num(dbr.vars.get(@database,"comandas.min_to_join"))
+	@max_to_join = parse.num(dbr.vars.get(@database,"comandas.max_to_join"))
+	@join_free_account = parse.bool(dbr.vars.get(@database,"comandas.join_free_account"))
+
+	if @min_to_join < 2 { @min_to_join = 2 }
+	if @max_to_join < 2 { @max_to_join = 2 }
 
 	#$
 	div(class="container-main d-lg-grid d-flex" id="container-main")
@@ -16,12 +24,23 @@ module "terminal de mesero"
 				{
 					div(class="card-header d-sm-flex d-block " style="align-items: center;" id="card_header_actions")
 					{
-						buttom(class="btn img mr-2 #<@@(@config_default,'$show_cuentas')> border-1-i" onclick="controller.openAccount(#<@only_account_predef>);")
+						button(class="btn img mr-2 #<ifstr(@join_accounts,'','d-none')>" type="button" onclick="controller.joinAccounts(#<@min_to_join>, #<@max_to_join>, #<@join_free_account>)")
+						{
+							$'
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-link-45deg" viewBox="0 0 16 16">
+								<path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1 1 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4 4 0 0 1-.128-1.287z"/>
+								<path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243z"/>
+							</svg>
+							'
+							span(class="vb m-width ms-1"){"Unir cuentas"}
+						}
+
+						buttom(class="btn img mr-2 #<@@(@config_default,'$show_cuentas')>" onclick="controller.openAccount(#<@only_account_predef>);")
 						{
 							svg(xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"){path("fill-rule"="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z")}
-							span(class="vb m-width"){"Abrir cuenta"}
+							span(class="vb m-width ms-1"){"Abrir cuenta"}
 						}
-						button(class="btn btn-admin img mr-2 #<@@(@config_default,'$show_foodfast')> border-1-i" onclick="controller.fastFoot();")
+						button(class="btn btn-admin img mr-2 #<@@(@config_default,'$show_foodfast')>" onclick="controller.fastFoot();")
 						{
 							// img(src="/$/img/comida-rapida.png" width="20" height="20" style="display: inline !important;")
 							$'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
@@ -57,7 +76,7 @@ module "terminal de mesero"
 								<!-- Marca curva -->
 								<path d="M260 240 A80 80 0 0 0 380 260"/>
 								</svg>'
-							span(class="vb m-width"){"Venta rápida"}
+							span(class="vb m-width ms-1"){"Venta rápida"}
 						}
 						button(class="btn img mr-2 #<@@(@config_default,'$show_foofhome')>" onclick="controller.showDialogDS();")
 						{
@@ -95,7 +114,7 @@ module "terminal de mesero"
 							// 	path("fill-rule"="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z")
 							// 	path(d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z")
 							// }
-							span(class="vb m-width"){"Servicio a domicilio"}
+							span(class="vb m-width ms-1"){"Servicio a domicilio"}
 						}
 						
 						a(href="#<preserveQSParams('./?view=corte-caja')>" class="btn img mr-2 only-cashier d-none")
@@ -223,6 +242,7 @@ module "terminal de mesero"
 	}
 	
 	script(src="/_/dmcm/app/front/_js/select_account.js"){""}
+	script(src="/_/dmcm/app/front/_js/join_accounts.js"){""}
 	script
 	{$'
 		$(document).ready(function()
