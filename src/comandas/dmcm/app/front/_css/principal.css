@@ -1691,6 +1691,7 @@ select
   display: flex;
   justify-content: end;
 }
+
 .list-btns button{
 	padding: 4px 8px 4px 4px;
 	display: flex;
@@ -1715,6 +1716,32 @@ select
   color: white;
   border: 1px solid #767676;*/
 }
+
+.group-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+.group-btns button {
+  display: flex;
+  flex: auto;
+  flex-shrink: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 4px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  outline: none;
+  background-color: var(--ligth-purple);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.group-btns .icon {
+  background-color: white;
+  padding: 8px;
+}
+
 .div-multiple
 {
   display: grid;

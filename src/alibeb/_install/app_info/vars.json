@@ -114,7 +114,7 @@
                 "varvalue": "0",
                 "varcaption": "Grupo de productos",
                 "varhelp": "Grupo de productos visibles para el agene",
-                "vartype": "string",
+                "vartype": "integer",
                 "varinput": {
                     "control": "select",
                     "source":{
@@ -200,6 +200,43 @@
                         ],
                         "showfield":"text",
                         "keyfield":"value"
+                    }
+                }
+            },
+            {
+                "varname": "comandas.fractions_group_rule",
+                "vardefault": "1",
+                "varvalue": "1",
+                "varcaption": "Regla del grupo de fracciones",
+                "varhelp": "Los productos en el grupo seleccionado serán...",
+                "vartype": "integer",
+                "varinput": {
+                    "control": "select",
+                    "source": {
+                        "type":"list",
+                        "values":[
+                            {"value":"1", "text":"Fraccionables y todos los demás NO"},
+                            {"value":"2", "text":"No fraccionables y todos los demás Sí"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"value"
+                    }
+                }
+            },
+            {
+                "varname": "comandas.fractions_group",
+                "vardefault": "0",
+                "varvalue": "0",
+                "varcaption": "Grupo de fracciones",
+                "varhelp": "Establecer grupo de productos",
+                "vartype": "integer",
+                "varinput": {
+                    "control": "select",
+                    "source": {
+                        "type":"query",
+                        "query":"SELECT 0 AS sys_pk, 'Ninguno' AS nombre UNION SELECT sys_pk, nombre FROM grupoproductos WHERE NOT ifnull(sys_deleted,0);",
+                        "keyfield":"sys_pk",
+                        "showfield":"nombre"
                     }
                 }
             }

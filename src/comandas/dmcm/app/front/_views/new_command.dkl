@@ -2,8 +2,18 @@
 #!
 module "nueva commanda"
 {
-	line=@@(@http_context,"request/get/line")
-	sku=@@(@http_context,"request/get/sku")
+	ref vars = getVarsConfig()
+	
+	decimal_money = @@(vars,"#decimal_money")
+	decimal_visible_money = @@(vars,"#decimal_visible_money")
+	decimal_volumen = @@(vars,"#decimal_volumen")
+	decimal_visible_volumen = @@(vars,"#decimal_visible_volmen")
+	fractions_group_rule = parse.num(GetVars("comandas.fractions_group_rule"))
+	fractions_group = parse.num(GetVars("comandas.fractions_group"))
+
+	line = @@(@http_context,"request/get/line")
+	sku = @@(@http_context,"request/get/sku")
+	
 	#$
 	div(class="container-command" id="")
 	{
@@ -73,19 +83,24 @@ module "nueva commanda"
 	}
 
 	script
-	{
-		$'
+	{$'
 		$(document).ready(function(){
-			// controller.foodbev();
-			// controller.get_prodc("#<@@(@waiter,"cc")>");
 			var line="#<line>";
 			var sku="#<sku>";
+			
+			controller.decimal_money = #<decimal_money>;
+			controller.decimal_volumen = #<decimal_volumen>;
+			controller.decimal_visible_money = #<decimal_visible_money>;
+			controller.decimal_visible_volumen = #<decimal_visible_volumen>;
+			controller.fractions_group_rule = #<fractions_group_rule>;
+			controller.fractions_group = #<fractions_group>;
+
 			controller.get_adds_dmns();
-			if(line!="")
-			{
-				controller.foodbev(null,"",line,"",sku);
-				
-			}else{
+			
+			if(line!="") {
+				controller.foodbev(null,"",line,"",sku);	
+			}
+			else {
 				controller.get_lines();
 			}
 
@@ -96,8 +111,5 @@ module "nueva commanda"
 			const nav_info = document.getElementById("nav_info");
 			if(nav_info) nav_info.style.width="100%";		
 		});
-		'
-	}
-
-	
+	'}
 }

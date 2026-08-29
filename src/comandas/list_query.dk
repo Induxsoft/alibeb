@@ -45,7 +45,8 @@ module "lista de consultas"
                 SELECT sum(ifnull(w.existencia,0)) FROM existencias w WHERE w.ialmacen=@almacen AND w.fk_producto_iexistencias=p.sys_pk
             ),0) existencia,
             p.iclase,
-            p.itipo
+            p.itipo,
+            ifnull(p.uf_solicitarcantidad,0) solicitarcantidad
         from
             (
                 select

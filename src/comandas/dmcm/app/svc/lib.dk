@@ -1391,6 +1391,18 @@ module "lib.dk"
         return get.foodbev(db,params)
     }
 
+    //#region get.cuentasDisponibles
+    /**
+     * Obtiene las cuentas disponibles para apertura o selección.
+     *
+     * Se combinan dos tipos de registros:
+       - Cuentas existentes, correspondientes a documentos de venta vigentes (abiertos o cerrados) asociados a una mesa.
+       - Recursos libres, correspondientes a registros de 'dmnsmesa' que no participan en las cuentas vigentes.
+     *
+     * ---
+     * Fecha: 26-08-2026
+     * Autor: Francisco Ávila
+     */
     get.cuentasDisponibles :: &db, &params
     {
         sql = "
@@ -3158,9 +3170,7 @@ module "lib.dk"
         {
             ref item=@item(foodbev,i)
             ref dataline=dbr.rec(db,@line,item)
-
             ref list_barrs=list.create()
-
             ref options=record.create()
 
             switch @PrioridadBarras
@@ -3183,12 +3193,12 @@ module "lib.dk"
                 }
             }
 
-            // options<"bars*">:list_barrs
+            iproducto = @@(item,"#sys_pk")
             new data_foodbev
             {
                 @"pkprod":@@(item,"pkprod")
                 @"sku":@@(item,"$sku")
-                @"sys_pk":@@(item,"sys_pk")
+                @"sys_pk":iproducto
                 @"description":@@(item,"description")
                 @"price":aplImpuestos(@@(item,campoPrecioR5(@PrecioVenta)),parseImpuesto(@@(item,"i1venta"),@zonaImpuesto),parseImpuesto(@@(item,"i2venta"),@zonaImpuesto),parseImpuesto(@@(item,"i3venta"),@zonaImpuesto),parseImpuesto(@@(item,"i4venta"),@zonaImpuesto))
                 @"unit":@@(item,"unit")
@@ -3199,10 +3209,16 @@ module "lib.dk"
                 @"cod_cp":@@(item,"cod_cp")
                 @"cod_cc":@@(item,"cod_cc")
                 @"data_img*":CreateHost(db,tolower(@@(item,"$sku")),"")
-                @"grupos*":getGroupProducts(db,@@(item,"#sys_pk"))
+                @"grupos*":getGroupProducts(db,iproducto)
                 @"existencia":@@(item,"#existencia")
                 @"validar_existencia":@@(item,"#validar_existencia")
+                @"solicitarcantidad": @@(item,"#solicitarcantidad")
             }
+
+            iproducto >> p
+            sql = "SELECT DISTINCT gp.sys_pk, gp.nombre FROM grupoproductos_producto_ gpp INNER JOIN grupoproductos gp ON gpp.igrupos = gp.sys_pk WHERE gpp.iproductos = @iproducto"
+            data_foodbev<"grupoproductos*"> : dbr.list(db,sql,p)
+
             do list.add(list_foodbev,data_foodbev)
         }
         

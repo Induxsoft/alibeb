@@ -84,7 +84,7 @@
         }
     }
 
-    //*******************modal indicaciones****************************************
+    //******************* modal indicaciones ****************************************
     div(id="modal-indicaciones" class="show_modal_center open-table hidde_control modal-responsive modal-md" style="top:15% !important;z-index: 1000;")
     {
         $""
@@ -137,6 +137,36 @@
         {
             button(class="blue_button" id="btn_addcs" onclick=""){"Aceptar"}
             button(class="white_button" id="" onclick="controller.hide_modal(\'#modal-indicaciones\')"){"Cancelar"}
+        }
+    }
+
+    // modal: cantidades
+    div(class="modal fade" id="sku-quantity-modal" tabindex="-1" "aria-labelledby"="sku-modal-label" "aria-hidden"="true")
+    {
+        div(class="modal-dialog modal-sm")
+        {
+            div(class="modal-content")
+            {
+                div(class="modal-header")
+                {
+                    h5(class="modal-title" id="sku-modal-label"){""}
+                    button(type="button" class="btn-close" "data-bs-dismiss"="modal" "aria-label"="Close"){""}
+                }
+                div(class="modal-body")
+                {
+                    div(class="input-group input-group-lg mb-3")
+                    {
+                        span(class="input-group-text"){"Cantidad:"}
+                        input(class="form-control mb-0" type="number" name="" value="1" id="sku-quantity")
+                        span(class="input-group-text" id="sku-unit-label"){"PZA"}
+                    }
+                    div(class="d-flex gap-1")
+                    {
+                        button(class="btn-lg blue_button flex-fill m-0" type="button" id="sku-quantity-ok"){"Aceptar"}
+                        button(class="btn-lg white_button flex-fill m-0" type="button" "data-bs-dismiss"="modal"){"Cancelar"}
+                    }
+                }
+            }
         }
     }
 

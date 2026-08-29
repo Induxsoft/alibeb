@@ -636,6 +636,12 @@ var views=
                         
                 if(sys_pk===itm.sys_pk)
                 {
+                  let cantidad = 1;
+                  if (itm.solicitarcantidad) {
+                        cantidad = controller.set_sku_quantity(null,itm.unit,cantidad,itm);
+                        if (!cantidad) break;
+                  }
+
                   var uuid=controller.guid();
                   uf_req_indicaciones=(itm.line?.uf_req_indicaciones ?? false) ? uuid:"";
                   last_id_orden=uuid;
@@ -653,8 +659,8 @@ var views=
                         prodcenter:prodcenter,
                         uuid:uuid,
                         sku:itm,
-                        quantity:1,
-                        price:views.format(itm.price * 1,controller.decimals_backend,".",","),
+                        quantity:cantidad,
+                        price:views.format(itm.price * cantidad,controller.decimals_backend,".",","),
                         adds:0,
                         total:0,
                         _priceProd_:views.format(itm.price * 1,controller.decimals_backend,".",","),
@@ -702,43 +708,47 @@ var views=
                                           <h5>${itm.description}</h5>
                                     </div>
                                     <div class="div-price" id="div-price_${uuid}">
-                                          <h3>$ ${views.format(itm.price * 1,controller.decimals,".",",")}</h3>
+                                          <h3 id="${uuid}-price">$ ${views.format(itm.price * cantidad,controller.decimals,".",",")}</h3>
                                     </div>
                                     <div class="" id="detail-indications_${uuid}"></div>
                                     <div class="d-flex justify-content-end" style="grid-column: 1 / 3;">
                                           <button class="btn btn-sm ${sku.variables ?"":"d-none"}" id="cant_prods_variables_${uuid}" onclick="views.load_variables('${uuid}')">${sku.variables ? totalCantidad(seleccion) +"+ Producto variable":""} </button>
                                     </div>
                               </div>
-                        <small class="list-btns">
+                        <div class="group-btns">
+                              <button class="${ (itm.cod_cp) ?``:`d-none` }" id="btn_indicacion_${uuid}" onclick='controller.indicatios(${JSON.stringify(itm)},"${uuid}")'>
+                                    <span class="icon">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z" /><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" /></svg>
+                                    </span>
+                                    <span>Indicaciones</span>
+                              </button>
 
-							<button onclick="controller.data_foodbev(${itm.sys_pk},true)" title="Otro igual a este">
-				  				<div>
-				  					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-bag-plus" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 7.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V12a.5.5 0 0 1-1 0v-1.5H6a.5.5 0 0 1 0-1h1.5V8a.5.5 0 0 1 .5-.5z" /><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" /></svg>
-								</div>
-								<span>Otro igual</span>
-							</button>
+                              <button class="${ (exist_adicional && itm.cod_cp) ?``:`d-none` }" id="btn_adicional_${uuid}" onclick='controller.indicatios(${JSON.stringify(itm)},"${uuid}",true)'>
+                                    <span class="icon">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z" /><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" /></svg>
+                                    </span>
+                                    <span>Adicionales</span>
+                              </button>
 
-							<button id="btn_indicacion_${uuid}" onclick='controller.indicatios(${JSON.stringify(itm)},"${uuid}")'>
-								<div>
-									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z" /><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" /></svg>
-								</div>
-								<span>Indicaciones</span>
-							</button>
+                              <button class="${ (itm.solicitarcantidad) ?``:`d-none` }" onclick="controller.set_sku_quantity('${uuid}')">
+                                    <span class="fw-bold" id="${uuid}-quantity">${cantidad}</span>
+                                    <small>${itm.unit}</small>
+                              </button>
 
-                                          <button class="${exist_adicional ? ``:`d-none`}" id="btn_adicional_${uuid}" onclick='controller.indicatios(${JSON.stringify(itm)},"${uuid}",true)'>
-								<div>
-									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z" /><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z" /></svg>
-								</div>
-								<span>Adicionales</span>
-							</button>
+                              <button onclick="controller.data_foodbev(${itm.sys_pk},true)" title="Otro igual a este">
+                                    <span class="icon">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-bag-plus" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 7.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V12a.5.5 0 0 1-1 0v-1.5H6a.5.5 0 0 1 0-1h1.5V8a.5.5 0 0 1 .5-.5z" /><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" /></svg>
+                                    </span>
+                                    <span>Otro igual</span>
+                              </button>
 
-							<button onclick="controller.quit('${uuid}')">
-								<div>
-									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-bag-dash" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5.5 10a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5z" /><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" /></svg>
-								</div>
-								<span>quitar</span>
-							</button>
-                        <small>
+                              <button onclick="controller.quit('${uuid}')">
+                                    <span class="icon">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-bag-dash" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5.5 10a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5z" /><path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z" /></svg>
+                                    </span>
+                                    <span>quitar</span>
+                              </button>
+                        </div>
                   </li>`;
                   break;
                 }
@@ -845,7 +855,7 @@ var views=
       {
             var price=0;
             list_orders.forEach(function(e,i){
-                  price+=Number(views.limpiarNumero(e.price+""));
+                  price += Number(views.limpiarNumero(e.price+"")); // * Number(e.quantity ?? 1)
             });
             var eprice=document.querySelector("#div-total-all");
             var currenttotal=document.querySelector("#totalcurrent");

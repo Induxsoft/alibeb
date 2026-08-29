@@ -8,10 +8,19 @@ document.addEventListener("DOMContentLoaded",()=>
 
 var controller=
 {
-    pos_porcentaje_propina:0,
-    decimals:2,
-    decimals_backend:2,
-    ltimer:5,//intentos de conexión al imin printer
+  // bd.globalvars.
+  decimal_money: 4,
+  decimal_volumen: 4,
+  decimal_visible_money: 2,
+  decimal_visible_volumen: 4,
+  fractions_group_rule: 1,
+  fractions_group: 0,
+  // ---
+  pos_porcentaje_propina:0,
+  decimals:2,
+  decimals_backend:2,
+  ltimer:5,//intentos de conexión al imin printer
+
     init()
     {
       views.init();
@@ -1290,6 +1299,121 @@ var controller=
         }
       }
       
+    },
+    show_sku_quantity_modal(guid)
+    {
+      const label = document.querySelector('#sku-quantity-modal #sku-modal-label');
+      const unit = document.querySelector('#sku-quantity-modal #sku-unit-label');
+      const quant = document.querySelector('#sku-quantity-modal #sku-quantity');
+      const accept = document.querySelector('#sku-quantity-modal #sku-quantity-ok');
+
+      const item = list_orders.find(o => o.uuid == guid);
+      label.textContent = item.sku.description;
+      unit.textContent = item.sku.unit;
+      quant.value = item.quantity;
+      accept.setAttribute('onclick',`controller.set_quantity('${guid}')`);
+
+      this.showModal('sku-quantity-modal');
+      quant.focus();
+    },
+    set_quantity(guid)
+    {
+      const quant = document.querySelector('#sku-quantity-modal #sku-quantity');
+      const span = document.getElementById(guid+"-quantity");
+      const item = list_orders.find(o => o.uuid == guid);
+
+      item.quantity = Number(quant.value);
+      span.textContent = Number(quant.value);
+      
+      this.hideModal('sku-quantity-modal');
+      views.counter();
+      views.showTotal();
+    },
+    truncate_decimals(value, decimals)
+    {
+      decimals = Math.max(0, parseInt(decimals) || 0);
+
+      const factor = Math.pow(10, decimals);
+
+      return Math.trunc(value * factor) / factor;
+    },
+    /**
+     * Determina si un producto permite cantidades fraccionables.
+     *
+     * fractions_group_rule:
+     *  1 - Los productos del grupo configurado son fraccionables;
+     *      todos los demás NO.
+     *  2 - Los productos del grupo configurado NO son fraccionables;
+     *      todos los demás SÍ.
+     */
+    is_fractionable(item)
+    {
+      if (!item)
+        return false;
+
+      if (!this.fractions_group_rule || !this.fractions_group)
+        return false;
+
+                     // cuando se agrega || cuando se edita || default
+      const groups = item.grupoproductos || item?.sku?.grupoproductos || [];
+
+      const inGroup = groups.some(group =>
+        Number(group.sys_pk) === Number(this.fractions_group)
+      );
+
+      switch (Number(this.fractions_group_rule))
+      {
+        case 1:
+          return inGroup;
+
+        case 2:
+          return !inGroup;
+
+        default:
+          return false;
+      }
+    },
+    set_sku_quantity(guid="",unit="",def=1,item=null)
+    {
+      if (guid)
+      {
+        item = list_orders.find(o => o.uuid == guid);
+        unit = item.sku.unit;
+        def = item.quantity;
+      }
+
+      let cantidad = parseFloat(prompt(`Indique la cantidad (${unit}):`, def));
+      if (isNaN(cantidad) || cantidad <= 0) {
+        alert("No se indicó una cantidad válida");
+        return 0;
+      }
+
+      let decimales = this.is_fractionable(item) ? this.decimal_volumen : 0;
+      cantidad = this.truncate_decimals(cantidad,decimales);
+
+      if (cantidad <= 0) {
+        alert("La cantidad indicada es demasiado pequeña");
+        return 0;
+      }
+
+      if (guid)
+      {
+        const quantity = document.getElementById(guid+"-quantity");
+        const price = document.getElementById(guid+"-price");
+        
+        let total = item.sku.price * cantidad;
+        let precio = views.format(total, controller.decimals, ".", ",");
+        
+        if (quantity) quantity.textContent = cantidad;
+        if (price) price.textContent = "$ "+precio;
+        item.quantity = cantidad;
+        item.price = precio;
+
+        views.counter();
+        views.showTotal();
+      }
+
+      return cantidad;
     },
     quit:function(id)
     {
