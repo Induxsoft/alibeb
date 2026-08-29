@@ -299,6 +299,11 @@ module "index.dkl"
 							ref data=change.client(db,params,postData)
 							break
 						}
+						case "change-num-people"
+						{
+							ref data=change.numpeople(db,params,postData)
+							break
+						}
 						case "cancel-ticket"
 						{
 							ref data=ticket.cancel(db,params,postData)

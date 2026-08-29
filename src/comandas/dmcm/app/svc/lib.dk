@@ -647,6 +647,16 @@ module "lib.dk"
             do rise_error(500,last_error())
         }
     }
+    change.numpeople::&db,&params,&postData
+    {
+        if @@(postData,"#people") < 1 { do rise_error(400,"No se indicó una cantidad válida") }
+        if dbr.num(db,"SELECT sys_pk FROM venta where sys_pk=@id_table",params) < 1 { do rise_error(404,"No se encontró la cuenta indicada") }
+
+        params<"people"> : @@(postData,"#people")
+        do dbr.execute(db,"UPDATE venta SET dmnspersonas = @people WHERE sys_pk = @id_table",params)
+
+        return @null
+    }
     change.client::&db,&params,&postData
     {
         if dbr.num(db,"SELECT sys_pk FROM venta where sys_pk=@id_table",params) < 1{do rise_error(500,"No se encontró la cuenta indicado")}

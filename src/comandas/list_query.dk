@@ -169,10 +169,32 @@ module "lista de consultas"
     WHERE v.sys_pk=@id_table AND dv.IProducto=@producto
     AND IF(IFNULL(@dventa,0)> 0,dv.sys_pk=@dventa,true);"
 
-    @list_mesas_zona="select 0 as 'sys_pk',0 as 'occupied_seats','' as 'sys_guid',d.id as 'code',coalesce(d.mesero,'') as 'waiter' ,d.personas as 'available_seats' 
-                        from dmnsmesa d 
-                      inner join dmnszona z on d.izona=z.sys_pk
-                      where (ifnull(@zone,'')='' or z.id=@zone) ;"
+    @list_mesas_zona="
+    SELECT
+        0 AS sys_pk,
+        0 as occupied_seats,
+        '' AS sys_guid,
+        d.id AS code,
+        coalesce(d.mesero,'') AS waiter,
+        d.personas AS available_seats
+    FROM
+        dmnsmesa d
+        INNER JOIN dmnszona z ON d.izona=z.sys_pk
+    WHERE
+        NOT ifnull(d.sys_deleted,0)
+        -- Recursos libres: registros de 'dmnsmesa' que no participan en las cuentas vigentes.
+        AND NOT EXISTS (
+            SELECT 1
+            FROM (
+                SELECT v.dmnsmesa AS clave
+                FROM venta v
+                WHERE v.documento = 6 AND v.statusadministrativo IN (1, 2) AND ifnull(v.sys_info, '') = '' AND ifnull(v.dmnsmesa, '') <> ''
+            ) c
+            -- Secuencia de escape: \\\\ (DKL) => \\ (SQL)
+            WHERE c.clave REGEXP CONCAT('(^|\\\\+)', d.id, '($|\\\\+|-|\\\\|)')
+        )
+        AND (ifnull(@zone,'')='' OR z.id=@zone)
+    ;"
 
     @countdorden="SELECT COUNT(d.fk_orden_detalle) FROM dorden d WHERE d.fk_orden_detalle=@pkorden"
     @list_mesa_waiter_cc="select ifnull(qv.sys_info,'SM') as service,qv.dmnsmesa as 'code',qv.sys_pk as 'sys_pk',qv.sys_guid as 'sys_guid',qv.referencia as 'reference',qv.statusadministrativo as 'status',qv.statusentrega as statusentrega,qv.dmnspersonas as 'occupied_seats',

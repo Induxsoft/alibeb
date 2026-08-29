@@ -217,17 +217,14 @@ module "terminal de mesero"
 					}
 				}
 			}
-		
-			// br{}
+
 			div(class="card card-mesas")
 			{
 				div(class="container-tables")
 				{
 					div(class="body-mesas"){$""}
 				}
-			}
-			
-			
+			}	
 		}
 		
 		div(class="card card-info placeholder-glow d-none d-lg-block" id="card-info" style="padding:0px;pointer-events:none;opacity:.4;")
@@ -247,6 +244,7 @@ module "terminal de mesero"
 	{$'
 		$(document).ready(function()
 		{
+			controller.only_account_predef = #<@only_account_predef>;
 			if("#<idt>"!="")
 			{
 				views.table_selected="#<idt>";

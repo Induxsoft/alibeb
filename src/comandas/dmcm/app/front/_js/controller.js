@@ -15,6 +15,7 @@ var controller=
   decimal_visible_volumen: 4,
   fractions_group_rule: 1,
   fractions_group: 0,
+  only_account_predef: false,
   // ---
   pos_porcentaje_propina:0,
   decimals:2,
@@ -829,10 +830,18 @@ var controller=
       {
         var mesa=document.querySelector("#txttable");
         var num_people=document.querySelector("#txtnumpeople");
+        
         num_people.value=cuantity;
         mesa.value=code;
+        
         this.show_modal("#open-table");
-        mesa.focus();
+        if (!this.only_account_predef) mesa.focus();
+        else
+        {
+          mesa.readOnly = true;
+          num_people.focus();
+        }
+        
         return;
       }
 
@@ -1836,10 +1845,13 @@ var controller=
         if (item)
         {
           const cuenta = document.querySelector('#open-table #txttable');
+          const personas = document.querySelector('#open-table #txtnumpeople');
+          
           cuenta.value = item.selectedkey;
           cuenta.readOnly = true;
           
           controller.show_modal('#open-table');
+          personas.focus();
         }
       });
     },
@@ -2261,5 +2273,47 @@ var controller=
         alert(error.message);
         views.toggle(document.body,true);
       },"PATCH",false);
+    },
+  changeNumPeople()
+  {
+    let available = views.account_selected.available_seats;
+    let occupied = views.account_selected.occupied_seats;
+    let people = parseInt(prompt("Indique el número de personas:", occupied));
+
+    if (isNaN(people) || people < 1) {
+      alert("No se indicó una cantidad válida");
+      return;
     }
+    if (people > available) {
+      alert("El número de personas indicado supera los asientos disponibles para la mesa.");
+      return;
+    }
+    if (people == occupied) return;
+
+    views.toggle(document.body,false,"","Guardando, por favor espere...");
+    let account = views.account_selected.sys_pk;
+
+    let endpoint = `${url}pos/dinner/change-num-people/?id_table=${account}`;
+    let body = {
+      action: "change-num-people",
+      account,
+      people
+    };
+
+    model.invoke_service(endpoint, body,
+      (data) => {
+        views.toggle(document.body,true);
+        
+        const span = document.querySelector(`.mesa_${account} .p-person`);
+        if (span) span.textContent = people+"/"+available;
+        views.account_selected.occupied_seats = people;
+      },
+      (e) => {
+        views.toggle(document.body,true);
+        if (e.message) alert(e.message);
+        else console.error(e);
+      },
+      "PATCH", false
+    );
+  }
 }
