@@ -831,6 +831,8 @@ module "lib.dk"
     
     mesa.cobrar::&db,&params,&postData
     {
+        do getVarsConfig()
+
         sql="select
             qv.dmnsmesa as 'code',
             qv.sys_pk as 'sys_pk',
@@ -992,14 +994,14 @@ module "lib.dk"
         
         if pos_afectar_existencias
         {
-            ref dventas=dbr.list(db,"SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo,
+            ref dventas=dbr.list(db,ftext("SELECT dv.sys_pk,dv.ialmacen,dv.iproducto,ifnull(dv.xsalir,dv.cantidad) cantidad,p.costopromedio,p.costoultimo,
             ((IFNULL(dv.precio,0) * ifnull(dv.cantidad,0)) - IFNULL(dv.descuento1,0) - IFNULL(dv.descuento2,0)) AS abonos
             FROM dventa dv 
             INNER JOIN venta v ON dv.fk_venta_detalle=v.sys_pk
             INNER JOIN producto p ON dv.iproducto=p.sys_pk
             WHERE
-            (p.iclase in(4,5) and p.itipo = 2)
-            AND v.sys_guid=@sys_guid;",rsource)
+            (p.iclase in(#<@@(@config_default,'$class_prod')>) and p.itipo = 2)
+            AND v.sys_guid=@sys_guid;"),rsource)
         }
 
         if @count(dventas) > 0
