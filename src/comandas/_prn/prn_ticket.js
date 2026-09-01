@@ -11,7 +11,7 @@ var prn_ticket=
     
         model_prn.PrinterException(url_redir,data,callbackinterval);
 
-        if(dsEscPrn)dsEscPrn.setCharsetEncoding("CP1252");
+        if(dsEscPrn)dsEscPrn?.setCharsetEncoding("CP1252");
 
         eposprn.connect(config, (status)=>
         {

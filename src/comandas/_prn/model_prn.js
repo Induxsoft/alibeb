@@ -116,7 +116,7 @@ var model_prn=
 
         let interval=setInterval(() => 
         {
-            if(eposprn.driver.connection && !(eposprn.driver?.isConnected??false))
+            if(eposprn?.driver?.connection && !(eposprn.driver?.isConnected??false))
             { 
                 let ws=eposprn.driver.connection.ws;
                 
