@@ -639,7 +639,7 @@ var views=
                         
                 if(sys_pk===itm.sys_pk)
                 {
-                  let cantidad = 1;
+                  let cantidad = itm.quantity ?? 1;
                   if (itm.solicitarcantidad) {
                         cantidad = controller.set_sku_quantity(null,itm.unit,cantidad,itm);
                         if (!cantidad) break;

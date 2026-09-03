@@ -11,7 +11,7 @@ var prn_ticket=
     
         model_prn.PrinterException(url_redir,data,callbackinterval);
 
-        if (dsEscPrn && typeof dsEscPrn.setCharsetEncoding === "function") { dsEscPrn.setCharsetEncoding("CP1252");}
+        if(dsEscPrn)dsEscPrn.setCharsetEncoding("CP1252");
 
         eposprn.connect(config, (status)=>
         {
@@ -108,7 +108,7 @@ var prn_ticket=
             }
             if(row.adds && row.adds?.length > 0)
             {
-                eposprn.printText(`     Adicionales`);
+                // eposprn.printText(`     Adicionales`);
 
                 for (let j = 0; j < row.adds.length; j++) 
                 {

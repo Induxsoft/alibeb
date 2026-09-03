@@ -3322,9 +3322,11 @@ module "lib.dk"
         query=@foodbev
         prodc=@@(params,"$prodc")
         line=@@(params,"$line")
-        
+        search=trim(@@(params,"$search"))
         ref linea=record.create()
-        if trim(@@(params,"$search")) == ""
+
+        quantity = 0
+        if search == ""
         {
             ref linea=dbr.rec(db,@line,params)
             if isnull(linea){do rise_error(500,"No se encontró datos de la línea")}
@@ -3345,10 +3347,56 @@ module "lib.dk"
         }
         else //buscar productos con coincidencia
         {
+            /*
+             * Summary:
+             * - verificar si trae * 
+            */
+            if contains(search,"*")
+            {
+                ref frags=split(search,"*")
+                search=trim(list.str(frags,0))
+                quantity = parse.num(trim(list.str(frags,1)))
+            }
+            
+            params<"search">:search
             params<"almacen">:dbr.num(db,"SELECT ialmacen FROM cconsumo WHERE sys_pk=@cc",params)
+
+            /*
+             * Summary:
+             * - buscar producto por codio y codigo de barras
+            */
             query=@foodbev + " AND p.codigo=@search OR p.codbar1=@search OR p.codbar2=@search OR p.codbar3=@search"
             ref foodbev=dbr.list(db,ftext(query),params)
 
+            /*
+             * Summary:
+             * - verficar producto por mascara
+            */
+            ref codes=ifnull(@@(params,"&codes"),list.create())
+            if @count(codes) > 0 && @count(foodbev) < 1
+            {
+                ref _p=record.copy(params,"*")
+                for i = 0; i < @count(codes)
+                {
+                    ref code=@item(codes,i)
+                    
+                    _p<"search">:trim(@@(code,"$k"))
+                    /*
+                     * Summary:
+                     * - buscar producto con la mascara 
+                    */
+                    ref foodbev=dbr.list(db,ftext(query),_p)
+                    if @count(foodbev) > 0
+                    {
+                        if @count(foodbev) == 1{quantity = div(@@(code,"#q"),@@(code,"#f")) }
+                        break
+                    }
+                }
+            }
+            /*
+             * Summary:
+             * - buscar por descripcion segun el campo @search
+            */
             if @count(foodbev) < 1
             {
                 query=@foodbev + " AND p.descripcion like CONCAT('%',@search,'%')"
@@ -3406,6 +3454,7 @@ module "lib.dk"
                 @"validar_existencia":@@(item,"#validar_existencia")
                 @"solicitarcantidad": @@(item,"#solicitarcantidad")
             }
+            if quantity > 0{data_foodbev<"quantity">:quantity}
 
             iproducto >> p
             sql = "SELECT DISTINCT gp.sys_pk, gp.nombre FROM grupoproductos_producto_ gpp INNER JOIN grupoproductos gp ON gpp.igrupos = gp.sys_pk WHERE gpp.iproductos = @iproducto"

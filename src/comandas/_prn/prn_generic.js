@@ -139,7 +139,7 @@ var prn_generic=
             }
             if(row.adds && row.adds?.length > 0)
             {
-                printer.printText(`     Adicionales`);
+                // printer.printText(`     Adicionales`);
 
                 for (let j = 0; j < row.adds.length; j++) 
                 {

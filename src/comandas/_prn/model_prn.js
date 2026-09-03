@@ -116,7 +116,7 @@ var model_prn=
 
         let interval=setInterval(() => 
         {
-            if(eposprn?.driver?.connection && !(eposprn.driver?.isConnected??false))
+            if(eposprn.driver.connection && !(eposprn.driver?.isConnected??false))
             { 
                 let ws=eposprn.driver.connection.ws;
                 
@@ -177,9 +177,11 @@ var model_prn=
         ,(error)=>{alert(error.message);}
         ,"GET",false);
     },
-    GetConfigPrinter()
+    GetConfigPrinter(name_storage="")
     {
-        let config_str=localStorage.getItem(model_prn.name_storage);
+        if(!name_storage)name_storage=model_prn.name_storage;
+
+        let config_str=localStorage.getItem(name_storage);
         if(!config_str)return {};
 
         return JSON.parse(config_str);
@@ -425,6 +427,53 @@ var model_prn=
 
             let url=this.btn_save_config.getAttribute("data-url");
             if(url)window.location.href=url;
+        },
+        getKeyFromForm(form)
+        {
+            if(!form)return "";
+            
+            return form.getAttribute("name-storage") || form.name || form.id || "";
+        },
+        SaveDataForm(idform,url_redir)
+        {
+            let form=document.getElementById(idform);
+            if(!form)return;
+
+            const data = Object.fromEntries(new FormData(form));
+
+            let key=this.getKeyFromForm(form);
+            if(!key)return;
+
+            localStorage.setItem(key,JSON.stringify(data));
+            // if(url_redir)window.location.href=url_redir;
+        },
+        SetDataConfigFromForm(idform)
+        {
+            let form=document.getElementById(idform);
+            if(!form)return;
+
+            let key=this.getKeyFromForm(form);
+            if(!key)return;
+
+            let config=model_prn.GetConfigPrinter(key);
+            if(!config || Object.keys(config).length < 1)return;
+
+            for (let k in config) 
+            {
+                const control = form.elements[k];
+
+                if (!control)
+                    continue;
+
+                const valor = config[k];
+
+                if (control.type === "checkbox") {
+                    control.checked = valor === "on" || valor === true || valor === "1" || Number(valor) > 0;
+                }
+                else {
+                    control.value = valor;
+                }
+            }
         },
         SaveData()
         {

@@ -31,6 +31,7 @@ var controller=
       //cargar transacciones realizadas
       controller.tarjeta.SetOptions();
       controller.SetTotal(true);
+      controller.setFocusBarra();
     },
     precioProducto(iproducto,cantidad,unidad)
     {
@@ -895,6 +896,8 @@ var controller=
     },
     activarFocusTrap(modal) 
     {
+      if(this.interval_focus_barra)clearInterval(this.interval_focus_barra);
+
         document.activeElement?.blur();
         const selector = `
             a[href],
@@ -944,6 +947,7 @@ var controller=
         primero.focus();
 
         return () => {
+            controller.setFocusBarra();
             document.removeEventListener('keydown', manejarTab, true);
         };
     },
@@ -965,7 +969,7 @@ var controller=
       var modal=document.querySelector(id);
       modal.classList.remove("hidde_control");
       this.toggle_backdrop();
-      this.activarFocusTrap(modal);
+      this.liberarFocusTrap=this.activarFocusTrap(modal);
       // Activar bloqueo de teclado
         document.addEventListener('keydown', this.bloquearTab, true);
     },
@@ -980,7 +984,7 @@ var controller=
       notas.value="";
       modal.classList.add("hidde_control");
       modal.focus();
-      this.toggle_backdrop();
+      this.toggle_backdrop(true);
       if(this.liberarFocusTrap)
       {
         this.liberarFocusTrap();
@@ -1238,8 +1242,6 @@ var controller=
           let traza=promo_productos.traza??[];
           let obsequios=promo_productos.obsequios??[];
           let notificaciones=promo_productos.notificaciones??[];
-          
-          console.log(promo_productos,venta_producto);
 
           if(traza.length < 1 && obsequios.length<1) //&& notificaciones.length < 1
           {
@@ -2237,7 +2239,7 @@ var controller=
       let modal=document.getElementById("modal-select-products");
       if(!search_prod || search_prod.value.trim()=="" || !modal.classList.contains("hidde_control"))return;
 
-      var uri=`${url}pos/dinner/search_producto/?search=${search_prod.value.trim()}&cc=${$cc}`;
+      var uri=`${url}pos/dinner/search_producto/?cc=${$cc}`;
       views.table_products_select.innerHTML="";
 
       views.toggle(document.body,false,"","Cargando, por favor espere...");
@@ -2251,7 +2253,7 @@ var controller=
         codes:reglas
       }
       
-      model.invoke_service(uri,null,function(data) 
+      model.invoke_service(uri,payload,function(data) 
       {
         views.ActiveAnimation(false);
         let foodbev=data.foodbev??[];
@@ -2274,7 +2276,7 @@ var controller=
         alert(error.message);
         views.ActiveAnimation(false);
         views.toggle(document.body,true);
-      },"GET",false);
+      },"POST",false);
     },
     select_foodbev(row)
     {
@@ -2487,5 +2489,16 @@ var controller=
       },
       "PATCH", false
     );
+  },
+  setFocusBarra()
+  {
+    views.search_prod.focus();
+    const cfg=model_prn.GetConfigPrinter("cfg-others");
+
+    if(!cfg || Object.keys(cfg).length < 1 || !controller.ParseBool(cfg.set_focus_barra??false))return;
+
+    this.interval_focus_barra= setInterval(() => {
+      views.search_prod.focus();
+    }, 1000);
   }
 }

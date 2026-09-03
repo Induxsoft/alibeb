@@ -14,6 +14,19 @@ module "nueva commanda"
 	line = @@(@http_context,"request/get/line")
 	sku = @@(@http_context,"request/get/sku")
 	
+	new @config_barcodes
+	{
+		@"mascara1":GetVars("mascara1")
+		@"mascara2":GetVars("mascara2")
+		@"mascara3":GetVars("mascara3")
+		@"mascara4":GetVars("mascara4")
+		@"mascara5":GetVars("mascara5")
+		@"factor1":GetVars("factor1")
+		@"factor2":GetVars("factor2")
+		@"factor3":GetVars("factor3")
+		@"factor4":GetVars("factor4")
+		@"factor5":GetVars("factor5")
+	}
 	#$
 	div(class="container-command" id="")
 	{
@@ -81,7 +94,7 @@ module "nueva commanda"
 			}
 		}
 	}
-
+	script(src="/_js/barcode-cfg.js"){""}
 	script
 	{$'
 		$(document).ready(function(){
@@ -109,7 +122,9 @@ module "nueva commanda"
 			if(titleNavBar) titleNavBar.innerHTML="";	
 
 			const nav_info = document.getElementById("nav_info");
-			if(nav_info) nav_info.style.width="100%";		
+			if(nav_info) nav_info.style.width="100%";	
+
+			controller.config_barcodes=#<to.json(@config_barcodes)>;
 		});
 	'}
 }

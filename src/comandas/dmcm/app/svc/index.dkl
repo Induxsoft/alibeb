@@ -214,11 +214,6 @@ module "index.dkl"
 						do validar.existencia(db,params)
 						break
 					}
-					case "search_producto"
-					{
-						ref data=get.productos(db,params)
-						break
-					}
 					case "load-tickets"
 					{
 						ref data=get.tickets_procesados(db,params)
@@ -261,6 +256,12 @@ module "index.dkl"
 				else if @@(params,"$entity")=="egreso"{ref data=pos.egreso(db,params,postData)}
 				else if @@(params,"$entity")=="arqueo"{ref data=pos.arqueo(db,params,postData)}
 				else if @@(params,"$entity")=="acces-config"{ref data=access.config(db,params,postData)}
+				else if @@(params,"$entity")== "search_producto"
+				{
+					params<"search">:@@(postData,"$input")
+					params<"codes*">:@@(postData,"&codes")
+					ref data=get.productos(db,params)
+				}
 				else
 				{
 					if @@(postData,"$action") == "join" { ref data = joinAccounts(db,params,postData) }
