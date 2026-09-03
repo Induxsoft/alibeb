@@ -32,15 +32,15 @@ var views=
 				{
 					var adds=adcs[a];
 					
-					if(adds.is_variable && !hadcs.includes("@__adics__"))
+					if(adds.is_variable && !hadcs.includes("@__vars__"))
 					{
-						hadcs+=`<br><span class="fw-bold datails-adcs w-100 d-block" id="@__adics__">Adicionales</span>`;
-						last_adic="adics";
-					}
-					else if((last_adic == "adics" || last_adic=="") && !adds.is_variable)
-					{
-						hadcs+=`<span class="fw-bold datails-adcs w-100 d-block" id="@__vars__">Variables</span>`;
+						hadcs+=`<br><span class="fw-bold datails-adcs w-100 d-block" id="@__vars__">Variables</span>`;
 						last_adic="vars";
+					}
+					else if((last_adic == "vars" || last_adic=="") && !adds.is_variable)
+					{
+						hadcs+=`<span class="fw-bold datails-adcs w-100 d-block" id="@__adics__">Adicionales</span>`;
+						last_adic="adics";
 					}
 
 					hadcs+=`<div class="datails-adcs">

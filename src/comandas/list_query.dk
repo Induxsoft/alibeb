@@ -399,7 +399,7 @@ module "lista de consultas"
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
                         where (orden.iventa=@iventa or orden.sys_pk=@_orden)"
     
-    @_list_articulos="SELECT p.codigo AS sku,p.sys_pk,p.ilinea as linea,0 pkorden,0 pkorden, dv.sys_timestamp, dv.cantidad, p.descripcion, '' especificaciones, dv.precio, dv.descuento1 d1, dv.descuento2 d2, 0 tiempo, cfg.i1venta,
+    /* @_list_articulos="SELECT p.codigo AS sku,p.sys_pk,p.ilinea as linea,0 pkorden,0 pkorden, dv.sys_timestamp, dv.cantidad, p.descripcion, '' especificaciones, dv.precio, dv.descuento1 d1, dv.descuento2 d2, 0 tiempo, cfg.i1venta,
                         cfg.i2venta,
                         cfg.i3venta,
                         cfg.i4venta,
@@ -408,9 +408,20 @@ module "lista de consultas"
                         dv.sys_guid as id_dventa
                         FROM dventa dv INNER JOIN producto p ON dv.iproducto=p.Sys_PK 
                         INNER JOIN cfgimpuesto cfg ON p.Impuestos=cfg.Sys_PK 
-                        WHERE dv.fk_venta_detalle=@iventa AND p.IClase<>2;"
+                        WHERE dv.fk_venta_detalle=@iventa AND p.IClase<>2;" */
 
-    @list_ordenes=@_list_dorden+ " UNION all "+ @_list_articulos
+    // @list_ordenes=@_list_dorden+ " UNION all "+ @_list_articulos
+    @list_ordenes="SELECT p.codigo AS sku,p.sys_pk,p.ilinea as linea,ifnull(dorden.sys_pk,0) pkdorden,ifnull(dorden.fk_orden_detalle,0) pkorden, dv.sys_timestamp, dv.cantidad, p.descripcion, ifnull(dorden.especificaciones,'') especificaciones, dv.precio, dv.descuento1 d1, dv.descuento2 d2, ifnull(dorden.tiemposervicio,0) as tiempo, cfg.i1venta,
+                        cfg.i2venta,
+                        cfg.i3venta,
+                        cfg.i4venta,
+                        p.unidad,
+                        dv.sys_pk dventa,
+                        dv.sys_guid as id_dventa
+                        FROM dventa dv INNER JOIN producto p ON dv.iproducto=p.Sys_PK 
+                        INNER JOIN cfgimpuesto cfg ON p.Impuestos=cfg.Sys_PK 
+						left join dorden on dorden.sys_guid=dv.sys_guid
+                        WHERE dv.fk_venta_detalle=@iventa;"
 
     @customer="select c.codigo as 'code',c.sys_pk,c.nombre as 'name' from cliente c where c.sys_pk=@cliente"
 

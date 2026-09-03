@@ -323,7 +323,29 @@ module "lib.dk"
         INNER JOIN orden o ON d.fk_orden_detalle=o.sys_pk
         SET d."+field_descuento_ord+"=0
         WHERE o.iventa=@venta;",params)
-        do dbr.execute(db,"UPDATE dventa SET "+slot_promocional+"=0 WHERE fk_venta_detalle=@venta",params)
+
+        ref details = dbr.list(db,"SELECT d.*, p.impuestos FROM dventa d INNER JOIN producto p ON d.iproducto=p.sys_pk WHERE d.fk_venta_detalle=@venta",params)
+        for i = 0; i < list.count(details)
+        {
+            ref dventa = list.obj(details,i)
+            
+            descuento1 = if(slot_promocional=="descuento1", 0, @@(dventa,"#descuento1"))
+            descuento2 = if(slot_promocional=="descuento2", 0, @@(dventa,"#descuento2"))
+            
+            ref amounts = GetDataImpuestos(db, @@(dventa,"#precio"), @@(dventa,"#cantidad"), descuento1, descuento2, @@(dventa,"#impuestos"))
+            new taxes
+            {
+                @"descuento1": descuento1
+                @"descuento2": descuento2
+                @"impuesto1": @@(amounts,"#impuesto1")
+                @"impuesto2": @@(amounts,"#impuesto2")
+                @"impuesto3": @@(amounts,"#impuesto3")
+                @"impuesto4": @@(amounts,"#impuesto4")
+            }
+            
+            do dbr.update(db,"dventa",taxes,"sys_pk=@sys_pk",record.copy(dventa,"sys_pk"))
+        }
+        // do dbr.execute(db,"UPDATE dventa SET "+slot_promocional+"=0 WHERE fk_venta_detalle=@venta",params)
         do dbr.execute(db,"DELETE FROM trazapromocion WHERE fk_venta=@venta",params)
         do dbr.execute(db,"DELETE FROM detailpromocion WHERE fk_venta=@venta",params)
 
@@ -1403,7 +1425,7 @@ module "lib.dk"
         return get.foodbev(db,params)
     }
 
-    //#region get.cuentasDisponibles
+    //#region cuentasDisponibles
     /**
      * Obtiene las cuentas disponibles para apertura o selección.
      *
@@ -1457,6 +1479,34 @@ module "lib.dk"
         ORDER BY `key`;
         "
         return dbr.list(db,sql,@null)
+    }
+
+    //#region accountDetails
+    /**
+     * Obtiene las partidas (dventa) de la cuenta (venta) proporcionada (id_table).
+     * Los datos se usan para poblar el diálogo de "Dividir cuenta".
+     *
+     * ---
+     * Fecha: 02-09-2026
+     * Autor: Francisco Ávila
+     */
+    get.accountDetails :: &db, &params
+    {
+        sql = "
+        SELECT
+            d.sys_pk AS `dventa`,
+            d.cantidad AS quantity,
+            p.descripcion AS descrip,
+            (
+                ( (ifnull(d.precio,0) * ifnull(d.cantidad,0))
+                - ifnull(d.descuento1,0) - ifnull(d.descuento2,0) )
+                + ifnull(d.impuesto1,0) + ifnull(d.impuesto2,0) + ifnull(d.impuesto3,0) + ifnull(d.impuesto4,0)
+            ) AS amount
+        FROM dventa d
+            INNER JOIN producto p ON d.iproducto = p.sys_pk
+        WHERE d.fk_venta_detalle = @id_table
+        "
+        return dbr.list(db,sql,params)
     }
 
     GetDestinationByPhone :: &db, &params
@@ -2856,6 +2906,136 @@ module "lib.dk"
         {
             if start_transaction { do dbr.rollback(db) }
             do rise_error(99,last_error())
+        }
+    }
+
+    _remove_sys_fields::&data
+    {
+        do field.remove(data,"sys_pk")
+        do field.remove(data,"sys_guid")
+        do field.remove(data,"sys_dtcreated")
+        do field.remove(data,"sys_timestamp")
+        do field.remove(data,"sys_info")
+        do field.remove(data,"sys_user")
+        do field.remove(data,"sys_lastuser")
+        do field.remove(data,"sys_exported")
+        do field.remove(data,"sys_dtexported")
+        do field.remove(data,"sys_recver")
+        do field.remove(data,"sys_deleted")
+        do field.remove(data,"sys_lock")
+    }
+
+    //#region splitAccount
+    /**
+     * Transfiere las órdenes de una cuenta A a una cuenta B.
+     *
+     * @param integer source - Clave primaria de la cuenta origen
+     * @param integer target - Clave primaria de la cuenta destino
+     * @param object item - Producto a transferir
+     * @param integer item.dventa - Clave primaria de la partida en la cuenta origen
+     * @param decimal item.quantity - Cantidad del producto
+     *
+     * ---
+     * Fecha: 01-09-2026
+     * Autor: Francisco Ávila
+     */
+    splitAccount :: &db, &params, &data
+    {
+        if dbr.num(db,"SELECT sys_pk FROM venta WHERE sys_pk = @source",data) < 1 { do rise_error(404,"No se encontró la cuenta origen") }
+        if dbr.num(db,"SELECT sys_pk FROM venta WHERE sys_pk = @target",data) < 1 { do rise_error(404,"No se encontró la cuenta destino") }
+        if @@(data,"#item/quantity") <= 0 { do rise_error(400,"No se indicó una cantidad válida") }
+
+        ref item = @@(data,"&item")
+
+        sql = ftext("
+        SELECT d.*, p.impuestos
+        FROM dventa d
+            INNER JOIN producto p ON d.iproducto = p.sys_pk
+        WHERE
+            d.sys_pk = #<@@(item,'#dventa')> AND
+            d.fk_venta_detalle = @source
+        ")
+        ref dventa = dbr.rec(db,sql,data)
+        if isnull(dventa) { do rise_error(404,"No se encontro el producto/receta en la cuenta origen") }
+
+        pk_impuesto = @@(dventa,"#impuestos")
+        remainder = @@(dventa,"#cantidad") - @@(item,"#quantity")
+        remove = remainder <= 0
+        
+        if remainder < 0 { item<"quantity"> : @@(dventa,"#cantidad") }
+        item<"iproducto"> : @@(dventa,"#iproducto")
+        do field.remove(dventa,"impuestos")
+
+        do dbr.begin(db)
+
+        // -- ORIGEN --
+        if remove
+        {
+            do dbr.delete(db,"trazapromocion","fk_dventa=@dventa",item)
+            do dbr.delete(db,"dventa","sys_pk=@dventa",item)
+        }
+        else
+        {
+            new a
+            {
+                @"cantidad": remainder
+                @"xfacturar": remainder
+                @"xsalir": remainder
+            }
+            do dbr.update(db,"dventa",a,"sys_pk=@dventa",item)
+        }
+
+        params<"venta"> : @@(data,"#source")
+        do apply_promo(db,params)
+        do updateAmounts(db,@@(data,"#source"))
+
+        // -- DESTINO --
+        ref existing = dbr.rec(db,ftext("SELECT * FROM dventa WHERE fk_venta_detalle = @target AND iproducto = #<@@(item,'#iproducto')>"),data)
+        quantity = @@(item,"#quantity") + @@(existing,"#cantidad")
+
+        if isnull(existing)
+        {
+            do _remove_sys_fields(dventa)
+            using dventa
+            {
+                @"sys_guid": uuid()
+                @"sys_dtcreated*": dbr.sql("now()")
+                @"sys_timestamp*": dbr.sql("now()")
+                @"sys_recver": 0
+                @"sys_deleted": @false
+
+                @"cantidad": quantity
+                @"xfacturar": quantity
+                @"xsalir": quantity
+
+                @"fk_venta_detalle": @@(data,"#target")
+            }
+            do dbr.insert(db,"dventa",dventa)
+        }
+        else
+        {
+            item<"existing"> : @@(existing,"#sys_pk")
+
+            new b
+            {
+                @"cantidad": quantity
+                @"xfacturar": quantity
+                @"xsalir": quantity
+            }
+            do dbr.update(db,"dventa",b,"sys_pk=@existing",item)
+        }
+
+        params<"venta"> : @@(data,"#target")
+        do apply_promo(db,params)
+        do updateAmounts(db,@@(data,"#target"))
+
+        do dbr.commit(db)
+        return @null
+
+        exception
+        {
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
+            do rise_error(500, last_error())
         }
     }
 

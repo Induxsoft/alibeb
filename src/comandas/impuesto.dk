@@ -97,12 +97,12 @@ module "impuestos"
 			@"d1":d1
 			@"d2":d2
             @"descuentos": descuentos
-            @"impuestos": impuestos
-            @"total": total
             @"impuesto1": impuesto1
             @"impuesto2": impuesto2
             @"impuesto3": impuesto3
             @"impuesto4": impuesto4
+			@"impuestos": impuestos
+            @"total": total
         }
         return precioInfo
     }

@@ -9,18 +9,21 @@ document.addEventListener("DOMContentLoaded",()=>
 var controller=
 {
   // bd.globalvars.
-  decimal_money: 4,
-  decimal_volumen: 4,
-  decimal_visible_money: 2,
-  decimal_visible_volumen: 4,
+  decimal_money: 6, //FXCA001
+  decimal_volumen: 4, //FXCA002
+  decimal_visible_money: 2,//V12-0A-001
+  decimal_visible_volumen: 4, //V12-0A-002
   fractions_group_rule: 1,
   fractions_group: 0,
   only_account_predef: false,
+  split_accounts: false,
+  join_accounts: false,
   // ---
   pos_porcentaje_propina:0,
   decimals:2,
   decimals_backend:2,
   ltimer:5,//intentos de conexión al imin printer
+  _selected_account:null,
 
     init()
     {
@@ -84,6 +87,18 @@ var controller=
         num = Math.round(+(num[0] + 'e' + (num[1] ? (+num[1] + dec) : dec)));
         num = num.toString().split('e');
         return signo * (num[0] + 'e' + (num[1] ? (+num[1] - dec) : -dec));
+    },
+    FormatMoney(value)
+    {
+      let lang = "es-MX"; //(new Intl.NumberFormat()).resolvedOptions().locale;
+      const formatter = new Intl.NumberFormat(lang, {
+        style: "currency",
+        currency: "MXN",
+        minimumFractionDigits: this.decimal_visible_money,
+        maximumFractionDigits: this.decimal_visible_money
+      });
+
+      return formatter.format(value);
     },
     GetTotales(isefectivo=false,setpropina=false)
     {
@@ -863,6 +878,7 @@ var controller=
       var uri=`${url}pos/dinner/tables/${id_table}/`;
       model.invoke_service(uri,null,function(data) 
       {
+        controller._selected_account = data;
         views.print_ordenes(data);
         views.PaindItem(data);
       },
@@ -931,11 +947,16 @@ var controller=
             document.removeEventListener('keydown', manejarTab, true);
         };
     },
-    toggle_backdrop()
+    toggle_backdrop(remove=false)
     {
       let backdrop=document.getElementById("backdrop");
       if(!backdrop)return;
-
+      
+      if(remove)
+      {
+        backdrop.classList.remove("backdrop");
+        return;
+      }
       backdrop.classList.toggle("backdrop");
     },
     liberarFocusTrap:null,
@@ -1919,8 +1940,113 @@ var controller=
         alert(error.message);
       },"PATCH",false);
     },
+    async splitAccount()
+    {
+      if (!this.split_accounts) {
+        alert("Característica desactivada");
+        return
+      }
+      if (!this._selected_account) {
+        alert("No se selecciono una cuenta");
+        return
+      }
+
+      /* const detail = this._selected_account.orders.map(o => {
+        return {
+          sys_pk: o.sys_pk,
+          orden: o.pkorden,
+          dorden: o.pkdorden,
+          dventa: o.dventa,
+          quantity: o.quantity,
+          descrip: o.description,
+          amount: this.FormatMoney(o.total)
+        }
+      }); */
+
+      try {
+        views.toggle(document.body,false,"","Cargando, por favor espere...");
+        let detail, accounts;
+
+        model.invoke_service(`${url}pos/dinner/account-details/?id_table=${this._selected_account.sys_pk}`, null,
+          (data) => { detail = Array.isArray(data) ? data : [] },
+          (error) => { throw new Error(error.message ?? "Ocurrio un error en la solicitud", { cause:error }) },
+          "GET", false, false
+        );
+
+        if (detail.length < 1) {
+          alert("No queda nada en esta cuenta");
+          return
+        }
+        
+        model.invoke_service(`${url}pos/dinner/load-accounts/`, null,
+          (data) => { accounts = Array.isArray(data) ? data : [] },
+          (error) => { throw new Error(error.message ?? "Ocurrio un error en la solicitud", { cause:error }) },
+          "GET", false, false
+        );
+
+        const cfg = {
+          id: this._selected_account.code,
+          reference: this._selected_account.reference,
+          detail,
+          accounts
+        };
+        split_account(cfg, function(res) { controller._splitAccount(res) });
+
+      } catch (error) {
+        alert("No fue posible cargar los datos");
+        console.error(error);
+      } finally { views.toggle(document.body,true); }
+
+      /* model.invoke_service(`${url}pos/dinner/load-accounts/`, null,
+        (data) => {
+          views.toggle(document.body,true);
+          
+          cfg.accounts = Array.isArray(data) ? data : [];
+          split_account(cfg, function(res) { controller._splitAccount(res) });
+        },
+        (error) => {
+          views.toggle(document.body,true);
+          if (error.message) alert(error.message);
+          else console.error(error);
+        },
+        "GET", false
+      ); */
+    },
+    _splitAccount(d)
+    {
+      if (!d) return;
+      views.toggle(document.body,false,"","Procesando, por favor espere...");
+
+      let endpoint = `${url}pos/dinner/split-account/?id_table=`+this._selected_account.sys_pk;
+      let body = Object.assign(d,{
+        action: "split-account",
+        source: this._selected_account.sys_pk,
+        target: d.to.sys_pk
+      });
+
+      // console.log(body)
+      // return
+
+      model.invoke_service(endpoint, body,
+        (data) => {
+          views.toggle(document.body,true);
+          controller.get_table(controller._selected_account.sys_pk);
+        },
+        (error) => {
+          views.toggle(document.body,true);
+          if (error.message) alert(error.message);
+          else console.error(error);
+        },
+        "PATCH", false
+      );
+    },
     joinAccounts(min=2, max=2, free=false)
     {
+      if (!this.join_accounts) {
+        alert("Característica desactivada");
+        return
+      }
+
       views.toggle(document.body,false,"","Cargando, por favor espere...");
 
       let uri = `${url}pos/dinner/load-accounts/`;
@@ -1953,7 +2079,7 @@ var controller=
       if (!d) return;
       views.toggle(document.body,false,"","Procesando, por favor espere...");
 
-      let uri = `${url}pos/dinner/tables/`;
+      let endpoint = `${url}pos/dinner/tables/`;
       let body = Object.assign(d,{
         action: "join",
         waiter: waiter_key, //"#<@@(@waiter,'key')>",
@@ -1961,7 +2087,7 @@ var controller=
         cc: $cc, //"#<@@(@waiter,'cc')>"
       });
 
-      model.invoke_service(uri, body,
+      model.invoke_service(endpoint, body,
         (data) => {
           controller.resfresh_tables();
         },
@@ -2069,6 +2195,42 @@ var controller=
         },"GET",false);
       });
     },
+  generarReglas(obj, codigo) 
+  {
+      const reglas = [];
+
+      for (let i = 1; i <= 5; i++) {
+          const mascara = obj[`mascara${i}`];
+
+          if (!mascara)
+              continue;
+
+          const resultado = interpretarCodigo(mascara, codigo);
+
+          if (resultado) {
+              resultado.f = Number(obj[`factor${i}`]) || 1;
+              reglas.push(resultado);
+          }
+      }
+
+      let p=this.parseCodigo(codigo);
+      if(p)reglas.push(p);
+
+      return reglas;
+  },
+  parseCodigo(cadena) 
+  {
+      if(!cadena.includes("*"))return null;
+
+      const partes = cadena.split("*");
+
+      return {
+          k: partes[0],
+          q: partes[1],
+          f: partes[2] ?? 1
+      }
+  },
+  
     SearchProd()
     {
       let search_prod=views.search_prod;
@@ -2077,32 +2239,42 @@ var controller=
 
       var uri=`${url}pos/dinner/search_producto/?search=${search_prod.value.trim()}&cc=${$cc}`;
       views.table_products_select.innerHTML="";
+
       views.toggle(document.body,false,"","Cargando, por favor espere...");
       views.ActiveAnimation(true);
-        model.invoke_service(uri,null,function(data) 
+
+      const reglas=this.generarReglas(controller.config_barcodes??{},search_prod.value.trim());
+
+      var payload=
+      {
+        input:search_prod.value.trim(),
+        codes:reglas
+      }
+      
+      model.invoke_service(uri,null,function(data) 
+      {
+        views.ActiveAnimation(false);
+        let foodbev=data.foodbev??[];
+        data_foodbev=foodbev;
+        
+        if(foodbev.length>1)
         {
-          views.ActiveAnimation(false);
-          let foodbev=data.foodbev??[];
-          data_foodbev=foodbev;
-          
-          if(foodbev.length>1)
-          {
-            views.table_products_select.innerHTML=views.createBody(foodbev);
-            controller.show_modal("#modal-select-products");
-            selectedMouse();
-          }
-          else if(foodbev.length == 1)
-          {
-            controller.select_foodbev(foodbev[0]);
-          }
-          views.toggle(document.body,true);
-        },
-        function(error) 
+          views.table_products_select.innerHTML=views.createBody(foodbev);
+          controller.show_modal("#modal-select-products");
+          selectedMouse();
+        }
+        else if(foodbev.length == 1)
         {
-          alert(error.message);
-          views.ActiveAnimation(false);
-          views.toggle(document.body,true);
-        },"GET",false);
+          controller.select_foodbev(foodbev[0]);
+        }
+        views.toggle(document.body,true);
+      },
+      function(error) 
+      {
+        alert(error.message);
+        views.ActiveAnimation(false);
+        views.toggle(document.body,true);
+      },"GET",false);
     },
     select_foodbev(row)
     {

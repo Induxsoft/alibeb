@@ -2,9 +2,11 @@
 #!
 module "terminal de mesero"
 {
+	do getVarsConfig()
 	ref getData=@@(@http_context,"&request/get")
 	
 	@only_account_predef = parse.bool(dbr.vars.get(@database,"comandas.only_account_predef"))
+	@split_accounts = parse.bool(dbr.vars.get(@database,"comandas.split_accounts"))
 	@join_accounts = parse.bool(dbr.vars.get(@database,"comandas.join_accounts"))
 	@min_to_join = parse.num(dbr.vars.get(@database,"comandas.min_to_join"))
 	@max_to_join = parse.num(dbr.vars.get(@database,"comandas.max_to_join"))
@@ -240,11 +242,17 @@ module "terminal de mesero"
 	
 	script(src="/_/dmcm/app/front/_js/select_account.js"){""}
 	script(src="/_/dmcm/app/front/_js/join_accounts.js"){""}
+	script(src="/_/dmcm/app/front/_js/pick_account.js"){""}
+	script(src="/_/dmcm/app/front/_js/split_account.js"){""}
+
 	script
 	{$'
 		$(document).ready(function()
 		{
 			controller.only_account_predef = #<@only_account_predef>;
+			controller.split_accounts = #<@split_accounts>;
+			controller.join_accounts = #<@join_accounts>;
+
 			if("#<idt>"!="")
 			{
 				views.table_selected="#<idt>";

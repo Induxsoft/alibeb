@@ -323,6 +323,9 @@ var views=
       },
       toggle(container,quit=false,_class="display-in-process",text=null)
       {
+            let backdrop=document.getElementById("backdrop");
+            if(quit && backdrop)backdrop.classList.remove("backdrop");
+
             if(!container)return;
             if(!_class)_class="display-in-process";
 
@@ -337,7 +340,7 @@ var views=
 
                   if(text)
                   {
-                        container.style.setProperty('--display-text', `"${text}"`);
+                        container.style.setProperty('--display-text', "${text}");
                   }
             }
       },
