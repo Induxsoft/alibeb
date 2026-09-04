@@ -1,3 +1,62 @@
+imin_register();
+
+function _PrinterException(o,ltimer=5)
+{
+    let interval=setInterval(() => 
+    {
+        if(o?.connection && !(o?.isConnected??false))
+        { 
+            let ws=o.connection?.ws;
+            if(o.connection.l_timer >= ltimer)
+            {
+                if(!ws || (ws && ws.readyState>=3))
+                {
+                    o.connection.reconnect =function() {console.warn("Reconexión deshabilitada");}
+                    if(interval)clearInterval(interval);
+                    toast("No se logró conectar con el controlador");
+                }
+            }
+        }
+        else if(interval)clearInterval(interval);
+    }, 300);
+}
+function imin_printer(lineas,meta)
+{
+    var o=createDriver_imin();
+
+    setTimeout(() => {_PrinterException(o);}, 500);
+
+    o.connect(meta.impresora,(status)=>
+    {
+        if(status == "failed")
+        {
+            console.warn("No se logró conectar al controlador");
+            return;
+        }
+        
+        for (let i = 0; i < lineas.length; i++) 
+        {
+            const linea = lineas[i];
+            o.printText(linea);
+        }
+
+        setTimeout(() => {
+            o.openCashDrawer();
+        }, 1000);
+    });
+}
+function imin_register()
+{
+    if (typeof POSPrinter === "undefined" || typeof POSPrinter.registrar !== "function") {
+        return;
+    }
+
+    POSPrinter.registrar('imin','Controlador Imin', function(lineas,meta){
+        imin_printer(lineas,meta);
+        return Promise.resolve();
+    }, { ajustes:true });
+}
+
 function createDriver_imin(){
     var o={
         buffer:"",
@@ -6,16 +65,21 @@ function createDriver_imin(){
         connect:function(device,success,fail)
         {
             this.connection = new IminPrinter();
+
             this.connection.connect().then(async (isConnect) => 
             {
-                if(isConnect)
-                {
-                    let status = await this.connection.getPrinterStatus();
-                    this.isConnected = isConnect;
-                    this.connection.initPrinter();
-                    if(success)
-                     success(status.text);
-                }
+                if (!isConnect) {return;}
+
+                this.isConnected = true;
+
+                const status = await this.connection.getPrinterStatus();
+
+                this.connection.initPrinter();
+
+                if (success) success(status.text);
+            })
+            .catch(error => {
+                console.error("Error conectando con impresora:", error);
             });
         },
         setAlign:function(align)

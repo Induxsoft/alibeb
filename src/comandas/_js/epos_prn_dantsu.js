@@ -1,3 +1,39 @@
+dantsu_register();
+
+function dantsu_printer(lineas,meta)
+{
+    var o=createDriver_generic();
+    o.connect(meta.impresora,(status)=>
+    {
+        if(status == "failed")
+        {
+            console.warn("No se logró conectar al controlador");
+            return;
+        }
+        
+        for (let i = 0; i < lineas.length; i++) 
+        {
+            const linea = lineas[i];
+            o.printText(linea);
+        }
+
+        setTimeout(() => {
+            o.openCashDrawer();
+        }, 1000);
+    });
+}
+function dantsu_register()
+{
+    if (typeof POSPrinter === "undefined" || typeof POSPrinter.registrar !== "function") {
+        return;
+    }
+
+    POSPrinter.registrar('dantsu','Controlador generico', function(lineas,meta){
+        dantsu_printer(lineas,meta);
+        return Promise.resolve();
+    }, { ajustes:true });
+}
+
 function createDriver_generic(){
     var o={
         buffer:"",

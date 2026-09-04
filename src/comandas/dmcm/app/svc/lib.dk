@@ -2745,7 +2745,20 @@ module "lib.dk"
 
         return corte
     }
+    get.block::&db,icaja
+    {
+        icaja >> params
 
+        if icaja > 0
+        {
+            iblock= dbr.num(db,"select ifnull(iblock,0) from caja where sys_pk=@icaja",params)
+            if iblock > 0{return iblock}
+        }
+        
+        exception{do pop_exception()}
+
+        return parse.num(dbr.vars.get(db,"pos_serie_default"))
+    }
     open.table::&db,&params,&data
     {
         start_transaction = @false
@@ -2775,8 +2788,8 @@ module "lib.dk"
                 return venta
             }
         }
-
-        params<"block">:parse.num(dbr.vars.get(db,"pos_serie_default"))
+        
+        params<"block">:get.block(db,@@(data,"#icaja"))
 
         if @@(params,"#block") < 1{do rise_error(500,"No se ncontró datos de la serie configurada")}
         
