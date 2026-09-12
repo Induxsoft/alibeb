@@ -445,7 +445,7 @@ var model_prn=
             if(!key)return;
 
             localStorage.setItem(key,JSON.stringify(data));
-            // if(url_redir)window.location.href=url_redir;
+            if(url_redir)window.location.href=url_redir;
         },
         SetDataConfigFromForm(idform)
         {

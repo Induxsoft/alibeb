@@ -2492,10 +2492,20 @@ var controller=
   },
   setFocusBarra()
   {
-    views.search_prod.focus();
+    if(!views.search_prod)return;
+
     const cfg=model_prn.GetConfigPrinter("cfg-others");
 
-    if(!cfg || Object.keys(cfg).length < 1 || !controller.ParseBool(cfg.set_focus_barra??false))return;
+    if(!cfg || Object.keys(cfg).length < 1 || !controller.ParseBool(cfg.set_focus_barra??false))
+    {
+      views.show_element("container_ctrl_search",false);
+      views.show_element("btn_show_ctrl_search",true);
+      return;
+    }
+    
+    views.show_element("container_ctrl_search",true);
+
+    views.search_prod.focus();
 
     this.interval_focus_barra= setInterval(() => {
       views.search_prod.focus();

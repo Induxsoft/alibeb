@@ -146,6 +146,7 @@ var views=
 	remove_command:function(sys_pk)
 	{
 		var element=document.querySelector("#c-command_"+sys_pk);
+	
 		if(element){
 			element.remove();
 		}

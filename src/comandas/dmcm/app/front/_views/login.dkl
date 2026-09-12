@@ -2,71 +2,143 @@
 #!
 module "login"
 {
-	#$
-	div(class="container-login")
-	{
-		div(class="module-all")
-		{
-			div(class="module-login")
-			{
-				label("for"="ubicacion" class="fw-bold"){"Ubicación:"}
-				select(class="input-login" type="text" name="ubicacion" id="ubicacion"){""}
-				br{}
-				hr{}
+    #$
+    div(class="dk-login" id="login")
+    {
+		link(href="/_/dmcm/app/front/_css/login.css" rel="stylesheet"){""}
 
-				div(class="d-flex gap-2 mb-2")
+        div(class="dk-login__panel mx-auto")
+        {
+            div(class="dk-login__location")
+            {
+                label("for"="ubicacion" class="fw-bold dk-login__label"){"Ubicación:"}
+                select(
+                    class="form-select dk-login__control"
+                    type="text"
+                    name="ubicacion"
+                    id="ubicacion"
+                ){$""}
+            }
+
+            hr(class="dk-login__separator"){}
+
+            div(class="dk-login__roles")
+            {
+				div
 				{
-					label(class="d-flex gap-1" "for"="rdomesero")
-					{
-						input(class="form-check-input" type="radio" name="opt" value="" id="rdomesero" checked="" onclick="views.ShowFormulario('container-mesero')")
-						"Vendedor"
-					}
-
-					label(class="d-flex gap-1" "for"="rdocajero")
-					{
-						input(class="form-check-input" type="radio" name="opt" value="" id="rdocajero" onclick="views.ShowFormulario('container-cajero')")
-						"Cajero"
-					}
+					input(
+						class="btn-check"
+						type="radio"
+						name="opt"
+						id="rdomesero"
+						checked=""
+						autocomplete="off"
+						onclick="views.ShowFormulario('container-mesero')"
+					)
+					label(class="btn-outline-primary px-2 py-1 border border-primary rounded" "for"="rdomesero"){"Vendedor"}
 				}
-				
-				div(id="container-cajero" style="display:none")
+				div
 				{
-					label("for"="selectcaja" class="fw-bold"){"Caja:"}
-					select(class="select-apparence-login" id="selectcaja" name="caja"){$""}br{}
-
-					label("for"="selectcajero" class="fw-bold"){"Cajero:"}
-					select(class="select-apparence-login" id="selectcajero" name="cajero"){$""}br{}
-
-					label("for"="pwd"){"Contraseña:"}
-					input(class="input-login" type="password" name="pwd" placeholder="")
+					input(
+						class="btn-check"
+						type="radio"
+						name="opt"
+						id="rdocajero"
+						autocomplete="off"
+						onclick="views.ShowFormulario('container-cajero')"
+					)
+					label(class="btn-outline-primary px-2 py-1 border border-primary rounded" "for"="rdocajero"){"Cajero"}
 				}
-				
-				div(id="container-mesero")
-				{
-					label("for"="selectwaiter" class="fw-bold"){"Vendedor:"}
-					select(class="select-apparence-login" id="selectwaiter" name="waiter"){$""}br{}
+            }
 
-					label("for"="pwd"){"Contraseña:"}
-					input(class="input-login" type="password" id="pwdlogin" placeholder="" name="pwd")
-				}
-				
+            div(
+                id="container-cajero"
+                class="dk-login__section"
+                style="display:none"
+            )
+            {
+                div(class="dk-login__field")
+                {
+                    label("for"="selectcaja" class="fw-bold dk-login__label"){"Caja:"}
+                    select(
+                        class="form-select dk-login__control"
+                        id="selectcaja"
+                        name="caja"
+                    ){$""}
+                }
 
-				div(class="module-click")
-				{
-					button(class="btn-admin" id="btnlogin" onclick="controller.login(this)"){"Aceptar"}
-				}
-				
-			}
-		}
-		
-	}
-	script
-	{
-		$'
-		$(document).ready(function()
-		{
-			controller.getUbicaciones();
-		});
-		'
-	}
+                div(class="dk-login__field")
+                {
+                    label("for"="selectcajero" class="fw-bold dk-login__label"){"Cajero:"}
+                    select(
+                        class="form-select dk-login__control"
+                        id="selectcajero"
+                        name="cajero"
+                    ){$""}
+                }
+
+                div(class="dk-login__field")
+                {
+                    label("for"="pwd" class="dk-login__label"){"Contraseña:"}
+                    input(
+                        class="form-control dk-login__control"
+                        type="password"
+                        name="pwd"
+                        id="pwd-cajero"
+                        placeholder=""
+                        autocomplete="current-password"
+                    )
+                }
+            }
+
+            div(
+                id="container-mesero"
+                class="dk-login__section"
+            )
+            {
+                div(class="dk-login__field")
+                {
+                    label("for"="selectwaiter" class="fw-bold dk-login__label"){"Vendedor:"}
+                    select(
+                        class="form-select dk-login__control"
+                        id="selectwaiter"
+                        name="waiter"
+                    ){$""}
+                }
+
+                div(class="dk-login__field")
+                {
+                    label("for"="pwdlogin" class="dk-login__label"){"Contraseña:"}
+                    input(
+                        class="form-control dk-login__control"
+                        type="password"
+                        id="pwdlogin"
+                        placeholder=""
+                        name="pwd"
+                        autocomplete="current-password"
+                    )
+                }
+            }
+
+            div(class="dk-login__actions")
+            {
+                button(
+                    class="btn-primary dk-login__button"
+                    id="btnlogin"
+                    type="button"
+                    onclick="controller.login(this)"
+                ){"Aceptar"}
+            }
+        }
+    }
+
+    script
+    {
+        $'
+        $(document).ready(function()
+        {
+            controller.getUbicaciones();
+        });
+        '
+    }
 }

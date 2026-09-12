@@ -23,7 +23,8 @@ module "lib.dk"
     kdf.get.ordenes::&db,&params
     {
         ref list_commands=dbr.list(db,ftext(@kdf_tables_orders),params)
-
+        
+        params<"atendido">:@true   
         for i=0;i<@count(list_commands)
         {
             ref item=@item(list_commands,i)
@@ -31,7 +32,7 @@ module "lib.dk"
             new p
             {
                 @"iventa":@@(item,"#sys_pk")
-                @"cprod":@@(params,"cprod")
+                @"cprod":@@(params,"$cprod")
                 @"orden":@@(item,"#pkorden")
             }
             
@@ -92,8 +93,11 @@ module "lib.dk"
             // @"hproduccion*":now
             @"fatendido*":dbr.sql("date(now())")
             // @"fproduccion*":dbr.sql("date(now())")
+            @"atendido": status > 0
         }
+        // do rise_error(0,to.json(table))
         do dbr.execute(db,@kds.updateorder,table)
+
         return table
     }
 

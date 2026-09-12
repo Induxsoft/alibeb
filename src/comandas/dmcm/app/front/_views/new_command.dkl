@@ -83,7 +83,7 @@ module "nueva commanda"
 				div(class="content-grid"){
 					div(class="column-content"){$""}
 				}
-				div(class="input-group footer-fixed md-width-i l-0-i" style="width: 69%;left:30%;")
+				div(class="input-group footer-fixed md-width-i l-0-i d-none" style="width: 69%;left:30%;" id="container_ctrl_search")
 				{
 					input(class="form-control border no-shadow h-100 m-0" style="background-color:white;" autofocus="true" name="search_prod" value="" id="search_prod" placeholder="Buscar por código, Código de barras y descripción...")
 					div(class="input-group-prepend border")

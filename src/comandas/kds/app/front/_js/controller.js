@@ -59,10 +59,8 @@ var controller=
     var uri=`${url}pos/dinner/kdf/${idkds}/?cprod=${cprod}`;
     var data={act:act}
       model.invoke_service(uri,data,function(data) {
-        if(!reload)
-          views.remove_command(data.idkdf);
-        else
-          controller.get_commands();
+        views.remove_command(idkds);
+        controller.get_commands();
         views.print_label_pedidos();
       },
       function(error) {

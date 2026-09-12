@@ -4,85 +4,110 @@ div(class="nabvar" style="z-index:100;margin-bottom: 4.8rem;")
 {
 	div(class="title-induxsoft" id="" style="position:fixed;")
 	{
-			$""
-			#!
-			namet=@@(@http_context,"request/get/n")
-			ticket=@@(@http_context,"request/get/t")
-			totalcurrent=@@(@http_context,"request/get/imp")
+		$""
+		#!
+		namet=@@(@http_context,"request/get/n")
+		ticket=@@(@http_context,"request/get/t")
+		totalcurrent=@@(@http_context,"request/get/imp")
 
-			if @token==""
+		if @token==""
+		{
+			namet=""
+			ticket=""
+			totalcurrent=""
+		}
+		#$
+		div(class="name_waiter")
+		{
+			a(href="/" style="color: white;text-decoration: none;")
 			{
-				namet=""
-				ticket=""
-				totalcurrent=""
+				h3(class="p-0 m-0"){$"#<@name_company>"}
+			}
+			small(style="font-size: small;color: lightgray;" class="d-flex"){"#<@as_company> "}
+			#!
+			if isset("@waiter")
+			{
+				#$
+				span(id="caption-waiter"){"#<ifstr(@token=='','Inicio de sesión',@@(@waiter,'caption'))>"}
 			}
 			#$
-			div(class="name_waiter")
+		}
+		div(class="#<ifstr(totalcurrent=='','hidde_control','')>" id="nav_info" style="display:flex;gap:4px;flex-wrap:wrap;flex-grow:1;")
+		{
+			span(value="#<namet>" id="name_m"){"#<namet>  "}
+			span(value="#<ticket>" id="name_ticket"){"#<ticket> "}
+			span(id="totalcurrent" style="width:100%;" total="#<totalcurrent>"){"#<ifstr(totalcurrent!='','$ '+totalcurrent,'')>"}
+		}
+		div(class="btn-cerrar")
+		{
+			$""
+			#!
+			isdesk=@@(@http_context,"request/get/desk")
+			idt=@@(@http_context,"request/get/idt")
+			if isset("@command")
 			{
-				a(href="/" style="color: white;text-decoration: none;")
-				{
-					h3(class="p-0 m-0"){$"#<@name_company>"}
-				}
-				small(style="font-size: small;color: lightgray;" class="d-flex"){"#<@as_company> "}
-				#!
-				if isset("@waiter")
-				{
-					#$
-					span(id="caption-waiter"){"#<ifstr(@token=='','Inicio de sesión',@@(@waiter,'caption'))>"}
-				}
+				if parse.bool(isdesk){@module="vw_principal"}
 				#$
-			}
-			div(class="#<ifstr(totalcurrent=='','hidde_control','')>" id="nav_info" style="display:flex;gap:4px;flex-wrap:wrap;flex-grow:1;")
-			{
-				span(value="#<namet>" id="name_m"){"#<namet>  "}
-				span(value="#<ticket>" id="name_ticket"){"#<ticket> "}
-				span(id="totalcurrent" style="width:100%;" total="#<totalcurrent>"){"#<ifstr(totalcurrent!='','$ '+totalcurrent,'')>"}
-			}
-			div(class="btn-cerrar")
-			{
-				$""
-				#!
-				isdesk=@@(@http_context,"request/get/desk")
-				idt=@@(@http_context,"request/get/idt")
-				if isset("@command")
+				div(class="btn-command")
 				{
-					if parse.bool(isdesk){@module="vw_principal"}
-					#$
-					div(class="btn-command")
+					button(class="btn-ligth-purple" id="btnExecute" style="display:flex; gap:8px; align-items:center;")
 					{
-						button(class="btn-ligth-purple" id="btnExecute" style="display:flex; gap:8px; align-items:center;")
-						{
-							svg(xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16"){
-								path(d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z")
-							}
-							h2{"Aceptar"}
+						svg(xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16"){
+							path(d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z")
 						}
-						button(class="btn2" onclick="controller.close_view('#<@module>','&idt=#<idt>');")
-						{
-							svg(xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="#FFF" title="Cancelar" class="bi bi-x-lg" viewBox="0 0 16 16"){
-								path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
-							}
+						h2{"Aceptar"}
+					}
+					button(class="btn2 d-none" type="button" id="btn_show_ctrl_search"){$'
+						<svg class="" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+							<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+						</svg>
+					'}
+					button(class="btn2" type="button" title="Pantalla completa" onclick="views.toggleFullScreen('#container-main')"){$'
+						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-fullscreen" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+						</svg>
+					'}
+					button(class="btn2" onclick="controller.close_view('#<@module>','&idt=#<idt>');")
+					{
+						svg(xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="#FFF" title="Cancelar" class="bi bi-x-lg" viewBox="0 0 16 16"){
+							path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
 						}
 					}
-					#!
 				}
-				else if @module!=""
+				#!
+			}
+			else if @module!=""
+			{
+				vw=@module
+				confirm=if(vw=="login",@true,@false)
+				
+				#$
+				div(class="d-flex gap-2")
 				{
-					vw=@module
-					confirm=if(vw=="login",@true,@false)
-					
-					#$
+					button(class="btn2" type="button" title="Pantalla completa" onclick="views.toggleFullScreen('#container-main')"){$'
+						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-fullscreen" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+						</svg>
+					'}
 					button(class="btn img " style="border:none" onclick="controller.close_view('#<vw>','&idt=#<idt>',#<confirm>);")
 					{
 						svg(xmlns="http://www.w3.org/2000/svg" id="cancel_modal" width="22" height="22" fill="#FFF" title="Cerrar" class="bi bi-x-lg" viewBox="0 0 16 16")
 						{
-		                	path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
-		            	}
+							path(d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z")
+						}
 					}
 				}
-				#$
-					
+				#!
 			}
-			
+			else
+			{
+				#$
+				button(class="btn2" type="button" title="Pantalla completa" onclick="views.toggleFullScreen('#container-main')"){$'
+					<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-fullscreen" viewBox="0 0 16 16">
+						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+					</svg>
+				'}
+			}
+		}
 	}
 }

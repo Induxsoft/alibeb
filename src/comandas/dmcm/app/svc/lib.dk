@@ -1104,13 +1104,13 @@ module "lib.dk"
         if pos_afectar_existencias && pos_produccion_al_cobrar == 1{do producir.x_ventas(db,params)}
         //ACTULIZAR ORDEN
         
-        new orden
-        {
-            // @"status":3
-            @"atendido":1
-            @"fatendido*":dbr.sql("now()")
-        }
-        do dbr.update(db,"orden",orden,"iventa=@venta AND ifnull(atendido,0)=0",postData)
+        // new orden
+        // {
+        //     // @"status":3
+        //     @"atendido":1
+        //     @"fatendido*":dbr.sql("now()")
+        // }
+        // do dbr.update(db,"orden",orden,"iventa=@venta AND ifnull(atendido,0)=0",postData)
         
         //obetner datos del ticket
         //folio de la venta

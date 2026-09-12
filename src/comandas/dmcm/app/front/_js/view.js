@@ -1,3 +1,8 @@
+
+window.addEventListener('load', () => {
+    document.activeElement?.blur();
+});
+
 var body_mesas=document.querySelector(".body-mesas");
 var data_foodbev=[];
 var list_orders=[];
@@ -168,16 +173,42 @@ var views=
             });
 
             this.search_prod=document.getElementById("search_prod");
-            if(this.search_prod)this.search_prod.addEventListener("keydown",(e)=>
+            if(this.search_prod)
             {
-                  if (e.key === 'Enter')controller.SearchProd();
-            })
+                  this.search_prod.addEventListener("keydown",(e)=>
+                  {
+                        if (e.key === 'Enter')controller.SearchProd();
+                  });
+            }
 
             this.table_products_select=document.getElementById("tbody-products-selected");
 
             //modulo de cobro
             this.client_new = document.getElementById("client_new");
             if(this.client_new)client_new.addEventListener("change",()=>{this.showBtnCredit();});
+
+            this.btn_show_ctrl_search=document.getElementById("btn_show_ctrl_search");
+            if(this.btn_show_ctrl_search)this.btn_show_ctrl_search.addEventListener("click",
+            ()=>
+            {
+                  views.show_element("container_ctrl_search",true);
+                  views.show_element("btn_show_ctrl_search",false);
+                  views.search_prod?.focus();
+            });
+      },
+      toggleFullScreen(containerOrSelector)
+      {
+            let container = (typeof containerOrSelector === "string")
+                  ? document.querySelector(containerOrSelector)
+                  : containerOrSelector;
+            
+            if (!container) {
+                  console.warn("Elemento no encontrado o no proporcionado.");
+                  container = document.body;
+            }
+
+            if (document.fullscreenElement) document.exitFullscreen();
+            else container.requestFullscreen();
       },
       showBtnCredit()
       {

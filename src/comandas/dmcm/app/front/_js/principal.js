@@ -45,14 +45,6 @@
          myJQueryCode();
     }
 
-    window.addEventListener('beforeunload',function(){
-       // event.show_loading();
-      });
-
-      window.addEventListener('unload',function(){
-       // event.hide_loading();
-      });
-
       var isactive=false;
     var event={
       load_variables:function()

@@ -1,0 +1,172 @@
+/* ==========================================================
+   Login
+   ========================================================== */
+
+.dk-login {
+    box-sizing: border-box;
+
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 1rem;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dk-login *,
+.dk-login *::before,
+.dk-login *::after {
+    box-sizing: border-box;
+}
+
+.dk-login__panel {
+    width: min(100%, 420px);
+
+    padding: 1.5rem;
+
+    background: #fff;
+    border-radius: .75rem;
+
+    box-shadow:
+        0 .25rem 1rem rgba(0, 0, 0, .12);
+
+    flex: 0 1 auto;
+}
+
+.dk-login__location {
+    width: 100%;
+}
+
+.dk-login__label {
+    display: block;
+
+    margin-bottom: .4rem;
+}
+
+.dk-login__control {
+    width: 100%;
+    min-height: 2.75rem;
+}
+
+.dk-login__separator {
+    margin: 1.25rem 0;
+}
+
+.dk-login__roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    margin-bottom: 1.25rem;
+}
+
+.dk-login__role {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+
+    margin: 0;
+
+    cursor: pointer;
+}
+
+.dk-login__role .form-check-input {
+    margin: 0;
+}
+
+.dk-login__section {
+    width: 100%;
+}
+
+.dk-login__field {
+    width: 100%;
+
+    margin-bottom: 1rem;
+}
+
+.dk-login__actions {
+    display: flex;
+    justify-content: flex-end;
+
+    margin-top: 1.25rem;
+}
+
+.dk-login__button {
+    min-width: 110px;
+    min-height: 2.75rem;
+}
+
+
+/* ----------------------------------------------------------
+   Pantallas pequeñas
+   ---------------------------------------------------------- */
+
+@media (max-width: 575.98px) {
+    .dk-login {
+        align-items: flex-start;
+
+        padding: 1rem .75rem;
+    }
+
+    .dk-login__panel {
+        width: 100%;
+        max-width: 420px;
+
+        margin-top: .5rem;
+
+        padding: 1.25rem;
+    }
+
+    .dk-login__roles {
+        gap: .75rem;
+    }
+
+    .dk-login__actions {
+        display: block;
+    }
+
+    .dk-login__button {
+        width: 100%;
+    }
+}
+
+
+/* ----------------------------------------------------------
+   Móvil / tablet en orientación horizontal
+   ---------------------------------------------------------- */
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .dk-login {
+        align-items: flex-start;
+
+        padding-top: .75rem;
+        padding-bottom: .75rem;
+    }
+
+    .dk-login__panel {
+        margin-top: 0;
+        margin-bottom: 0;
+
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .dk-login__separator {
+        margin-top: .75rem;
+        margin-bottom: .75rem;
+    }
+
+    .dk-login__field {
+        margin-bottom: .75rem;
+    }
+
+    .dk-login__actions {
+        margin-top: .75rem;
+    }
+}

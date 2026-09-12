@@ -5,6 +5,9 @@ module "infocuenta"
 	id_table=@@(@http_context,"request/get/id_table")
 	idt=@@(@http_context,"request/get/idt")
 	if idt!="" && id_table==""{id_table=idt}
+
+	@split_accounts = parse.bool(dbr.vars.get(@database,"comandas.split_accounts"))
+
 	#$
 	div(class="container1")
 	{
@@ -20,20 +23,20 @@ module "infocuenta"
 	}
 	#!
 	if id_table!=""
-	 {
-	 	#$
-	 	script
-	 	{
-	 		$'
-	 			$(document).ready(function()
-				{
-	 				controller.get_table("#<id_table>");
-	 				event.hide_loading();
-	 			});
-	 			
-	 		'
-	 	}
-	 	#!
-	 }
-	
+	{
+		#$
+		script(src="/_/dmcm/app/front/_js/pick_account.js"){""}
+		script(src="/_/dmcm/app/front/_js/split_account.js"){""}
+		script
+		{$'
+			$(document).ready(function()
+			{
+				controller.split_accounts = #<@split_accounts>;
+
+				controller.get_table("#<id_table>");
+				event.hide_loading();
+			});
+		'}
+		#!
+	}
 }

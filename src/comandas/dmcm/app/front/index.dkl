@@ -135,10 +135,10 @@ module "index"
 		#!
 		#include "_views/modals.dkl"	 
 		#$
-		script(src="#<@js_epos_prn>"){""}
-		script(src="#<@js_epos_prn_imin>"){""}
-		script(src="#<@js_epos_prn_dantsu>"){""}
-		script(src="#<@js_epos_imin_printer>"){""}
+		script(defer="" src="#<@js_epos_prn>"){""}
+		script(defer="" src="#<@js_epos_prn_imin>"){""}
+		script(defer="" src="#<@js_epos_prn_dantsu>"){""}
+		script(defer="" src="#<@js_epos_imin_printer>"){""}
 		script(src="/_js/bootstrap.bundle.min.js"){""}
 		script(src="/_js/induxsoft.controls.js"){""}
 		//para test desde android
@@ -161,12 +161,12 @@ module "index"
             #$
 		}
 		
-		script(src="#<GetFilePrn('prn_generic.js')>"){""}
+		script(defer="" src="#<GetFilePrn('prn_generic.js')>"){""}
 		script(src="#<GetFilePrn('model_prn.js')>"){""}
-		script(src="#<GetFilePrn('prn_arqueo.js')>"){""}
-		script(src="#<GetFilePrn('prn_egreso.js')>"){""}
-		script(src="#<GetFilePrn('prn_ingreso.js')>"){""}
-		script(src="#<GetFilePrn('prn_ticket.js')>"){""}
+		script(defer="" src="#<GetFilePrn('prn_arqueo.js')>"){""}
+		script(defer="" src="#<GetFilePrn('prn_egreso.js')>"){""}
+		script(defer="" src="#<GetFilePrn('prn_ingreso.js')>"){""}
+		script(defer="" src="#<GetFilePrn('prn_ticket.js')>"){""}
 		
 		script
 		{
