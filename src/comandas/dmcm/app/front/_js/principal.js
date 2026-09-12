@@ -1,51 +1,7 @@
 
 
-    function myJQueryCode() {
-      var current = 0;
-        $(document).ready(() => {
-          var hidden=false;
+    var isactive=false;
 
-          // $(".hidden-panel1").click(function() {
-          //   $(".list-products").slideToggle("slow");
-          //   var listP=document.querySelector(".command-product");
-          //   var panel=document.querySelector(".command");
-          //   if(!hidden)
-          //   {
-          //     panel.setAttribute("style","display:flex !important;width:100% !important");
-          //     hidden=true;
-          //   }
-          //   else
-          //   {
-          //     panel.setAttribute("style","");
-          //     listP.setAttribute("style","");//width:4px
-          //     hidden=false;
-          //   }
-            
-          // });
-
-          
-          event.load_variables();
-          if(Number(module))
-            {controller.get_tables();}
-
-          window.onresize=function(){
-            // event.resize();
-          };  
-      });
-    }
-
-    if(typeof jQuery=='undefined') {
-        var headTag = document.getElementsByTagName("head")[0];
-        var jqTag = document.createElement('script');
-        jqTag.type = 'text/javascript';
-        jqTag.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-        jqTag.onload = myJQueryCode;
-        headTag.appendChild(jqTag);
-    } else {
-         myJQueryCode();
-    }
-
-      var isactive=false;
     var event={
       load_variables:function()
       {
@@ -54,9 +10,6 @@
       },
       resize:function()
       {
-        //$(".div-first").height(window.innerHeight-120); //-$("#master-nav").height()-$("#footer").height()
-        // $(".div-first").width(window.innerWidth-100);
-        // $(".editor-row").height(window.innerHeight-$("#panel-top").height()-$("#master-nav").height()-$("#footer").height()-5);
       }
       ,
       show_loading:function() {
@@ -89,3 +42,22 @@
       
      
     }
+
+    // Arranque de la vista principal.
+    //
+    // Antes este archivo cargaba jQuery desde https://code.jquery.com y colgaba
+    // el arranque de su onload. Como esta funcion es la unica que llama a
+    // controller.get_tables(), un punto de venta sin internet se quedaba con la
+    // pantalla de mesas vacia de forma permanente. jQuery se usaba unicamente
+    // para cinco $(document).ready, asi que se elimino por completo.
+    function initPrincipal()
+    {
+      event.load_variables();
+
+      if (Number(module)) { controller.get_tables(); }
+    }
+
+    if (document.readyState === "loading")
+      document.addEventListener("DOMContentLoaded", initPrincipal);
+    else
+      initPrincipal();

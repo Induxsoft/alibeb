@@ -11,7 +11,9 @@ module "infocuenta"
 	#$
 	div(class="container1")
 	{
-		div(class="card card-info" id="card-info" style="padding:0px;display:block;")
+		// card-info--page: aqui el panel ES la pagina completa, asi que debe
+		// verse tambien por debajo del punto de corte del panel lateral.
+		div(class="card card-info card-info--page" id="card-info" style="padding:0px;")
 		{
 			div(class="body-info")
 			{
@@ -29,7 +31,7 @@ module "infocuenta"
 		script(src="/_/dmcm/app/front/_js/split_account.js"){""}
 		script
 		{$'
-			$(document).ready(function()
+			document.addEventListener("DOMContentLoaded",function()
 			{
 				controller.split_accounts = #<@split_accounts>;
 

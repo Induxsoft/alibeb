@@ -70,7 +70,27 @@
     '.sp-ft{padding:12px 18px;border-top:1px solid #ddd;display:flex;justify-content:flex-end;}',
     '.sp-close{padding:10px 30px;font-size:15px;font-weight:700;color:#111;background:#fff;',
     'border:2px solid #111;border-radius:4px;cursor:pointer;font-family:inherit;}',
-    '.sp-close:hover{background:#111;color:#fff;}'
+    '.sp-close:hover{background:#111;color:#fff;}',
+    '.sp-dest-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;',
+    'justify-content:center;z-index:2147483001;padding:16px;box-sizing:border-box;',
+    'font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}',
+    '.sp-dest-dlg{background:#fff;border:2px solid #111;border-radius:6px;width:min(880px,100%);',
+    'max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.4);}',
+    '.sp-dest-hd{padding:12px 18px;font-size:17px;font-weight:700;color:#111;border-bottom:1px solid #ddd;}',
+    '.sp-dest-bd{display:flex;flex:1;min-height:0;}',
+    '.sp-dest-gridwrap{flex:1;min-width:0;overflow-y:auto;padding:18px;}',
+    '.sp-dest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px;}',
+    '.sp-dest-btn{height:80px;border:3px solid transparent;border-radius:4px;line-height:1.1;font-weight:800;',
+    'color:#000;cursor:pointer;padding:4px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit;}',
+    '.sp-dest-btn:focus-visible{outline:3px solid #111;outline-offset:2px;}',
+    '.sp-dest-open{background:#2ee6f5;}.sp-dest-close{background:#ff1f1f;}',
+    '.sp-dest-side{width:250px;flex:none;border-left:1px solid #bbb;background:#fafafa;padding:16px;overflow-y:auto;}',
+    '.sp-dest-row{display:flex;justify-content:space-between;gap:10px;font-size:15px;font-weight:700;color:#111;padding:9px 2px;border-bottom:1px dashed #d5d5d5;}',
+    '.sp-dest-lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#777;margin:0 0 8px;}',
+    '.sp-dest-ft{padding:12px 18px;border-top:1px solid #ddd;display:flex;justify-content:flex-end;}',
+    '.sp-dest-add{padding:10px 18px;font-size:15px;font-weight:700;color:#111;background:#fff;border:2px solid #111;border-radius:4px;cursor:pointer;font-family:inherit;margin-right:8px;}',
+    '.sp-dest-add:hover{background:#111;color:#fff;}',
+    '@media(max-width:640px){.sp-dest-bd{flex-direction:column;}.sp-dest-side{width:auto;border-left:0;border-top:1px solid #bbb;max-height:38vh;}.sp-dest-btn{height:66px;}}'
   ].join('');
 
   function injectCSS() {
@@ -201,21 +221,217 @@
       else dlg.className = 'sp-dlg';
     }
 
-    function askDestination(ln) {
-      if (typeof picker !== 'function') {
-        throw new Error('split_account: falta pick_account (o config.picker)');
-      }
-      var accounts = (Array.isArray(config.accounts) ? config.accounts : [])
-        .filter(function (a) { return a && String(a.key) !== accountId; });
 
-      picker({
-        keys: accounts,
-        include_closed: config.include_closed === true || config.includeclosed === true,
-        title: config.picker_title || 'Mover a...'
-      }, function (target) {
-        if (!target) return;                 // canceló la selección de destino
-        commit(ln, target);
+    /* ---------- selector de destino integrado ----------
+       Se usa cuando no se proporciona un picker personalizado. Permite crear
+       subcuentas sin depender de cambios en pick_account.js. */
+    var createdAccounts = {}; // key -> { sys_pk, key, status, amount, reference }
+    var destOverlay = null;
+    var destLastFocus = null;
+    var destDone = false;
+
+    function normStatus(v) {
+      v = String(v == null ? '' : v).toLowerCase().trim();
+      if (v === 'closed' || v === 'cerrada' || v === 'cerrado') return 'close';
+      if (v === 'abierta' || v === 'abierto' || v === 'opened') return 'open';
+      if (v === 'libre' || v === 'disponible') return 'free';
+      if (v === 'free' || v === 'open' || v === 'close') return v;
+      return 'free';
+    }
+
+    function accountSepFor(key) {
+      var op = config.concat_op || '';
+      return (op && String(key).indexOf(op) !== -1)
+        ? (config.delimiter_alt || config.delimiter || '-')
+        : (config.delimiter || '-');
+    }
+
+    function lettersToIndexLocal(s) {
+      var n = 0;
+      s = String(s).toUpperCase();
+      for (var i = 0; i < s.length; i++) n = n * 26 + (s.charCodeAt(i) - 64);
+      return n;
+    }
+
+    function indexToLettersLocal(n) {
+      var s = '';
+      while (n > 0) {
+        var r = (n - 1) % 26;
+        s = String.fromCharCode(65 + r) + s;
+        n = Math.floor((n - 1) / 26);
+      }
+      return s;
+    }
+
+    function nextSubaccountKey(parentKey) {
+      var sep = accountSepFor(parentKey);
+      var max = 0;
+
+      function inspect(key) {
+        key = String(key);
+        var pos = key.lastIndexOf(sep);
+        if (pos <= 0 || key.slice(0, pos) !== parentKey) return;
+        var suffix = key.slice(pos + sep.length);
+        if (/^[A-Za-z]{1,3}$/.test(suffix)) {
+          max = Math.max(max, lettersToIndexLocal(suffix));
+        }
+      }
+
+      (Array.isArray(config.accounts) ? config.accounts : []).forEach(function (a) {
+        if (a && a.key != null) inspect(a.key);
       });
+      Object.keys(createdAccounts).forEach(inspect);
+
+      return parentKey + sep + indexToLettersLocal(max + 1);
+    }
+
+    function closeDestination() {
+      if (!destOverlay) return;
+      document.removeEventListener('keydown', onDestKey, true);
+      if (destOverlay.parentNode) destOverlay.parentNode.removeChild(destOverlay);
+      if (destLastFocus && destLastFocus.focus) {
+        try { destLastFocus.focus(); } catch (e) {}
+      }
+      destOverlay = null;
+    }
+
+    function onDestKey(ev) {
+      if (ev.key === 'Escape' || ev.keyCode === 27) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeDestination();
+      }
+    }
+
+    function openDestinationPicker(ln) {
+      destLastFocus = document.activeElement;
+      var title = config.picker_title || 'Mover a...';
+      var includeClosed = config.include_closed === true || config.includeclosed === true;
+      var accounts = [];
+
+      (Array.isArray(config.accounts) ? config.accounts : []).forEach(function (a) {
+        if (!a || a.key == null || String(a.key) === accountId) return;
+        accounts.push({
+          sys_pk: a.sys_pk == null ? null : a.sys_pk,
+          key: String(a.key),
+          status: normStatus(a.status),
+          amount: a.amount || '',
+          reference: a.reference == null ? (a.referencia || '') : a.reference
+        });
+      });
+
+      Object.keys(createdAccounts).forEach(function (key) {
+        if (String(key) === accountId) return;
+        var ca = createdAccounts[key];
+        if (!accounts.some(function (a) { return a.key === key; })) accounts.push(ca);
+      });
+
+      var ov = el('div', 'sp-dest-ov');
+      var d = el('div', 'sp-dest-dlg');
+      d.setAttribute('role', 'dialog');
+      d.setAttribute('aria-modal', 'true');
+      d.setAttribute('aria-label', title);
+
+      d.appendChild(el('div', 'sp-dest-hd', title));
+
+      var bd = el('div', 'sp-dest-bd');
+      var gw = el('div', 'sp-dest-gridwrap');
+      var grid = el('div', 'sp-dest-grid');
+      var side = el('div', 'sp-dest-side');
+      gw.appendChild(grid);
+      bd.appendChild(gw);
+      bd.appendChild(side);
+      d.appendChild(bd);
+
+      var ft = el('div', 'sp-dest-ft');
+      var add = el('button', 'sp-dest-add', '+Subcuenta');
+      var cancel = el('button', 'sp-close', closeLabel);
+      add.type = cancel.type = 'button';
+      ft.appendChild(add);   // +Subcuenta primero (izquierda)
+      ft.appendChild(cancel); // Cancelar después (derecha)
+      d.appendChild(ft);
+      ov.appendChild(d);
+      document.body.appendChild(ov);
+      destOverlay = ov;
+      destDone = false;
+
+      var selected = null;
+      var btns = [];
+
+      function renderSide(a) {
+        side.innerHTML = '';
+        if (!a) {
+          side.appendChild(el('p', 'sp-empty', 'Seleccione una cuenta de destino.'));
+          return;
+        }
+        side.appendChild(el('p', 'sp-dest-lbl', 'Cuenta seleccionada'));
+        var r = el('div', 'sp-dest-row');
+        r.appendChild(el('span', null, a.key));
+        r.appendChild(el('span', null, a.amount || ''));
+        side.appendChild(r);
+      }
+
+      function choose(a, b) {
+        if (a.status === 'free' || (a.status === 'close' && !includeClosed)) return;
+        selected = a;
+        btns.forEach(function (x) { x.classList.remove('sp-dest-sel'); });
+        if (b) b.classList.add('sp-dest-sel');
+        renderSide(a);
+      }
+
+      accounts.forEach(function (a) {
+        if (a.status !== 'open' && !(a.status === 'close' && includeClosed)) return;
+        var b = el('button', 'sp-dest-btn sp-dest-' + a.status, a.key);
+        b.type = 'button';
+        b.onclick = function () {
+          choose(a, b);
+          if (a.status === 'open' || (a.status === 'close' && includeClosed)) {
+            // Igual que pick_account: seleccionar la cuenta completa y cerrar.
+            var target = {
+              sys_pk: a.sys_pk,
+              key: a.key,
+              reference: a.reference
+            };
+            closeDestination();
+            commit(ln, target);
+          }
+        };
+        btns.push(b);
+        grid.appendChild(b);
+      });
+
+      if (!btns.length) grid.appendChild(el('p', 'sp-empty', 'No hay cuentas disponibles.'));
+
+      add.onclick = function () {
+        // Se basa en la cuenta padre (accountId) que se está dividiendo, no en
+        // una selección previa: un clic crea la subcuenta y mueve el ítem.
+        var key = nextSubaccountKey(accountId);
+        var a = {
+          sys_pk: null,
+          key: key,
+          status: 'open',
+          amount: '',
+          reference: ''
+        };
+        createdAccounts[key] = a;
+
+        var target = {
+          sys_pk: a.sys_pk,
+          key: a.key,
+          reference: a.reference
+        };
+        closeDestination();
+        commit(ln, target);
+      };
+
+      cancel.onclick = closeDestination;
+      document.addEventListener('keydown', onDestKey, true);
+      renderSide(null);
+      (btns[0] || cancel).focus();
+    }
+
+    function askDestination(ln) {
+      openDestinationPicker(ln);
     }
 
     function commit(ln, target) {
@@ -237,13 +453,33 @@
       var r;
       try { r = callback(payload); } catch (err) { r = false; }
 
+      function accepted(result) {
+        if (result === false) return false;
+
+        // Para una subcuenta recién creada (sys_pk:null), el backend puede devolver
+        // el sys_pk asignado. Se conserva para los siguientes detail.
+        var sysPk = null;
+        if (result && typeof result === 'object' && result.sys_pk != null) {
+          sysPk = result.sys_pk;
+        } else if (typeof result === 'number' || typeof result === 'string') {
+          sysPk = result;
+        }
+
+        if (sysPk != null && createdAccounts[target.key]) {
+          createdAccounts[target.key].sys_pk = sysPk;
+          target.sys_pk = sysPk;
+        }
+
+        return true;
+      }
+
       if (r && typeof r.then === 'function') {
         busy(true);
-        r.then(function (ok) {
+        r.then(function (result) {
           busy(false);
-          if (ok !== false) apply(ln, target);
+          if (accepted(result)) apply(ln, target);
         }, function () { busy(false); });
-      } else if (r !== false) {
+      } else if (accepted(r)) {
         apply(ln, target);
       }
     }

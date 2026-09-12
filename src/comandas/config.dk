@@ -15,6 +15,7 @@ module "config.dkl"
 	@idaccessmovil="accessmovil"
 	@idlogin="login"
 	@token="token"
+	@time_expired_token= "12 HOUR" //horas 
 	//statdus del ticket
 	@_status_admin_abierto= 1
 
@@ -30,8 +31,8 @@ module "config.dkl"
 	
 	@SYMBOLE_DIVISA="$"
 	//imagenes default
-	@img_default_lines="/$/img/default-linea.png"
-	@img_default_foodbev="/$/img/default-foodbev.jpg"
+	@img_default_lines="/$/img/default_product.png"//default-linea.png
+	@img_default_foodbev="/$/img/default_product.png"//default-foodbev.jpg
 
 	@module=""
 	@name_company="Induxsoft"

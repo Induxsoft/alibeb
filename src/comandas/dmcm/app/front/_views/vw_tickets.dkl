@@ -8,7 +8,7 @@ module ""
     @condition=trim(@@(@GET,"$--condition"))
     
     #$
-    div(class="container" style="height:85%;")
+    div(class="container d-flex flex-column" style="min-height:0;max-height:100%;")
     {
         h5{"Tickets"}
 
@@ -22,7 +22,7 @@ module ""
             }
         }
         #$
-        div(class="table-responsive" style="height:95%;")
+        div(class="table-responsive" style="flex:1 1 auto;min-height:0;overflow:auto;")
         {
             table(class="table table-bordered table-hover table-selectable")
             {

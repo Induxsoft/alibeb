@@ -158,6 +158,43 @@ var views=
             this.cliente_ds=document.getElementById("cliente_ds");
             if(this.cliente_ds)this.cliente_ds.addEventListener("change",()=>{this.setDataDS(this.cliente_ds.getValue())});
 
+            // Bloqueo visual mientras se navega a otra vista.
+            // pagehide cubre Safari/iOS, donde beforeunload no es fiable.
+            window.addEventListener("beforeunload",()=>views.navOverlayShow());
+            window.addEventListener("pagehide",()=>views.navOverlayShow());
+            // pageshow se dispara tambien al volver con el boton atras desde la
+            // cache de la pagina; sin esto la capa reaparecia pegada.
+            window.addEventListener("pageshow",()=>views.navOverlayHide());
+            // Escape como salida de emergencia si la navegacion nunca ocurrio.
+            document.addEventListener("keydown",(e)=>
+            {
+                  if(e.key==="Escape")views.navOverlayHide();
+            });
+
+            // (D) Colapso de la barra de acciones hacia arriba.
+            this.btn_toggle_toolbar=document.getElementById("btn-toggle-toolbar");
+            if(this.btn_toggle_toolbar)
+            {
+                  this.setToolbarCollapsed(localStorage.getItem(views.TOOLBAR_KEY)==="1");
+                  this.btn_toggle_toolbar.addEventListener("click",()=>
+                  {
+                        let el=document.getElementById("card_header_actions");
+                        views.setToolbarCollapsed(!(el && el.classList.contains("is-collapsed")));
+                  });
+            }
+
+            // (E) Colapso del panel de detalle hacia la derecha.
+            this.btn_panel_collapse=document.getElementById("btn-panel-collapse");
+            this.btn_panel_reopen=document.getElementById("btn-panel-reopen");
+            if(this.btn_panel_collapse||this.btn_panel_reopen)
+            {
+                  this.setPanelCollapsed(localStorage.getItem(views.PANEL_KEY)==="1");
+                  if(this.btn_panel_collapse)
+                        this.btn_panel_collapse.addEventListener("click",()=>views.setPanelCollapsed(true));
+                  if(this.btn_panel_reopen)
+                        this.btn_panel_reopen.addEventListener("click",()=>views.setPanelCollapsed(false));
+            }
+
             this.btn_show_cortesia=document.getElementById("btn-show-cortesia");
             if(this.btn_show_cortesia)this.btn_show_cortesia.addEventListener("click",()=>
             {
@@ -304,15 +341,10 @@ var views=
       DeleteElementsCashier(_delete=true,_class=".only-cashier")
       {
             let elements=document.querySelectorAll(_class)
-            if(!_delete && _class==".only-cashier")
-            {
-                  let cardh_actions=document.getElementById("card_header_actions");
-                  if(cardh_actions)
-                  {
-                        cardh_actions.classList.add("d-md-flex");
-                        cardh_actions.classList.add("d-block");
-                  }
-            }
+            // Antes, para el cajero, aqui se le anadian d-md-flex y d-block a
+            // #card_header_actions. Ambas son display con !important y pisaban
+            // el flex-wrap de la barra, dejandola desordenada justo en el perfil
+            // que mas botones tiene. El layout ya lo resuelve .cmn-toolbar.
             for (let i = 0; i < elements.length; i++) 
             {
                   const element = elements[i];
@@ -415,6 +447,102 @@ var views=
             document.getElementById(id).style.display = "block";
       },
       icon_mesa:"",
+      // ---- Bloqueo durante la navegacion entre paginas -------------------
+      // Si el servidor tarda, la pagina anterior sigue viva y aceptando clics:
+      // parece congelada y el usuario vuelve a tocar, disparando acciones
+      // duplicadas. Esta capa cubre la pantalla, absorbe los clics y avisa de
+      // que se esta trabajando.
+      NAV_OVERLAY_ID:"app-nav-overlay",
+      _nav_overlay_timer:null,
+
+      navOverlayEl()
+      {
+            let el=document.getElementById(views.NAV_OVERLAY_ID);
+            if(el)return el;
+            if(!document.body)return null;
+
+            el=document.createElement("div");
+            el.id=views.NAV_OVERLAY_ID;
+            el.className="nav-overlay";
+            el.setAttribute("aria-hidden","true");
+            el.setAttribute("role","status");
+            el.innerHTML='<div class="nav-overlay__box">'
+                        +'<div class="nav-overlay__spinner"></div>'
+                        +'<p class="nav-overlay__text">Cargando, por favor espere…</p>'
+                        +'</div>';
+            document.body.appendChild(el);
+            return el;
+      },
+
+      navOverlayShow(text)
+      {
+            let el=views.navOverlayEl();
+            if(!el)return;
+
+            if(text)
+            {
+                  let t=el.querySelector(".nav-overlay__text");
+                  if(t)t.textContent=text;
+            }
+            el.classList.add("is-visible");
+            el.setAttribute("aria-hidden","false");
+
+            // Salvavidas: si la navegacion se cancela (el usuario pulsa Esc, o
+            // el enlace no llega a navegar), la capa se retira sola en vez de
+            // dejar la terminal bloqueada.
+            if(views._nav_overlay_timer)clearTimeout(views._nav_overlay_timer);
+            views._nav_overlay_timer=setTimeout(()=>views.navOverlayHide(),20000);
+      },
+
+      navOverlayHide()
+      {
+            if(views._nav_overlay_timer)
+            {
+                  clearTimeout(views._nav_overlay_timer);
+                  views._nav_overlay_timer=null;
+            }
+            let el=document.getElementById(views.NAV_OVERLAY_ID);
+            if(!el)return;
+            el.classList.remove("is-visible");
+            el.setAttribute("aria-hidden","true");
+      },
+
+      TOOLBAR_KEY:"dmcm.toolbar.collapsed",
+      PANEL_KEY:"dmcm.panel.collapsed",
+      // Se pone en true mientras print_mesas re-selecciona la cuenta tras un
+      // refresco automatico. Sin esta bandera, el intervalo de actualizacion
+      // reabriria el panel una y otra vez despues de que el usuario lo colapse.
+      _auto_reselect:false,
+
+      // (D) Colapsa o despliega el bloque de acciones de la barra.
+      setToolbarCollapsed(collapsed)
+      {
+            let el=document.getElementById("card_header_actions");
+            if(!el)return;
+
+            el.classList.toggle("is-collapsed",collapsed);
+
+            let btn=document.getElementById("btn-toggle-toolbar");
+            if(btn)btn.title=collapsed?"Mostrar las acciones":"Ocultar las acciones";
+
+            try{ localStorage.setItem(views.TOOLBAR_KEY,collapsed?"1":"0"); }catch(e){}
+      },
+
+      // (E) Colapsa o despliega el panel de detalle hacia la derecha.
+      setPanelCollapsed(collapsed)
+      {
+            let main=document.getElementById("container-main");
+            if(!main)return;
+
+            // Si no esta colapsado no hay nada que hacer: evita reescribir
+            // localStorage en cada clic sobre una cuenta.
+            if(!collapsed && !main.classList.contains("is-panel-collapsed"))return;
+
+            main.classList.toggle("is-panel-collapsed",collapsed);
+
+            try{ localStorage.setItem(views.PANEL_KEY,collapsed?"1":"0"); }catch(e){}
+      },
+
       print_mesas:function(data) 
       {
             var html="";
@@ -422,6 +550,9 @@ var views=
             for (var i =0; i<data.length; i++) 
             {
                   var itm=data[i];
+                  // balance viene del servicio (qv.total): 0 en las mesas libres.
+                  var _bal=Number(itm.balance||0);
+                  var _total=_bal>0 ? "$ "+views.format(_bal,controller.decimals,".",",") : "";
                   html+=`<div class="${css_class_mesa} mesa_${itm.sys_pk}" onclick="controller.verify_size_window(\'${itm.sys_pk}\',\'${itm.code}\',${itm.available_seats},this)">
                               <div class="${this.color(itm.status,itm)} mesa_color_estatus"></div>            
                               <div class="div-mesa_person">
@@ -431,12 +562,13 @@ var views=
                                     <p class="p-person">${itm.occupied_seats}/${itm.available_seats}</p>
                                     <div class="mesa_color ${this.flag_color(itm.flag)} mesa_color_${itm.sys_pk}"></div>
                               </div>
-                              <div style="display:flex; align-items:center;justify-content:center; margin-top:28px;">
+                              <div class="div-mesa_icon">
                                     ${itm.img??views.icon_mesa}
                               </div>
-                              <div class="div-mesa_name">
-                                    <a>${itm.code}</a>
+                              <div class="div-mesa_name" title="${itm.code}">
+                                    ${itm.code}
                               </div>
+                              <div class="div-mesa_total">${_total}</div>
                         </div>`;
           }
 
@@ -445,8 +577,16 @@ var views=
           if(views.table_selected>0 && !controller.ismobile())
           {
             var element_select=document.querySelector(`.mesa_${views.table_selected}`);
-            if(element_select)views.trigger(element_select,"click");
+            // Re-seleccion automatica tras el refresco: no debe reabrir el
+            // panel si el usuario lo dejo colapsado a proposito.
+            if(element_select)
+            {
+                  views._auto_reselect=true;
+                  try{ views.trigger(element_select,"click"); }
+                  finally{ views._auto_reselect=false; }
+            }
           }
+          this.setSizeTextTable();
       },
       PaindItem(data)
       {
@@ -848,6 +988,7 @@ var views=
                   options+=`<option value="${itm.sys_pk}">${itm.nombre}</option>`;
             }
             select.innerHTML=options;
+            select.disabled = false;
       },
       LoadSelect(data,idselect,selected="")
       {
@@ -861,6 +1002,7 @@ var views=
                   options+=`<option value="${itm.codigo}">${itm.descripcion}</option>`;
             }
             select.innerHTML=options;
+            select.disabled=false;
       },
       createUbicacion(data)
       {
@@ -872,6 +1014,7 @@ var views=
                   options+=`<option value="${itm.codigo}">${itm.descripcion}</option>`;
             }
             this.ubicacion.innerHTML=options;
+            this.ubicacion.disabled = false;
       },
       counter:function()
       {
@@ -1408,7 +1551,14 @@ var views=
             if(btn_mdl_save_note)btn_mdl_save_note.onclick=()=>controller.SaveFPago(data.sys_pk,(data)=>{controller.hide_modal("#modal-note-account");},false);
 
             if(table_ordenes)table_ordenes.innerHTML=html;
-            if(name_table)name_table.innerHTML=`<div class=""><h3>${data.code}</h3></div>`;
+            if(name_table)
+            {
+                  // El nombre puede ser muy largo ("Mesa 16+Mesa 16-A+mesaa002+mx01")
+                  // y empujaba el detalle fuera de la vista. Se recorta a 3 lineas
+                  // por CSS y el nombre completo queda en el title.
+                  name_table.innerHTML=`<span class="name-table__text">${data.code}</span>`;
+                  name_table.setAttribute("title",data.code??"");
+            }
       
             var btncancel=document.getElementById("btn-cancelar");
             var btncortesia=document.getElementById("btn-cortesia");
@@ -1472,7 +1622,6 @@ var views=
             }
             this.actionsDS(data);
             views.ActiveAnimation(false);
-            setRemainingHeight("container-info-orders","table_orders_details");
       },
       actionsDS(data)
       {
@@ -1744,6 +1893,47 @@ var views=
       }
 
       return html;
+    },
+    setSizeTextTable()
+    {
+      document.querySelectorAll('.div-mesa_name').forEach(el => {
+      const maxLines = 2;
+      const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+      const maxHeight = lineHeight * maxLines;
+
+      // Guardamos el texto original
+      const originalText = el.innerText;
+
+      // Ajuste dinámico de fuente
+      let fontSize = parseFloat(getComputedStyle(el).fontSize);
+      while (el.scrollHeight > maxHeight && fontSize > 10) {
+            fontSize -= 1;
+            el.style.fontSize = fontSize + 'px';
+      }
+
+      // Si aún excede, truncamos con "..."
+      if (el.scrollHeight > maxHeight) {
+            let text = originalText;
+            let low = 0;
+            let high = text.length;
+            let truncated = text;
+
+            while (low <= high) {
+                  const mid = Math.floor((low + high) / 2);
+                  el.innerText = text.slice(0, mid) + '...';
+
+                  if (el.scrollHeight > maxHeight) {
+                  high = mid - 1;
+                  } else {
+                  truncated = el.innerText;
+                  low = mid + 1;
+                  }
+            }
+
+            el.innerText = truncated;
+      }
+      });
+
     }
 };
 
@@ -2392,60 +2582,13 @@ function toggleDebug(show_vconsole=true)
       else cerrarDebug();
 }
 
-/**
- * Ajusta el alto de un elemento destino tomando en cuenta
- * el espacio ocupado por los hijos directos de un contenedor padre.
- *
- * @param {string} parentId   ID del elemento padre
- * @param {string} targetId   ID del elemento que tendrá el alto restante
- */
-function setRemainingHeight(parentId, targetId)
-{
-    const parent = document.getElementById(parentId);
-    const target = document.getElementById(targetId);
-
-    if (!parent || !target)
-    {
-        return;
-    }
-
-    // Obtener hijos directos del padre
-    const children = Array.from(parent.children);
-
-    let usedHeight = 0;
-
-    children.forEach(child =>
-    {
-        // Ignorar el elemento destino
-        if (child.id === targetId) return;
-      
-        const rect = child.getBoundingClientRect();
-        // Altura total incluyendo márgenes
-        const style = window.getComputedStyle(child);
-
-        const marginTop = parseFloat(style.marginTop) || 0;
-        const marginBottom = parseFloat(style.marginBottom) || 0;
-
-        usedHeight += rect.height + marginTop + marginBottom;
-    });
-
-    // Altura disponible del padre
-    const parentRect = parent.getBoundingClientRect();
-
-    const parentStyle = window.getComputedStyle(parent);
-
-    const paddingTop = parseFloat(parentStyle.paddingTop) || 0;
-    const paddingBottom = parseFloat(parentStyle.paddingBottom) || 0;
-
-    const availableHeight =
-        parentRect.height -
-        usedHeight -
-        paddingTop -
-        paddingBottom;
-
-    // Aplicar alto restante
-    target.style.height = `${Math.max(0, availableHeight)}px`;
-}
+// La antigua funcion de calculo de altura del panel fue eliminada.
+//
+// Media los hermanos y escribia target.style.height en px INLINE, algo que
+// ninguna hoja de estilos puede corregir despues. Ademas no se recalculaba
+// cuando actionsDS() mostraba u ocultaba los botones de reparto, asi que la
+// altura quedaba obsoleta al instante.
+// Lo sustituye la cadena flex de .body-info > #table_orders_details.
 
 /**
  * Pinta el modal completo.
@@ -2977,13 +3120,10 @@ function mostrarModalPromociones(promociones, venta) {
 setTimeout(()=>
 {
       if(debugVisible)abrirDebug(false);
-      // setRemainingHeight("container-all","container-main");
-      setRemainingHeight("container-info-orders","table_orders_details");
 },800);
 
-// Opcional: recalcular al redimensionar
-window.addEventListener("resize", () =>
+window.addEventListener("resize",
+()=>
 {
-    setRemainingHeight("container-info-orders","table_orders_details");
+      views.setSizeTextTable();
 });
-

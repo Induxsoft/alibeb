@@ -4,11 +4,12 @@
 module "login"
 {
 	#$
-	div(class="container-all")
+	// Antes esta vista envolvia su contenido en otro .container-all y volvia a
+	// incluir navbar.dkl, quedando DOS navbars anidados dentro del shell de
+	// index.dkl. No se notaba porque ambos eran position:fixed y se
+	// superponian; con el navbar ya en flujo normal se verian dos barras.
+	div(class="container-workspace")
 	{
-		#!
-		include path.concat(@path_include,"navbar.dkl")
-		#$
 		div(class="container-login #<@token>")
 		{
 			div(class="module-all")

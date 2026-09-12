@@ -630,6 +630,9 @@ body
   background-color: var(--purple) !important; /* Green */
   color: white !important;
 }
+.btn-admin:disabled {
+  background-color: #e9ecef !important;
+}
 
 .svg-white:hover
 {
@@ -765,23 +768,108 @@ body
     margin-top: 0.5cm;
 }
 /****************************************************************/
+/* ============================================================
+   CAPA DE BLOQUEO DURANTE LA NAVEGACION
+   Reutiliza la animacion @keyframes girar ya definida arriba.
+   Al ser position:fixed y cubrir el viewport, absorbe los clics
+   sin necesidad de pointer-events ni de manejadores extra.
+   ============================================================ */
+.nav-overlay
+{
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255,255,255,.62);
+  cursor: progress;
+}
+.nav-overlay.is-visible { display: flex; }
+.nav-overlay__box
+{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 1.25rem 1.75rem;
+  background-color: #FFF;
+  border-radius: .75rem;
+  box-shadow: 0 6px 24px rgba(0,0,0,.18);
+}
+.nav-overlay__spinner
+{
+  width: 42px;
+  height: 42px;
+  border: 4px solid #e9e9e9;
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: girar .9s linear infinite;
+}
+.nav-overlay__text
+{
+  margin: 0;
+  font-size: .9rem;
+  color: #555;
+  text-align: center;
+}
+
+/* ============================================================
+   APP SHELL
+   Una sola cadena de alturas basada en flex. Regla: ningun
+   contenedor de layout lleva altura en porcentaje, y todo
+   contenedor que deba encoger lleva min-height:0 (sin el, un
+   flex/grid item nunca baja de su contenido y el scroll interno
+   se rompe).
+   OJO: .container-all se usa tambien como clase de utilidad
+   dentro de modals.dkl, por eso el shell usa .app-shell.
+   ============================================================ */
+.app-shell
+{
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;          /* dvh respeta la barra de URL en moviles */
+  overflow: hidden;
+  background-color: #F5F5F5 !important;
+}
+.app-shell > .nabvar { flex: 0 0 auto; margin-bottom: 0 !important; }
+.app-content
+{
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Vistas de paneles (vw_principal, vw_infocuenta, newcommand):
+   el scroll vive dentro de los paneles, no en el shell. */
+.app-shell--panes .app-content { overflow: hidden; }
+/* Vistas documento (cobrar, corte de caja, tickets, login...):
+   scroll normal, con el navbar siempre visible arriba. */
+.app-shell--doc .app-content { overflow: auto; }
+/* Raiz de vista (unico hijo de .app-content):
+   en modo paneles ocupa lo que queda y puede encoger;
+   en modo documento conserva su altura natural y scrollea el shell. */
+.app-shell--panes .app-content > * { flex: 1 1 auto; min-height: 0; }
+.app-shell--doc   .app-content > * { flex: 0 0 auto; }
+
 .container-main
 {
   width: 100%;
-  /* margin-top: 4.63rem; */
-  /* padding-right: var(--bs-gutter-x,.75rem); */
-  /* padding-left: var(--bs-gutter-x,.75rem); */
   margin-right: auto;
   margin-left: auto;
-  height: 90%;
+  height: auto;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 70% 30%;
-
-  grid-auto-rows: 100%;
-  grid-auto-columns: 100%;
-/*    grid-area: 2-;*/
-/*    background: red;*/
+  /* Una sola columna por defecto. El panel lateral lo enciende la
+     unica media query de 768px (ver PUNTO DE CORTE UNICO, mas abajo). */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 100%;   /* fila explicita: neutraliza grid-auto-rows */
+  overflow: hidden;
+  /* Bloque contenedor de .btn-panel-reopen, que es absoluta. */
+  position: relative;
 }
+.container-main:fullscreen { background-color: #F5F5F5; }
 .container-all
 {
   display: flex; 
@@ -789,13 +877,18 @@ body
   height: 100%;
   background-color: #F5F5F5 !important;
 }
-/* Float four columns side by side */
+/* Columna izquierda: cabecera de altura natural + rejilla de mesas elastica */
 .column 
 {
-  float: left;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  float: none;
+  width: auto;
   padding-left:10px;
 }
+.column > .content { flex: 0 0 auto; }
 
 /* Remove extra left and right margins, due to padding in columns */
 /* .row {margin: 0 -5px;} */
@@ -817,7 +910,136 @@ body
 }
 .cmn-header .card-header{
   display: flex;
+  /* Sin flex-wrap los botones NO bajan de linea: se comprimen por
+     debajo del ancho de su texto y la etiqueta parte dentro del boton
+     ("a domicilio" en dos renglones). Esta es la causa del recorte
+     de la barra en tablet. */
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 4px;
   gap: 4px;
+}
+/* .vb estaba comentada pero se usa en 8 span de la barra */
+.vb{ white-space: nowrap; }
+
+/* ============================================================
+   (A) (D) BARRA DE ACCIONES
+   Dos zonas: el bloque colapsable de acciones, y un grupo fijo
+   (filtro, configuracion, herramientas y el boton de colapsar)
+   que siempre queda a la vista.
+   ============================================================ */
+.cmn-toolbar
+{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+  padding: .5rem .75rem;
+}
+.cmn-toolbar__primary
+{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.cmn-toolbar__actions
+{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 20rem;
+  min-width: 0;
+  overflow: hidden;
+  max-height: 14rem;
+  transition: max-height .22s ease, opacity .18s ease;
+}
+.cmn-toolbar__fixed
+{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin-left: auto;       /* sustituye al span.flex-grow-1 que habia */
+}
+/* Estado colapsado: las acciones se repliegan hacia arriba.
+   flex:0 0 0 es imprescindible: con el flex-basis de 20rem el bloque seguia
+   reservando ancho aunque midiera 0 de alto, y dejaba un hueco vacio a la
+   izquierda de la barra. */
+.cmn-toolbar.is-collapsed .cmn-toolbar__actions
+{
+  max-height: 0;
+  opacity: 0;
+  flex: 0 0 0;
+  margin: 0;
+  padding: 0;
+}
+#btn-toggle-toolbar svg { transition: transform .22s ease; }
+.cmn-toolbar.is-collapsed #btn-toggle-toolbar svg { transform: rotate(180deg); }
+
+/* ============================================================
+   (E) COLAPSO DEL PANEL DE DETALLE
+   ============================================================ */
+/* Queda fijo sobre .card-info (fuera de .body-info), asi que no se mueve
+   cuando el panel scrollea. Lleva fondo propio para seguir siendo legible
+   sobre las filas de productos que pasan por debajo. */
+.btn-panel-collapse
+{
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 !important;
+  border: 1px solid #e3e3e3 !important;
+  border-radius: 50%;
+  color: var(--purple) !important;
+  background-color: rgba(255,255,255,.94) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.16);
+}
+.btn-panel-collapse:hover
+{
+  color: #FFF !important;
+  background-color: var(--purple) !important;
+}
+/* Pestana de reapertura: oculta salvo cuando el panel esta colapsado. */
+.btn-panel-reopen
+{
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 5rem;
+  padding: 0;
+  cursor: pointer;
+  color: #FFF;
+  border: none;
+  border-radius: .5rem 0 0 .5rem;
+  background-color: var(--purple);
+  box-shadow: -2px 0 6px rgba(0,0,0,.15);
+}
+/* Solo aplica donde el panel lateral existe. Especificidad 0,2,0 y 1,2,0:
+   ganan sobre la media query de 768px sin necesidad de !important. */
+@media (min-width: 768px)
+{
+  .container-main.is-panel-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .container-main.is-panel-collapsed #card-info { display: none; }
+  .container-main.is-panel-collapsed .btn-panel-reopen { display: flex; }
+  /* Sitio para la pestana, para que no tape el scroll de la rejilla. */
+  .container-main.is-panel-collapsed .column { padding-right: 1.75rem; }
 }
 
 /*css para modulo de mesas*/
@@ -834,17 +1056,26 @@ body
 }
 .container-tables
 {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
-  height: 100%;
+  height: auto;
 }
 .table-selected
 {
   border: 2px solid purple;
 }
+/* Antes: height:90%. Como hermano de una cabecera de altura variable,
+   la suma se pasaba de 100% y empujaba la rejilla fuera de pantalla. */
 .card-mesas
 {
-  height: 90%;
-  padding-bottom: 1.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  overflow: hidden;
 }
 .div-mesa_color
 {
@@ -888,21 +1119,50 @@ body
 /*css para la ventana de commandos */
 .container-command
 {
-  height: 90%;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 10px;
-  /* margin-top: 4.63rem; */
+  overflow: hidden;
+  /* Bloque contenedor del panel deslizable de productos y de su tirador.
+     Sin esto ambos se posicionaban contra el viewport y usaban top:10% para
+     esquivar el navbar fijo; ahora se anclan al area de la comanda. */
+  position: relative;
 }
 .command
 {
   width: 100%;
   display: grid;
   grid-template-columns: 30% 70%;
-/*  grid-auto-rows: 8rem;*/
+  grid-template-rows: 100%;
   gap: .2rem;
   padding: 10px;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
   background-color: #FFF !important;
 }
+.command > .command-content
+{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.command-content > .barr-atr { flex: 0 0 auto; }
+
+/* El panel lateral de lineas tambien es columna: la lista scrollea y el
+   total se queda abajo. */
+.command-product
+{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.command-product > #div-total-all { flex: 0 0 auto; }
 .shadow{
   box-shadow: 1px 2px 5px 0 #ddd;
 }
@@ -948,18 +1208,24 @@ body
 .command-centrop button,.column-line button{margin-left: 2px}
 .column-content
 {
-  height: 100%;
+  /* El scroller es .content-grid. Antes esto era height:100% + overflow:auto,
+     un segundo scroller anidado que con la cadena rota se quedaba en 0. */
+  height: auto;
+  min-height: 100%;
   padding: 8px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
   grid-auto-rows: 14rem;
   gap: .5rem;
-  overflow: auto;
+  overflow: visible;
 }
 .content-grid
 {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
     overflow: auto;
-    height: 92%;
+    padding-bottom: 60px;
 }
 .command-product
 {
@@ -969,7 +1235,9 @@ body
 }
 .command-product .list-products
 {
-  height: 100%;
+  flex: 1 1 auto;      /* era height:100%, que dejaba fuera a #div-total-all */
+  min-height: 0;
+  height: auto;
   box-shadow: inset 1px 3px 20px 0 rgb(0 0 0 / 10%);
   padding: 8px;
   overflow: auto;
@@ -1116,12 +1384,123 @@ body
 .txtarea_rsz{resize: none !important;}
 
 .table_opened{background:#B0D9F5 !important;}
+/* .container1 se usa en vw_infocuenta.dkl y config-prn.dkl pero no
+   estaba definida en ningun CSS. */
+.container1
+{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+/* Envoltorio de vw_workspace, antes era un .container-all anidado. */
+.container-workspace
+{
+  display: flex;
+  flex-direction: column;
+}
+.app-shell--panes .container1 { overflow: hidden; }
+
+/* Panel de detalle de la cuenta. Se empotra como columna derecha en
+   vw_principal y como contenido completo en vw_infocuenta. */
 .card-info
 {
-  width: 100%;
-  float: right;
-  height: 100%;
-  min-width: 30% !important;
+  width: auto;
+  float: none;              /* era float:right, inerte dentro de grid/flex */
+  height: auto;
+  min-height: 0;
+  min-width: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;       /* bloque contenedor de .btn-panel-collapse */
+}
+/* En vw_infocuenta el panel ES la pagina, no hay nada que colapsar. */
+.card-info--page .btn-panel-collapse { display: none; }
+/* .body-info se usaba en los dos .dkl pero no estaba definida en
+   ningun CSS: por eso hizo falta calcular alturas en JS. */
+.body-info
+{
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* (B) Red de seguridad: si la cabecera + botones + un minimo de ordenes no
+     caben en el alto disponible (tablet en horizontal), el panel entero
+     scrollea en vez de recortarse. */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.body-info > #info-vnt,
+.body-info > #module-nota,
+.body-info > #mol_cmmd_account { flex: 0 0 auto; }
+/* Scroll unico: todo el panel se desplaza junto. El colapsador no se mueve
+   porque es absoluto sobre .card-info, fuera de este contenedor. */
+.body-info > #table_orders_details
+{
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* ---- (C) Cabecera del panel y botones secundarios ---- */
+/* padding-right deja sitio al colapsador para que el total no quede debajo */
+#info-vnt .div-footer { padding: 8px 12px; padding-right: 2.25rem; }
+/* El nombre pierde peso visual y se limita a 3 lineas: antes, una cuenta con
+   varias mesas unidas ocupaba 5 renglones y empujaba el detalle fuera. */
+#name_table
+{
+  font-size: .9rem;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0;
+  color: #444;
+  word-break: break-word;
+}
+.name-table__text
+{
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* El total es el dato importante del encabezado. */
+#lbltotal
+{
+  font-size: clamp(1.6rem, 5vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+#info-vnt .div-footer > .d-flex > .mt-2 { flex: 0 0 auto; }
+/* Los botones traian ms-2 y quedaban con separaciones irregulares al
+   envolverse. Ahora es una sola fila fluida con separacion uniforme. */
+#module-nota > div
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+}
+#module-nota > div > .btn
+{
+  flex: 1 1 auto;
+  min-width: 2.75rem;
+  justify-content: center;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+}
+/* ---- (C) Acciones principales: se reparten segun quepan ---- */
+#mol_cmmd_account .row-grid
+{
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+}
+#mol_cmmd_account .row-grid .btn { justify-content: center; }
+/* El div interno trae overflow:auto;max-height:100% inline. Se neutraliza
+   para que el scroller sea uno solo (el contenedor) y no dos anidados. */
+.body-info > #table_orders_details > div
+{
+  max-height: none !important;
+  overflow: visible !important;
 }
 .disabled
 {
@@ -1139,20 +1518,46 @@ html{scroll-behavior: smooth;}
   width: 100%;
   height: 100%;
   background-color: #FFF !important;
-/*  border-radius: 20px 20px 20px 20px;*/
-  /*justify-content: center;
-  justify-items: center;*/
   display: flex;
   text-decoration: none;
   color: black;
   align-items: center;
   flex-flow: column;
   cursor: pointer;
-  padding: 8px;
+  /* El padding superior reserva el sitio de .div-mesa_person (absoluta),
+     en vez del margin-top:28px que traia el icono en linea. */
+  padding: 1.75rem .5rem .5rem;
   box-shadow: 1px 2px 5px 0 #ddd;
   position: relative;
   overflow: hidden;
   transition-duration: .3s;
+}
+/* El icono absorbe el espacio sobrante; codigo y total quedan abajo,
+   alineados entre todas las tarjetas de la fila. */
+.div-mesa_icon
+{
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.div-mesa_icon svg,
+.div-mesa_icon img { height: 40px; width: 40px; }
+.div-mesa_total
+{
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 1.1rem;
+  text-align: center;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--purple);
+  line-height: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mesas:hover{
   box-shadow: 3px 4px 7px 0 #ccc;
@@ -1165,11 +1570,13 @@ html{scroll-behavior: smooth;}
 {
     display: flex;
     width: 100%;
-    flex-grow: 1;
+    flex: 0 0 auto;          /* era flex-grow:1; ahora crece .div-mesa_icon */
     align-items: center;
     justify-content: center;
     text-align: center;
     font-weight: 500;
+    line-height: 1.15;
+    word-break: break-word;
 }
 .div-mesa_person{
   display: flex;
@@ -1182,6 +1589,7 @@ html{scroll-behavior: smooth;}
   padding: 2px 4px;
   align-items: center;
   gap: 6px;
+  top: 0;
 }
 
 .btn{
@@ -1867,32 +2275,81 @@ select
 }
  .checkbox{display: none;}
 
+/* ============================================================
+   PUNTO DE CORTE UNICO DEL PANEL LATERAL
+   ------------------------------------------------------------
+   Antes esta decision estaba tomada en cuatro sitios con tres
+   valores distintos (992px de d-lg-*, 1000px aqui, 1000px en
+   controller.ismobile()), lo que dejaba una franja muerta de
+   992-1000px. Ahora esta SOLO aqui.
+   controller.js consume la MISMA cadena con matchMedia, asi que
+   CSS y JS no pueden discrepar por construccion.
+   Si cambias 768px, cambialo tambien en MQ_SIDE_PANEL.
+   ============================================================ */
+@media (min-width: 768px)
+{
+  /* No se usan porcentajes: a 768px un 30% daria 230px y ahi no
+     caben ni el total ni la rejilla de botones de la cuenta.
+     280px es el minimo con el que la rejilla .row-grid de 2 columnas
+     sigue siendo usable; por debajo de ~250px los botones se parten. */
+  .container-main
+  {
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 30%, 420px);
+  }
+  #card-info { display: flex; }
+}
+@media (max-width: 767.98px)
+{
+  /* Telefono / tablet en vertical angosto: el detalle se abre como
+     pagina (vw_infocuenta), no como panel. */
+  #card-info { display: none; }
+  /* Especificidad 110 (#id + .clase): gana sobre la regla de arriba sin
+     necesidad de !important. En vw_infocuenta el panel es la pagina entera. */
+  #card-info.card-info--page { display: flex; }
+  .body-mesas
+  {
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+    grid-auto-rows: 7rem;
+    gap: .75rem;
+  }
+}
+
 /* Responsive columns - one column layout (vertical) on small screens */
 /* Móviles */
 @media screen and (max-width: 1000px) 
 {
   .l-0-i{left: 0 !important;}
   .md-width-i{width: 100% !important;}
+  /* Era display:block, y eso rompia la cadena de alturas: .command-content
+     quedaba con altura de contenido dentro de un contenedor con
+     overflow:hidden, asi que la rejilla de lineas y productos se recortaba
+     sin poder desplazarse. Se mantiene como columna flex. */
   .command
   {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+  }
+  .command > .command-content
+  {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
   }
   /* .container{
     display: block;
   } */
-  .card-info{
-    margin-top: 4px;
-    display: none;
-  }
+  /* .card-info ya no se oculta aqui: lo decide la media query unica
+     de 768px. Mantener esta regla reintroducia la franja muerta. */
   
   .btn{margin-top: 3px;}
   .command-product
   {
     width: 40%;
-    height: 90%;
+    height: 100%;
     background: #f4f4f4;
     position: absolute;
-    top: 10%;
+    top: 0;
     left: -40%;
 /*              display: flex;*/
     align-items: center;
@@ -1963,8 +2420,9 @@ select
   }
   .command
   {
-    display:flex !important;
-    width:100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
   }
   .command-content
   {
@@ -1983,13 +2441,8 @@ select
 
   
 }
-@media screen and (max-width: 320)
-{
-  .card-info
-  {
-    min-width: 30%;
-  }
-}
+/* Bloque eliminado: decia "max-width: 320" sin unidad, era sintacticamente
+   invalido y el parser lo descartaba entero. Nunca se aplico. */
 @media screen and (max-width: 625px) 
 {
   .command-product{
@@ -2000,11 +2453,9 @@ select
     left: 80%;
   }
   
-  .card-header
-  {
-    display: grid;
-    grid-template-columns: 50% 50%;
-  }
+  /* Regla eliminada: .card-header traia d-sm-flex/d-block, que Bootstrap
+     define con !important, asi que este display:grid nunca se aplicaba.
+     El envolvimiento de la barra ahora lo resuelve flex-wrap. */
   #btn-unir
   {
     width: 100%;
@@ -2014,10 +2465,7 @@ select
     width: 100%;
     display: block;
   }
-  .card-info{
-    margin-bottom: 20px;
-    display: none;
-  }
+  /* (ver nota anterior) .card-info lo gobierna la media query de 768px */
   .div-modal{display: flex;}
   .form-table{display: block;}
   .modal-responsive{
@@ -2040,12 +2488,8 @@ select
     gap: 10px;
 }
 
-.btn {
-    /* padding: 10px; */
-    /* border: 1px solid #333; */
-    cursor: pointer;
-    background: #ddd;
-}
+/* Eliminada la segunda definicion de .btn (habia dos en este archivo y
+   la de abajo pisaba el color de fondo de la de arriba). */
 
 .content {
     /* display: flex; */

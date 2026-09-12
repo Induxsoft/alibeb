@@ -111,7 +111,7 @@ module "index.dkl"
 			{
 				if dm_token==""{do rise_error(99,"Sin token de inicio de sesión.")}
 				new t{@"token":dm_token}
-				if isnull(token.valid(db,t)){do rise_error(99,"El token es inválido o ha sido revocado.")}	
+				if isnull(token.valid(db,t)){do rise_error(99,"@token_revocado - El token es inválido o ha sido revocado.")}	
 			}
 		}
 		

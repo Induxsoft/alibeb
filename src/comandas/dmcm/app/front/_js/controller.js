@@ -1,9 +1,28 @@
 var $prodc="";
 var $line="";
 
+// ---------------------------------------------------------------------------
+// Punto de corte unico del panel lateral.
+// Debe coincidir LITERALMENTE con la media query de _css/principal.css.
+// Si cambias uno, cambia el otro.
+// ---------------------------------------------------------------------------
+var MQ_SIDE_PANEL = window.matchMedia("(min-width: 768px)");
+
 document.addEventListener("DOMContentLoaded",()=>
 {
   controller.init();
+
+  // Al rotar la tablet cruzamos el punto de corte sin recargar la pagina.
+  // Antes no habia ningun listener: ismobile() solo se evaluaba en el momento
+  // del clic, asi que tras rotar la vista quedaba en un estado inconsistente.
+  var onSidePanelChange=function(e)
+  {
+    if(e.matches && controller._selected_account)
+      views.print_ordenes(controller._selected_account);
+  };
+
+  if(MQ_SIDE_PANEL.addEventListener) MQ_SIDE_PANEL.addEventListener("change",onSidePanelChange);
+  else if(MQ_SIDE_PANEL.addListener) MQ_SIDE_PANEL.addListener(onSidePanelChange); // WebView antiguo
 });
 
 var controller=
@@ -826,10 +845,16 @@ var controller=
         views.toggle(document.body,true);
       },"GET",false);
     },
+    // Devuelve true cuando NO hay espacio para el panel lateral y el detalle
+    // debe abrirse como pagina (vw_infocuenta).
+    //
+    // Usa exactamente la misma cadena que la media query de principal.css, de
+    // modo que CSS y JS no puedan discrepar. window.innerWidth no servia: en
+    // escritorio incluye el ancho de la barra de desplazamiento, asi que ni
+    // siquiera coincidia con lo que evalua el motor de CSS.
     ismobile:function()
     {
-      if (window.innerWidth<=1000){return true;}
-      else {return false;}
+      return !MQ_SIDE_PANEL.matches;
     },
     resfresh_tables:function()
     {
@@ -872,6 +897,10 @@ var controller=
         return;
       }
       views.ActiveAnimation(true);
+      // (E) Si el panel estaba colapsado a la derecha, seleccionar una cuenta
+      // lo reabre: el detalle se ve de inmediato sin un clic extra. No aplica
+      // cuando la seleccion la dispara el refresco automatico de la rejilla.
+      if(!views._auto_reselect)views.setPanelCollapsed(false);
       controller.get_table(id_table);
     },
     get_table:function(id_table)
@@ -1722,7 +1751,7 @@ var controller=
       function(error) 
       {
         window.location.href="./?view=&dm_scr="+ws;
-        alert(error.message);
+        // alert(error.message);
       },"POST",false,false);
     },
     get_waiters:function (selectwaiter="",ubicacion="*") 

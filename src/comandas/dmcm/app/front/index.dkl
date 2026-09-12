@@ -40,6 +40,8 @@ module "index"
 
 	@module=""
 	file_include=""
+	// Modo de shell: "panes" = alto fijo con scroll interno; "doc" = documento con scroll normal.
+	shell_mode="doc"
 	ref @__divisa=@null
 	pos_card_procesor=""
 	pos_refrescar_mesas= 0
@@ -53,12 +55,14 @@ module "index"
 			ref categorias=GetCategorias("1,2")
 			file_include= path.concat(@path_view,"vw_principal.dkl")
 			pos_refrescar_mesas=parse.num(GetVars("pos_refrescar_mesas"))
+			shell_mode="panes"
 			break
 		}
 		case "vw_infocuenta"
 		{
 			@module="vw_principal"
 			file_include=path.concat(@path_view,"vw_infocuenta.dkl")
+			shell_mode="panes"
 			break
 		}
 		case "newcommand"
@@ -66,6 +70,7 @@ module "index"
 			@command=@true
 			@module="vw_infocuenta"
 			file_include=path.concat(@path_view,"new_command.dkl")
+			shell_mode="panes"
 			break
 		}
 		case "vw_workspace"
@@ -152,13 +157,17 @@ module "index"
 		}
 		
 
-		div(class="container-all" style="overflow:auto" id="container-all")
+		div(class="container-all app-shell app-shell--#<shell_mode>" id="container-all")
 		{
 			#!
             include path.concat(@path_include,"navbar.dkl")
-
-			include file_include
-            #$
+			#$
+			div(class="app-content" id="app-content")
+			{
+				#!
+				include file_include
+				#$
+			}
 		}
 		
 		script(defer="" src="#<GetFilePrn('prn_generic.js')>"){""}

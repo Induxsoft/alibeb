@@ -17,6 +17,7 @@ module "login"
                     type="text"
                     name="ubicacion"
                     id="ubicacion"
+                    disabled=""
                 ){$""}
             }
 
@@ -64,6 +65,7 @@ module "login"
                         class="form-select dk-login__control"
                         id="selectcaja"
                         name="caja"
+                        disabled=""
                     ){$""}
                 }
 
@@ -74,6 +76,7 @@ module "login"
                         class="form-select dk-login__control"
                         id="selectcajero"
                         name="cajero"
+                        disabled=""
                     ){$""}
                 }
 
@@ -103,6 +106,7 @@ module "login"
                         class="form-select dk-login__control"
                         id="selectwaiter"
                         name="waiter"
+                        disabled=""
                     ){$""}
                 }
 

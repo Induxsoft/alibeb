@@ -2940,13 +2940,15 @@ module "lib.dk"
 
     //#region splitAccount
     /**
-     * Transfiere las órdenes de una cuenta A a una cuenta B.
+     * Transfiere las órdenes de una cuenta A a una cuenta B, Si cuenta B no eiste se crea.
      *
      * @param integer source - Clave primaria de la cuenta origen
      * @param integer target - Clave primaria de la cuenta destino
      * @param object item - Producto a transferir
      * @param integer item.dventa - Clave primaria de la partida en la cuenta origen
      * @param decimal item.quantity - Cantidad del producto
+     * @param object to - Cuenta destino
+     * @param string to.key - Identificador de la cuenta destino
      *
      * ---
      * Fecha: 01-09-2026
@@ -2954,8 +2956,37 @@ module "lib.dk"
      */
     splitAccount :: &db, &params, &data
     {
-        if dbr.num(db,"SELECT sys_pk FROM venta WHERE sys_pk = @source",data) < 1 { do rise_error(404,"No se encontró la cuenta origen") }
-        if dbr.num(db,"SELECT sys_pk FROM venta WHERE sys_pk = @target",data) < 1 { do rise_error(404,"No se encontró la cuenta destino") }
+        do errordet(@false)
+        do dbr.begin(db)
+
+        sql = "
+        SELECT
+            c.codigo AS ccliente,
+            cc.codigo AS cconsumo,
+            a.codigo AS cagente
+        FROM venta v
+            INNER JOIN cliente c ON v.icliente = c.sys_pk
+            INNER JOIN cconsumo cc ON v.icconsumo = cc.sys_pk
+            LEFT JOIN agente a ON v.iagente = a.sys_pk
+        WHERE v.sys_pk = @source
+        "
+        ref main = dbr.rec(db,sql,data)
+        
+        if isnull(main) { do rise_error(404,"No se encontró la cuenta origen") }
+        if dbr.num(db,"SELECT sys_pk FROM venta WHERE sys_pk = @target",data) < 1 //{ do rise_error(404,"No se encontró la cuenta destino") }
+        {
+            new account
+            {
+                @"table": @@(data,"$to/key")
+                @"num_people": 1
+                @"notas": ""
+                @"waiter": @@(main,"$cagente")
+                @"cliente": @@(main,"$ccliente")
+                @"cc": @@(main,"$cconsumo")
+            }
+            ref sub = open.table(db,params,account)
+            data<"target"> : @@(sub,"#sys_pk")
+        }
         if @@(data,"#item/quantity") <= 0 { do rise_error(400,"No se indicó una cantidad válida") }
 
         ref item = @@(data,"&item")
@@ -2978,8 +3009,6 @@ module "lib.dk"
         if remainder < 0 { item<"quantity"> : @@(dventa,"#cantidad") }
         item<"iproducto"> : @@(dventa,"#iproducto")
         do field.remove(dventa,"impuestos")
-
-        do dbr.begin(db)
 
         // -- ORIGEN --
         if remove
@@ -4576,7 +4605,7 @@ module "lib.dk"
         {
             @"token":@@(data,"token")
             @"creacion*":now()
-            @"expiracion*":str2dt(dbr.str(db,"SELECT NOW()+INTERVAL @cofig_expiracion minute AS DATE ",config))
+            @"expiracion*":str2dt(dbr.str(db,ftext("SELECT NOW()+INTERVAL #<@time_expired_token> AS DATE "),config))
             @"revocado":0
             @"datos":to.json(@@(data,"&datos"))
         }
@@ -4586,7 +4615,7 @@ module "lib.dk"
     token.valid::&db,&params
     {
         query=@getdatatoken
-        query=query+" where token=@token AND date(expiracion)>= date(NOW()) AND revocado=0 ;"
+        query=query+" where token=@token AND expiracion >= NOW() AND revocado=0 ;"
         ref json=dbr.rec(db,query,params)
         if isnull(json){return @null}
         
@@ -4621,10 +4650,14 @@ module "lib.dk"
             @"token":@dmtoken
             @"validate":validar
         }
-		if isnull(token.valid(db,p)){do rise_error(99,"El token es inválido o ha sido revocado.")}
+        /*
+         * Summary:
+         * - @token_revocado  , identificador para la interfaz que debe redirigirse al login
+        */
+		if isnull(token.valid(db,p)){do rise_error(99,"@token_revocado - El token es inválido o ha sido revocado.")}
 
         r= VerifyToken(db,p)
-        if not(r){do rise_error(500,"Algo salió mal, cierre sesión e intente de nuevo")}
+        if not(r){do rise_error(500,"@token_revocado - Algo salió mal, cierre sesión e intente de nuevo")}
 
         return p
     }

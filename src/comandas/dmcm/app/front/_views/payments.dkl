@@ -95,7 +95,7 @@ module ""
                             </svg>'
                             $"Volver"
                         }
-                        button(class="btn-admin" type="button" id="btn_cobrar_venta" onclick="controller.Cobrar(#<@@(getData,'#idt')>,this)" style="height: fit-content;")
+                        button(class="btn-admin" type="button" id="btn_cobrar_venta" onclick="controller.Cobrar(#<@@(getData,'#idt')>,this)" style="height: fit-content;" disabled="")
                         {
                             $"Cobrar"
                             $'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
@@ -218,8 +218,10 @@ module ""
                 controller.tarjeta.Transactions=#<to.json(ltransactions)>;
                 controller.pos_porcentaje_propina=#<pos_porcentaje_propina>;
                 controller.rsource=#<to.json(rsource)>;
+
+                const btn_cobrar_venta = document.getElementById("btn_cobrar_venta");
+                btn_cobrar_venta.disabled = false;
             })
-            
         '}
     }
 }
