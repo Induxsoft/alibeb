@@ -53,7 +53,12 @@
 	           	div(class="form-group")
 	           	{
 	           		small{"Personas:"}
-	           		input(type="number" min="1" value="1" id="txtnumpeople" class="form-control")
+                    div(class="input-group")
+                    {
+                        button(class="btn" type="button" onclick="views.decrease('#txtnumpeople')"){"-"}
+                        input(type="number" min="1" value="1" id="txtnumpeople" class="form-control")
+                        button(class="btn" type="button" onclick="views.increase('#txtnumpeople')"){"+"}
+                    }
 	           	}
            		div(class="form-group" style="grid-column:1/3;")
            		{

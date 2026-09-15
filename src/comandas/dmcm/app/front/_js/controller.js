@@ -880,7 +880,7 @@ var controller=
         else
         {
           mesa.readOnly = true;
-          num_people.focus();
+          // num_people.focus();
         }
         
         return;
@@ -1903,7 +1903,7 @@ var controller=
           cuenta.readOnly = true;
           
           controller.show_modal('#open-table');
-          personas.focus();
+          // personas.focus();
         }
       });
     },
@@ -2021,7 +2021,7 @@ var controller=
           detail,
           accounts
         };
-        split_account(cfg, function(res) { controller._splitAccount(res) });
+        split_account(cfg, function(res) { return controller._splitAccount(res) });
 
       } catch (error) {
         alert("No fue posible cargar los datos");
@@ -2055,21 +2055,31 @@ var controller=
         target: d.to.sys_pk
       });
 
-      // console.log(body)
-      // return
-
+      let created = null;
       model.invoke_service(endpoint, body,
         (data) => {
           views.toggle(document.body,true);
           controller.get_table(controller._selected_account.sys_pk);
+          controller.resfresh_tables();
+          
+          if (data)
+          {
+            created = {
+              sys_pk: data.sys_pk,
+              key: data.code,
+              status: "open",
+              amount: controller.FormatMoney(data.balance)
+            };
+          }
         },
         (error) => {
           views.toggle(document.body,true);
           if (error.message) alert(error.message);
           else console.error(error);
         },
-        "PATCH", false
+        "PATCH", false, false
       );
+      return created;
     },
     joinAccounts(min=2, max=2, free=false)
     {

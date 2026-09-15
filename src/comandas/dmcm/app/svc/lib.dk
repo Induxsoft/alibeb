@@ -2950,6 +2950,7 @@ module "lib.dk"
      * @param object to - Cuenta destino
      * @param string to.key - Identificador de la cuenta destino
      *
+     * @return Devuelve null o la cuenta B creada si no existia.
      * ---
      * Fecha: 01-09-2026
      * Autor: Francisco Ávila
@@ -2971,6 +2972,7 @@ module "lib.dk"
         WHERE v.sys_pk = @source
         "
         ref main = dbr.rec(db,sql,data)
+        ref sub = @null
         
         if isnull(main) { do rise_error(404,"No se encontró la cuenta origen") }
         if dbr.num(db,"SELECT sys_pk FROM venta WHERE sys_pk = @target",data) < 1 //{ do rise_error(404,"No se encontró la cuenta destino") }
@@ -3072,7 +3074,7 @@ module "lib.dk"
         do updateAmounts(db,@@(data,"#target"))
 
         do dbr.commit(db)
-        return @null
+        return sub
 
         exception
         {

@@ -54,11 +54,20 @@ var views=
             this.modal_tarjeta=document.getElementById("modal_tarjeta");
             this.modal_home_delivery = document.getElementById('modal-home-delivery');
 
+            const pwdlogin = document.querySelectorAll('#login input[name="pwd"]');
             const home_delivery_phone = document.querySelector('#modal-home-delivery input[name="telefono"]');
             const dmns_destino = document.getElementById('div-dmns-destino');
             const btn_delivery_phone_ok = document.getElementById('btn-delivery-phone-ok');
             const btn_home_delivery_ok = document.getElementById('btn-home-delivery-ok');
             
+            pwdlogin.forEach(b => {
+                  b.addEventListener("keydown", (e) => {
+                        if (e.key === 'Enter') {
+                              e.preventDefault();
+                              controller.login({id:"btnlogin"});
+                        }
+                  });
+            })
             if (this.modal_home_delivery) this.modal_home_delivery.addEventListener('shown.bs.modal', (e) => {
                 home_delivery_phone.readOnly = false;
                 dmns_destino.disabled = true;
@@ -246,6 +255,26 @@ var views=
 
             if (document.fullscreenElement) document.exitFullscreen();
             else container.requestFullscreen();
+      },
+      increase(selector)
+      {
+            const input = document.querySelector(selector);
+            if (input) {
+                  let step = Number(input.step);
+                  if (step <= 0) step = 1;
+
+                  input.value = Number(input.value) + step;
+            }
+      },
+      decrease(selector)
+      {
+            const input = document.querySelector(selector);
+            if (input) {
+                  let step = Number(input.step);
+                  if (step <= 0) step = 1;
+
+                  input.value = Number(input.value) - step;
+            }
       },
       showBtnCredit()
       {
