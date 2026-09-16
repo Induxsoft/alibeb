@@ -20,3 +20,5 @@
 "CA61","Agregar configuracion de impresora","","/!/alibeb/config-prn-cp/_new/","0","alibeb.config_prn_cp","DET045","0","shortcut","cofig-prn-cp"
 "CA62","Editar Configuracion","","/!/alibeb/config-prn-cp/","0","alibeb.config_prn_cp","DET045","1","shortcut","cofig-prn-cp"
 "CA63","Eiliminar configuracion","","/!/alibeb/config-prn-cp/","0","alibeb.config_prn_cp","DET045","1","shortcut","cofig-prn-cp"
+
+CA80,Plano de mesas,,/!/alibeb/plano-mesas/,0,alibeb.plano_mesas,DET0C6,0,shortcut,"Mesas"

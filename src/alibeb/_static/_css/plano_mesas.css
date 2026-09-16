@@ -1,0 +1,119 @@
+/* Layout general: mesas + zonas en columnas */
+.pm-work-area {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: .75rem;
+    height: calc(100vh - 140px);
+    min-height: 320px;
+}
+
+/* Columna de mesas: ocupa el espacio disponible */
+.pm-col-mesas {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    border: 1px solid #dee2e6;
+    border-radius: .25rem;
+    background: #fafafa;
+    overflow: auto;
+}
+
+/* Columna de zonas: ancho automático según contenido */
+.pm-col-zonas {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 220px;
+    max-width: 320px;
+    overflow-y: auto;
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+/* Estado vacío de mesas */
+.pm-col-mesas:empty::before {
+    content: "No hay mesas en esta zona. Usa \"Agregar mesa\" o \"Generar mesas\".";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #999;
+    font-size: .9rem;
+    text-align: center;
+    width: 80%;
+}
+
+/* Cuadrito de mesa */
+.pm-mesa {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border: 2px solid #6c757d;
+    border-radius: .375rem;
+    background: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 4px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+
+.pm-mesa:hover {
+    border-color: #0d6efd;
+}
+
+.pm-mesa.selected {
+    border-color: #dc3545;
+    background: #fff5f5;
+    box-shadow: 0 0 0 2px rgba(220,53,69,.35);
+}
+
+/* Cuando aún no hay posición (x/y) asignada, se acomodan en flujo (grid) */
+.pm-col-mesas.pm-flow-layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 10px;
+    padding: 10px;
+}
+.pm-col-mesas.pm-flow-layout .pm-mesa {
+    position: static;
+}
+
+/* Botón de toggle de zonas: oculto en pantallas grandes */
+#btn-toggle-zonas {
+    display: none;
+}
+
+/* Pantallas pequeñas: zonas ocultas por defecto, mostrable con botón */
+@media (max-width: 991.98px) {
+    .pm-work-area {
+        position: relative;
+    }
+    .pm-col-zonas {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: .25rem;
+        box-shadow: -2px 0 6px rgba(0,0,0,.15);
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 5;
+    }
+    .pm-col-zonas.pm-visible {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    #btn-toggle-zonas {
+        display: inline-block;
+    }
+}

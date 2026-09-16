@@ -1,0 +1,33 @@
+#include "dkli.dkh"
+#!
+module "Controller"
+{
+    // Ambas entidades (dmnszona y dmnsmesa) se sirven desde esta misma app.
+    // El model.dk expone las funciones estándar para cada una y una operación
+    // custom "generar_mesas" para el alta masiva de mesas.
+
+    switch @@(params,"$_target")
+    {
+        case "dmnszona"
+        {
+            @table_name = "dmnszona"
+
+            point @create to zona_create
+            point @update to zona_update
+            point @delete to zona_delete
+            break
+        }
+        default // "dmnsmesa"
+        {
+            @table_name = "dmnsmesa"
+
+            point @list to mesa_list
+            point @create to mesa_create
+            point @update to mesa_update
+            point @delete to mesa_delete
+
+            if @@(params,"$_action") == "generar" { point @create to generar_mesas }
+            break
+        }
+    }
+}

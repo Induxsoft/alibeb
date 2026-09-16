@@ -28,6 +28,8 @@ module "Controller configs"
 	do crudl.routes.entity("/alibeb_lineas/","alibeb_lineas")
 	do crudl.routes.entity("/alibeb_recetas/","alibeb_recetas")
 
+	do crudl.routes.entity("/plano-mesas/","plano_mesas")
+
 	do crudl.routes.entity("/gestion-kds/","gestion_kds")
 	do crudl.routes.entity("/gestion-meseros/","gestion_meseros")
 	do crudl.routes.entity("/gestion-prn/","gestion_prn")

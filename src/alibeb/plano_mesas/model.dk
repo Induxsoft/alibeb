@@ -1,0 +1,206 @@
+#include "dkli.dkh"
+#!
+module "Plano de mesas"
+{
+    @keyfield = "sys_pk"
+
+    // Manejador de excepciones común, propaga mensajes de error amigables.
+    function catch(&db,&params,&data)
+    {
+        code = last_error_code()
+        error = last_error()
+
+        if dbr.in_transaction(db) { do dbr.rollback(db) }
+        if isset("@@_action_context") { do dbr.apps.action.log() }
+
+        if isanyword(@@(params,"$_operation"),"create,update")
+        {
+            if contains(error,"Duplicate entry") { error = "Entrada duplicada, ya existe un registro con los mismos valores." }
+            do prepareView(db,params,data)
+        }
+        else if @@(params,"$_operation") == "delete"
+        {
+            if contains(error,"Cannot delete or update a parent row") || contains(error,"DELETE Error") {
+                error = "No es posible eliminar, existen mesas relacionadas a esta zona."
+            }
+        }
+
+        do clear_exceptions()
+        do rise_error(code,error)
+    }
+
+    function prepareView(&db,&params,&data)
+    {
+        // Sin datos auxiliares adicionales por ahora.
+    }
+
+    // ================= ZONA (dmnszona) =================
+
+    function zona_create(&db,&params,&data)
+    {
+        @use_transaction = @true
+        @just_read_entity = @true
+
+        // do dbr.apps.action.pre("TF_ZONA_CREATE:DET_ZONA:")
+        // do dbr.begin(db)
+
+        ref entity = entity.create(db,params,data)
+
+        // do dbr.apps.action.pos(entity)
+        // do dbr.commit(db)
+        // do dbr.apps.action.ext(entity)
+
+        return entity
+        exception{ do catch(db,params,data) }
+    }
+
+    function zona_update(&db,&params,&data)
+    {
+        do rise_error(500,"Acción no implementada")
+    }
+
+    function zona_delete(&db,&params)
+    {
+        @use_transaction = @false
+        @just_read_entity = @true
+
+        // do dbr.apps.action.pre("TF_ZONA_DELETE:DET_ZONA:_entity_id")
+        do dbr.begin(db)
+
+        do dbr.delete(db,"dmnsmesa","izona=@_entity_id",params)
+        do entity.delete(db,params)
+
+        // do dbr.apps.action.pos(@null)
+        do dbr.commit(db)
+        // do dbr.apps.action.ext(@null)
+
+        return @null
+        exception{ do catch(db,params,@null) }
+    }
+
+    // ================= MESA (dmnsmesa) =================
+
+    function mesa_list(&db,&params)
+    {
+        // do dbr.apps.action.grant("TF_MESA_LIST:DET_MESA:")
+
+        ref zonas = dbr.list(db,"SELECT sys_pk, id FROM dmnszona WHERE NOT ifnull(sys_deleted,0)",@null)
+
+        izona = @@(params,"#izona")
+        if izona < 1 {
+            if list.count(zonas) > 0 { izona = @@(list.obj(zonas,0),"#sys_pk") }
+        }
+        izona >> params
+        
+        ref mesas = dbr.list(db,"SELECT * FROM dmnsmesa WHERE NOT ifnull(sys_deleted,0) AND izona=@izona ORDER BY id",params)
+
+        zonas, mesas >> resp
+        return resp
+
+        exception{ do catch(db,params,@null) }
+    }
+
+    // Alta rápida: solo requiere "id" e "izona" (resto queda null / editable después)
+    function mesa_create(&db,&params,&data)
+    {
+        @use_transaction = @true
+        @just_read_entity = @true
+
+        // do dbr.apps.action.pre("TF_MESA_CREATE:DET_MESA:")
+        // do dbr.begin(db)
+
+        ref entity = entity.create(db,params,data)
+
+        // do dbr.apps.action.pos(entity)
+        // do dbr.commit(db)
+        // do dbr.apps.action.ext(entity)
+
+        return entity
+        exception{ do catch(db,params,data) }
+    }
+
+    function mesa_update(&db,&params,&data)
+    {
+        do rise_error(500,"Acción no implementada")
+    }
+
+    function mesa_delete(&db,&params)
+    {
+        @use_transaction = @true
+        @just_read_entity = @true
+
+        // do dbr.apps.action.pre("TF_MESA_DELETE:DET_MESA:_entity_id")
+        // do dbr.begin(db)
+
+        do entity.delete(db,params)
+
+        // do dbr.apps.action.pos(@null)
+        // do dbr.commit(db)
+        // do dbr.apps.action.ext(@null)
+
+        return @null
+        exception{ do catch(db,params,@null) }
+    }
+
+    // ================= GENERAR MESAS (operación custom) =================
+    // Alta masiva de mesas con prefijo/posfijo/inicio/fin/formato, sobre una
+    // zona dada. Se invoca vía AJAX directo (no es parte del CRUD-L estándar).
+    //
+    // datos esperados:
+    //   izona    -> sys_pk de la zona destino
+    //   prefijo  -> texto antes del consecutivo (opcional)
+    //   posfijo  -> texto después del consecutivo (opcional)
+    //   inicio   -> número inicial del consecutivo
+    //   fin      -> número final del consecutivo
+    //   formato  -> máscara de padding del consecutivo, ej: "00" -> 2 dígitos
+
+    function generar_mesas(&db,&params,&data)
+    {
+        @use_transaction = @true
+        @just_read_entity = @true
+
+        // do dbr.apps.action.grant("TF_MESA_CREATE:DET_MESA:")
+
+        izona    = @@(data,"#izona")
+        prefijo  = field.dstr(data,"prefijo","")
+        posfijo  = field.dstr(data,"posfijo","")
+        inicio   = @@(data,"#inicio")
+        fin      = @@(data,"#fin")
+        formato  = field.dstr(data,"formato","")
+        pad_len  = length(formato)
+
+        ref creadas = list.create()
+        ref con_error = list.create()
+
+        // do dbr.begin(db)
+
+        for n = inicio; n <= fin; n + 1
+        {
+            consecutivo = str(n)
+            if pad_len > 0 { consecutivo = padleft(consecutivo,pad_len,"0") }
+
+            id_mesa = prefijo + consecutivo + posfijo
+
+            new mesa_data
+            {
+                @"id": id_mesa
+                @"izona": izona
+            }
+
+            ref nueva = entity.create(db,params,mesa_data)
+            do list.add(creadas,nueva)
+
+            exception
+            {
+                mesa_data<"message"> : last_error()
+                do list.add(con_error,mesa_data)
+                do pop_exception()
+            }
+        }
+
+        // do dbr.commit(db)
+
+        creadas, con_error >> resp
+        return resp
+    }
+}

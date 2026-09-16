@@ -1,0 +1,157 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.v12.dkl"
+
+    do @context.begin(@crud_context)
+
+    ref zonas = ifnull(@("&./zonas"),list.create())
+    ref mesas = ifnull(@("&./mesas"),list.create())
+
+    function printNavButtons()
+    {
+        cls = "btn btn-main-action btn-sm border-secondary induxsoft-corners"
+        #$
+        button(class="#<cls> me-3" type="button" "data-bs-toggle"="modal" "data-bs-target"="#modal-generar-mesas"){"Generar mesas"}
+        button(class="#<cls>" type="button" onclick="pm.agregarMesa()"){"Agregar mesa"}
+        button(class="#<cls>" type="button" onclick="pm.eliminarMesaSeleccionada()"){"Eliminar mesa"}
+
+        button(class="#<cls>" type="button" onclick="pm.agregarZona()"){"Agregar zona"}
+        button(class="#<cls>" type="button" onclick="pm.eliminarZonaSeleccionada()"){"Eliminar zona"}
+
+        button(class="#<cls> d-lg-none" type="button" id="btn-toggle-zonas" onclick="pm.toggleZonas()"){"Zonas"}
+        #!
+    }
+    point buttons to printNavButtons
+    new nav_config
+    {
+        @"title": "Plano de mesas"
+        @"urlexit": "/"
+        @"buttons*": buttons
+
+        member @"hidden"
+        {
+            @"copy": @true
+            @"csv": @true
+            @"print": @true
+            @"send": @true
+        }
+    }
+    
+    #$
+    div(id="view")
+    {
+        link(href="/$/alibeb/_css/plano_mesas.css" rel="stylesheet"){""}
+
+        section(id="top_area")
+        {
+            #!
+            do uie.printV12FormBar(nav_config)
+            #$
+        }
+
+        // work_area es el contenedor de columnas: mesas (flexible) + zonas (auto, colapsable)
+        section(id="work_area" class="pm-work-area")
+        {
+            main(id="dmns-mesas" class="pm-col-mesas")
+            {""}
+
+            aside(id="dmns-zonas" class="pm-col-zonas")
+            {
+                div(class="w-auto h-100")
+                {
+                    "edit-table"(
+                        id="tbl-zonas"
+                        data='#<to.json(zonas)>'
+                        "hidde-selector"="true"
+                        "control-styles"="th{font-weight:500!important;}"
+                    )
+                    {
+                        "edit-thead"
+                        {
+                            "edit-tr"
+                            {
+                                "edit-th"(type="NoEditable" field="id" textalign="end"){"Zonas"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        section(id="bottom_area")
+        {
+            div(id="_custom_area")
+            {
+                // Modal: Generar mesas
+                div(class="modal fade" id="modal-generar-mesas" tabindex="-1" "aria-hidden"="true")
+                {
+                    div(class="modal-dialog")
+                    {
+                        div(class="modal-content induxsoft-corners")
+                        {
+                            div(class="modal-header py-2")
+                            {
+                                h6(class="modal-title mb-0"){"Generar mesas"}
+                                button(type="button" class="btn-close" "data-bs-dismiss"="modal" "aria-label"="Close"){""}
+                            }
+                            div(class="modal-body")
+                            {
+                                p(class="fw-bold mb-2"){"ID o número de mesa:"}
+                                div(class="row g-2 mb-2")
+                                {
+                                    div(class="col-6")
+                                    {
+                                        label(class="form-label mb-0" "for"="gm-prefijo"){"Prefijo:"}
+                                        input(class="form-control form-control-sm rounded-0" type="text" id="gm-prefijo" value="M")
+                                    }
+                                    div(class="col-6")
+                                    {
+                                        label(class="form-label mb-0" "for"="gm-posfijo"){"Posfijo:"}
+                                        input(class="form-control form-control-sm rounded-0" type="text" id="gm-posfijo" value="")
+                                    }
+                                }
+                                div(class="row g-2")
+                                {
+                                    div(class="col-4")
+                                    {
+                                        label(class="form-label mb-0" "for"="gm-inicio"){"Inicio:"}
+                                        input(class="form-control form-control-sm rounded-0" type="number" id="gm-inicio" value="1")
+                                    }
+                                    div(class="col-4")
+                                    {
+                                        label(class="form-label mb-0" "for"="gm-fin"){"Fin:"}
+                                        input(class="form-control form-control-sm rounded-0" type="number" id="gm-fin" value="1")
+                                    }
+                                    div(class="col-4")
+                                    {
+                                        label(class="form-label mb-0" "for"="gm-formato"){"Formato:"}
+                                        input(class="form-control form-control-sm rounded-0" type="text" id="gm-formato" value="00")
+                                    }
+                                }
+                            }
+                            div(class="modal-footer py-2")
+                            {
+                                button(type="button" class="btn btn-sm btn-primary rounded-0" onclick="pm.confirmarGenerarMesas()"){"Generar"}
+                                button(type="button" class="btn btn-sm btn-light rounded-0 border-dark" "data-bs-dismiss"="modal"){"Cancelar"}
+                            }
+                        }
+                    }
+                }
+
+                script(src="/$/alibeb/js/plano_mesas.js"){""}
+                script(type="text/javascript")
+                {$'
+                pm.zonas = #<to.json(zonas)>;
+                pm.mesas = #<to.json(mesas)>;
+                '}
+            }
+        }
+    }
+    #!
+
+    do @context.end()
+}
