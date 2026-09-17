@@ -2,6 +2,7 @@
 #!
 module "Plano de mesas"
 {
+    do errordet(@false)
     @keyfield = "sys_pk"
 
     // Manejador de excepciones común, propaga mensajes de error amigables.
@@ -38,17 +39,17 @@ module "Plano de mesas"
 
     function zona_create(&db,&params,&data)
     {
-        @use_transaction = @true
+        @use_transaction = @false
         @just_read_entity = @true
 
-        // do dbr.apps.action.pre("TF_ZONA_CREATE:DET_ZONA:")
-        // do dbr.begin(db)
+        do dbr.apps.action.pre("CA81")
+        do dbr.begin(db)
 
         ref entity = entity.create(db,params,data)
 
-        // do dbr.apps.action.pos(entity)
-        // do dbr.commit(db)
-        // do dbr.apps.action.ext(entity)
+        do dbr.apps.action.pos(entity)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(entity)
 
         return entity
         exception{ do catch(db,params,data) }
@@ -64,15 +65,15 @@ module "Plano de mesas"
         @use_transaction = @false
         @just_read_entity = @true
 
-        // do dbr.apps.action.pre("TF_ZONA_DELETE:DET_ZONA:_entity_id")
+        do dbr.apps.action.pre("CA83")
         do dbr.begin(db)
 
         do dbr.delete(db,"dmnsmesa","izona=@_entity_id",params)
         do entity.delete(db,params)
 
-        // do dbr.apps.action.pos(@null)
+        do dbr.apps.action.pos(@null)
         do dbr.commit(db)
-        // do dbr.apps.action.ext(@null)
+        do dbr.apps.action.ext(@null)
 
         return @null
         exception{ do catch(db,params,@null) }
@@ -82,17 +83,24 @@ module "Plano de mesas"
 
     function mesa_list(&db,&params)
     {
-        // do dbr.apps.action.grant("TF_MESA_LIST:DET_MESA:")
+        do dbr.apps.action.grant("CA80")
 
         ref zonas = dbr.list(db,"SELECT sys_pk, id FROM dmnszona WHERE NOT ifnull(sys_deleted,0)",@null)
 
         izona = @@(params,"#izona")
-        if izona < 1 {
-            if list.count(zonas) > 0 { izona = @@(list.obj(zonas,0),"#sys_pk") }
-        }
+        // if izona < 1 {
+        //     if list.count(zonas) > 0 { izona = @@(list.obj(zonas,0),"#sys_pk") }
+        // }
         izona >> params
         
-        ref mesas = dbr.list(db,"SELECT * FROM dmnsmesa WHERE NOT ifnull(sys_deleted,0) AND izona=@izona ORDER BY id",params)
+        ref mesas = dbr.list(db,"
+        SELECT *
+        FROM dmnsmesa
+        WHERE
+            NOT ifnull(sys_deleted,0)
+            AND if(@izona>0, izona=@izona, TRUE)
+        ORDER BY izona, id
+        ",params)
 
         zonas, mesas >> resp
         return resp
@@ -103,17 +111,17 @@ module "Plano de mesas"
     // Alta rápida: solo requiere "id" e "izona" (resto queda null / editable después)
     function mesa_create(&db,&params,&data)
     {
-        @use_transaction = @true
+        @use_transaction = @false
         @just_read_entity = @true
 
-        // do dbr.apps.action.pre("TF_MESA_CREATE:DET_MESA:")
-        // do dbr.begin(db)
+        do dbr.apps.action.pre("CA84")
+        do dbr.begin(db)
 
         ref entity = entity.create(db,params,data)
 
-        // do dbr.apps.action.pos(entity)
-        // do dbr.commit(db)
-        // do dbr.apps.action.ext(entity)
+        do dbr.apps.action.pos(entity)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(entity)
 
         return entity
         exception{ do catch(db,params,data) }
@@ -126,17 +134,17 @@ module "Plano de mesas"
 
     function mesa_delete(&db,&params)
     {
-        @use_transaction = @true
+        @use_transaction = @false
         @just_read_entity = @true
 
-        // do dbr.apps.action.pre("TF_MESA_DELETE:DET_MESA:_entity_id")
-        // do dbr.begin(db)
+        do dbr.apps.action.pre("CA86")
+        do dbr.begin(db)
 
         do entity.delete(db,params)
 
-        // do dbr.apps.action.pos(@null)
-        // do dbr.commit(db)
-        // do dbr.apps.action.ext(@null)
+        do dbr.apps.action.pos(@null)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(@null)
 
         return @null
         exception{ do catch(db,params,@null) }
@@ -159,7 +167,7 @@ module "Plano de mesas"
         @use_transaction = @true
         @just_read_entity = @true
 
-        // do dbr.apps.action.grant("TF_MESA_CREATE:DET_MESA:")
+        do dbr.apps.action.grant("CA84")
 
         izona    = @@(data,"#izona")
         prefijo  = field.dstr(data,"prefijo","")

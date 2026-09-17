@@ -100,6 +100,22 @@ var pm = {
         this.pintarMesas();
     },
 
+    // -------------------- Utilidades --------------------
+
+    // Procesa la respuesta de un fetch: si no es ok, intenta leer el JSON
+    // del error y usar su "message"; si no viene, usa fallbackMsg.
+    handleResponse(r, fallbackMsg)
+    {
+        if (r.ok) return r.json().catch(() => null);
+
+        return r.json()
+            .catch(() => null)
+            .then(body => {
+                const msg = (body && body.message) ? body.message : fallbackMsg;
+                throw new Error(msg);
+            });
+    },
+
     // -------------------- Mesas: alta / baja --------------------
 
     agregarMesa()
@@ -117,7 +133,7 @@ var pm = {
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ id: id, izona: this.zonaActualId })
         })
-        .then(r => { if (!r.ok) throw new Error('No fue posible crear la mesa.'); return r.json(); })
+        .then(r => this.handleResponse(r, 'No fue posible crear la mesa.'))
         .then(nueva => {
             this.mesas.push(nueva);
             this.pintarMesas();
@@ -142,7 +158,7 @@ var pm = {
             method: 'DELETE',
             headers: { 'Accept': 'application/json' }
         })
-        .then(r => { if (!r.ok) throw new Error('No fue posible eliminar la mesa.'); })
+        .then(r => this.handleResponse(r, 'No fue posible eliminar la mesa.'))
         .then(() => {
             this.mesas = this.mesas.filter(m => m.sys_pk != sysPk);
             if (this.mesaSeleccionadaId === sysPk) this.mesaSeleccionadaId = null;
@@ -183,7 +199,7 @@ var pm = {
                 formato: formato
             })
         })
-        .then(r => { if (!r.ok) throw new Error('No fue posible generar las mesas.'); return r.json(); })
+        .then(r => this.handleResponse(r, 'No fue posible generar las mesas.'))
         .then(resultado => {
             (resultado.creadas || []).forEach(m => this.mesas.push(m));
             this.pintarMesas();
@@ -204,7 +220,7 @@ var pm = {
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ id: id })
         })
-        .then(r => { if (!r.ok) throw new Error('No fue posible crear la zona.'); return r.json(); })
+        .then(r => this.handleResponse(r, 'No fue posible crear la zona.'))
         .then(nueva => {
             this.tblzonas.DataArray.push(nueva);
             this.tblzonas._printRows();
@@ -237,7 +253,7 @@ var pm = {
             method: 'DELETE',
             headers: { 'Accept': 'application/json' }
         })
-        .then(r => { if (!r.ok) throw new Error('No fue posible eliminar la zona (verifica que no tenga mesas asociadas).'); })
+        .then(r => this.handleResponse(r, 'No fue posible eliminar la zona (verifica que no tenga mesas asociadas).'))
         .then(() => {
             const index = this.tblzonas.DataArray.findIndex(o => o.sys_pk == sysPk);
             if (index > -1) this.tblzonas.DeleteRow(index);

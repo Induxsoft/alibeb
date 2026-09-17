@@ -30,3 +30,11 @@ CA63,Eliminar configuración prn,alibeb.config_prn_cp
 CA70,Acceder a la configuración de impresión del dispositivo,alibeb
 CA71,Cancelar cuenta,alibeb
 CA72,Descuento por cortesía,alibeb
+alibeb.plano_mesas,Plano de mesas,alibeb
+CA80,Plano de mesas,alibeb.plano_mesas
+CA81,Crear zona de mesa,alibeb.plano_mesas
+CA82,Editar zona de mesa,alibeb.plano_mesas
+CA83,Eliminar zona de mesa,alibeb.plano_mesas
+CA84,Agregar mesa,alibeb.plano_mesas
+CA85,Editar mesa,alibeb.plano_mesas
+CA86,Eliminar mesa,alibeb.plano_mesas
