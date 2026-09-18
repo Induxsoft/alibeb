@@ -83,13 +83,15 @@ module "lista de consultas"
 
 	@flag="select ifnull(d.bandera,0) bandera from dmnsmesa d where d.id=@code"
 
-	@available="select d.personas from dmnsmesa d where d.id=@code"
+	@available="select ifnull(d.personas,0) from dmnsmesa d where d.id=@code"
 
 	@exist_table="select dmnsmesa from  venta v INNER JOIN agente a ON v.iagente=a.sys_pk
-                where v.dmnsmesa=@code and v.StatusAdministrativo<3;"
+                where v.dmnsmesa=@code and v.StatusAdministrativo<3
+                AND v.icconsumo=@cc;"
 
     @table_paid="select ifnull(v.sys_pk,0)pk_venta from  venta v INNER JOIN agente a ON v.iagente=a.sys_pk
                 where v.dmnsmesa=@code 
+                and v.icconsumo=@cc
                 and v.StatusAdministrativo<>3 
                 and v.statusentrega<>3
                 and v.StatusAdministrativo<>99
@@ -494,7 +496,11 @@ module "lista de consultas"
                         cfg.i4venta,
                         p.unidad,
                         dv.sys_pk dventa,
-                        dv.sys_guid as id_dventa
+                        dv.sys_guid as id_dventa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i1venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i1_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i2venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i2_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i3venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i3_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i4venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i4_tasa
                         FROM dventa dv INNER JOIN producto p ON dv.iproducto=p.Sys_PK 
                         INNER JOIN cfgimpuesto cfg ON p.Impuestos=cfg.Sys_PK 
 						left join dorden on dorden.sys_guid=dv.sys_guid

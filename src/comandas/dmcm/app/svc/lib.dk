@@ -2501,8 +2501,11 @@ module "lib.dk"
         
         ref record=record.create()
 
+        pos_ag_show_zown=parse.bool(GetVars("pos_ag_show_zown"))
+        if not(pos_ag_show_zown){do field.remove(params,"zone")}
         //consulta para obtener las mesas de la zona
         ref mesas_zona=dbr.list(db,@list_mesas_zona,params)
+        ref ag=get.data.agent(db,@@(params,"$waiter"))
         
         for i=0;i<@count(mesas_zona)
         {
@@ -2530,7 +2533,6 @@ module "lib.dk"
             mz<"flag">:dbr.num(db,@flag,p)
             mz<"img">:@icon_mesa
             record<@@(mz,"code")+"*">:mz
-
         }
 
         //consulta para obetener las mesas del mesero y del cc
@@ -2538,45 +2540,64 @@ module "lib.dk"
         for i=0;i<@count(mesas_waiter_cc)
         {
             ref itm=@item(mesas_waiter_cc,i)
-            service=trim(@@(itm,"$service"))
-            key_code=replace(ranychars(@@(itm,"$code"),"/,[]{}"," ")," ","")
             
-            if service == "FF"{itm<"img">:@icon_mesa_ff}
-            else if service == "DS"{itm<"img">:@icon_mesa_ds}
-            else{itm<"img">:@icon_mesa}
+            continue = @true
 
-            new p
+            if @@(ag,"#zn") > 0 && pos_ag_show_zown
             {
-                @"cliente":@@(itm,"#cliente")
-                @"cc":@@(itm,"#icc")
-                @"ag":@@(itm,"#ag")
-                @"code":key_code
+                itm<"zn">:@@(ag,"#zn")
+                ref dmns_zn=dbr.rec(db,"SELECT ifnull(izona,0)zn,id FROM dmnsmesa where trim(id)=trim(@code) ",itm)
+                izone=dbr.num(db,"SELECT ifnull(izona,0) FROM dmnsmesa where trim(id)=trim(@code) and izona=@zn",itm)
+
+                if not(isnull(dmns_zn)) && @@(dmns_zn,"#zn") != izone
+                {
+                    continue = @false
+                }
             }
             
-            itm<"customer*">:dbr.rec(db,@customer,p)
-            itm<"cc*">:dbr.rec(db,@cc,p)
-            itm<"waiter*">:dbr.rec(db,@waiter,p)
-            itm<"owner">:""
-            itm<"lifespan*">:get.lifespan(db,@@(itm,"sys_pk"))
-
-            ref joined_tables=split(@@(p,"code"),"+")
-            
-            available=0
-            for j=0;j<list.count(joined_tables)
+            if continue 
             {
-                new pa{@"code":list.str(joined_tables,j)}
-                available=available + dbr.num(db,@available,pa)
-            }
-            if available==0{available =@@(itm,"#occupied_seats")}
-            
-            itm<"available_seats">:available
-            itm<"flag">:dbr.num(db,@flag,p)
+                service=trim(@@(itm,"$service"))
+                key_code=replace(ranychars(@@(itm,"$code"),"/,[]{}"," ")," ","")
+                
+                if service == "FF"{itm<"img">:@icon_mesa_ff}
+                else if service == "DS"{itm<"img">:@icon_mesa_ds}
+                else{itm<"img">:@icon_mesa}
 
-            do field.remove(itm,"cliente")
-            do field.remove(itm,"icc")
-            do field.remove(itm,"ag")
-            
-            record<key_code+"*">:itm
+                new p
+                {
+                    @"cliente":@@(itm,"#cliente")
+                    @"cc":@@(itm,"#icc")
+                    @"ag":@@(itm,"#ag")
+                    @"code":key_code
+                }
+                
+                itm<"customer*">:dbr.rec(db,@customer,p)
+                itm<"cc*">:dbr.rec(db,@cc,p)
+                itm<"waiter*">:dbr.rec(db,@waiter,p)
+                itm<"owner">:""
+                itm<"lifespan*">:get.lifespan(db,@@(itm,"sys_pk"))
+
+                ref joined_tables=split(@@(p,"code"),"+")
+                
+                available=0
+                for j=0;j<list.count(joined_tables)
+                {
+                    new pa{@"code":list.str(joined_tables,j)}
+                    available=available + dbr.num(db,@available,pa)
+                }
+                
+                if available==0{available =@@(itm,"#occupied_seats")}
+                
+                itm<"available_seats">:available
+                itm<"flag">:dbr.num(db,@flag,p)
+
+                do field.remove(itm,"cliente")
+                do field.remove(itm,"icc")
+                do field.remove(itm,"ag")
+                
+                record<key_code+"*">:itm
+            }
         }
         
         //lista para definir todas las mesas
@@ -2596,7 +2617,7 @@ module "lib.dk"
         if trim(@@(params,"$sql"))==""{sql=@list_ordenes}
         else{sql=@@(params,"$sql")}
         
-        ref ordenes=dbr.list(db,sql,params)
+        ref ordenes=dbr.list(db,ftext(sql),params)
 
         ref data=list.create()
 
@@ -2614,6 +2635,7 @@ module "lib.dk"
                 ref itm=@item(adds,j)
                 itm<"importe">:aplImpuestos(@@(itm,"#precio"),parseImpuesto(@@(itm,"i1venta"),@zonaImpuesto),parseImpuesto(@@(itm,"i2venta"),@zonaImpuesto),parseImpuesto(@@(itm,"i3venta"),@zonaImpuesto),parseImpuesto(@@(itm,"i4venta"),@zonaImpuesto))
             }
+
             using row
             {
                 @"unidad":@@(rsource,"$unidad")
@@ -2635,6 +2657,11 @@ module "lib.dk"
                 @"_precio":@@(rsource,"#precio") //sin impuesto
                 @"_total":(@@(rsource,"#precio")*@@(rsource,"#cantidad")) - (@@(rsource,"#d1") + @@(rsource,"#d2")) //sin impuesto
                 @"dventa":@@(rsource,"#dventa")
+                
+                @"i1_tasa":@@(rsource,"#i1_tasa")
+                @"i2_tasa":@@(rsource,"#i2_tasa")
+                @"i3_tasa":@@(rsource,"#i3_tasa")
+                @"i4_tasa":@@(rsource,"#i4_tasa")
             }
 
             if @@(rsource,"#dventa") < 1 && trim(@@(rsource,"$id_dventa")) !=""
@@ -3181,12 +3208,35 @@ module "lib.dk"
     
     exist.table::&db,&params,&data
     {
+        ref params=record.copyex(params,data,"*",",","",":")
         params<"code">:trim(@@(data,"$table"))
         params<"waiter">:trim(@@(data,"$waiter"))
-
+        
         idtable=dbr.str(db,@exist_table,params)
-
+        
         if idtable!=""{do rise_error(99,"Ya existe una mesa con el mismo nombre")}
+
+        /*
+         * Summary:
+         * - validar variable
+        */
+
+        if parse.bool(GetVars("pos_ag_open_zown"))
+        {
+            izona_table=dbr.num(db,"SELECT ifnull(sys_pk,0) from dmnsmesa where trim(id)=trim(@table)",params)
+            
+            if izona_table > 0
+            {
+                ref ag=get.data.agent(db,@@(params,"$waiter"))       
+                params<"zn">:@@(ag,"#zn")
+
+                izone=dbr.num(db,"SELECT ifnull(izona,0) FROM dmnsmesa where trim(id)=trim(@code) and izona=@zn",params)     
+                if @@(ag,"#zn") > 0 && izone != @@(ag,"#zn")
+                {
+                    do rise_error(500,"El vendedor no puede abrir la cuenta de la zona a la que pertenece la venta seleccionada")
+                }
+            }
+        }
 
         ispaid=dbr.num(db,@table_paid,params)
         if ispaid > 0{do rise_error(500,"La cuenta de la mesa no ha sido cobrada.")}
@@ -4433,11 +4483,13 @@ module "lib.dk"
         ref data=ifnull(data,record.create())
 
         ref zone=dbr.rec(db,@getzone,data)
+        ref cajero=dbr.rec(db,"SELECT codigo,nombre from cajero where sys_pk=@cajero",params)
         new d
         {
-            @"key":@@(data,"codigo")
-            @"caption":@@(data,"nombre")
+            @"key":ifstr(trim(@@(data,"codigo"))!="",@@(data,"codigo"),@@(cajero,"$codigo"))
+            @"caption":ifstr(trim(@@(data,"nombre"))!="",@@(data,"nombre"),@@(cajero,"$nombre"))
             @"zone":@@(zone,"descripcion")
+            @"zn":@@(zone,"#sys_pk")
             @"cc":dbr.num(db,"select centroconsumo from caja where sys_pk=@caja",params)
             @"idcaja":@@(postData,"$caja")
             @"idcajero":@@(postData,"$cajero")
@@ -4548,22 +4600,25 @@ module "lib.dk"
             ref cajero=dbr.rec(db,"select sys_pk,codigo,nombre,agente from cajero where codigo=@idcajero",json)
             if isnull(cajero){return @false}
 
-            if @@(cajero,"#agente")< 1{do rise_error(500,"El cajero no tiene un agente relacionado para continuar")}
+            // if @@(cajero,"#agente")< 1{do rise_error(500,"El cajero no tiene un agente relacionado para continuar")}
 
             ref dmtmmn=dbr.rec(db,"SELECT * FROM ut_dm_tmm u WHERE u.agente=@agente",cajero)
-            if isnull(dmtmmn){do rise_error(500,"Se encontró una relación entre el cajero y el agente pero, no hay una configuración de centro de consumo")}
+            // if isnull(dmtmmn){do rise_error(500,"Se encontró una relación entre el cajero y el agente pero, no hay una configuración de centro de consumo")}
 
             ref zone=dbr.rec(db,@getzone,dmtmmn)
             ref agente=dbr.rec(db,"select codigo,nombre from agente where sys_pk=@agente",cajero)
             
-            if @@(dmtmmn,"#cc") < 1{do rise_error(500,"No hay un centro de consumo configurado para el cajero")}
+            // if @@(dmtmmn,"#cc") < 1{do rise_error(500,"No hay un centro de consumo configurado para el cajero")}
+            cc=@@(dmtmmn,"#cc")
+            if cc < 1{cc=dbr.num(db,"select centroconsumo from caja where codigo=@idcaja",json)}
 
             using json
             {
-                @"key":@@(agente,"$codigo")
-                @"caption":@@(agente,"$nombre")
+                @"key":@@(cajero,"$codigo")
+                @"caption":@@(cajero,"$nombre")
                 @"zone":@@(zone,"$descripcion")
-                @"cc":@@(dmtmmn,"#cc")
+                @"zn":@@(zone,"#sys_pk")
+                @"cc":cc
             }
 
             data<"waiter">:@@(agente,"$codigo")
@@ -4583,6 +4638,16 @@ module "lib.dk"
 
         
         return @true
+    }
+    get.data.agent::&db,agent
+    {
+        agent >> params
+
+        sql="SELECT u.*,a.codigo , a.sys_guid FROM ut_dm_tmm u
+        INNER JOIN agente a ON u.agente=a.sys_pk
+        WHERE a.sys_pk=@agent OR a.sys_guid=@agent OR a.codigo=@agent;"
+
+        return dbr.rec(db,sql,params)
     }
     update.datatoken::&db,&params
     {

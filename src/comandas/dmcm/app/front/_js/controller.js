@@ -1061,6 +1061,12 @@ var controller=
           alert(error.message);
         },"PUT",false);
       }
+      
+      if(idview.trim()=="" && window.ebrowser)
+      {
+        ebrowser.apps.exit();
+        return;
+      }
       if(token!="")
         params+="&dmtm_token="+token;
       if(ws!="" && idview!="vw_workspace")

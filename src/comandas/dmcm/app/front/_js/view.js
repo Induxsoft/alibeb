@@ -3148,7 +3148,15 @@ function mostrarModalPromociones(promociones, venta) {
 }
 setTimeout(()=>
 {
-      if(debugVisible)abrirDebug(false);
+      if(debugVisible)
+      {
+            let interval_debug=setInterval(() => 
+            {
+                  abrirDebug(false);
+                  let display=document.querySelector(".vc-switch")?.style?.display || "none";
+                  if(display!="none")clearInterval(interval_debug);
+            }, 1000);
+      }
 },800);
 
 window.addEventListener("resize",
