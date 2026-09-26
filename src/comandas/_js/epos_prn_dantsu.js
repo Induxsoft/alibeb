@@ -16,6 +16,10 @@ function dantsu_printer(lineas,meta)
             const linea = lineas[i];
             o.printText(linea);
         }
+        
+        o.printText("\n \n");
+        o.printText("\n \n");
+        o.printText("\n \n");
 
         setTimeout(() => {
             o.openCashDrawer();
