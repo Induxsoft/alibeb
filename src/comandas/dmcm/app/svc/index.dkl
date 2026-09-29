@@ -10,7 +10,7 @@ module "index.dkl"
 	#include "dbr.apps.dkl"
 	#include "dbr.security.dkl"
 
-	@SITE_INCLUDES="config.dk,lib.dk,list_query.dk,impuesto.dk"
+	@SITE_INCLUDES="config.dk,lib.dk,impuesto.dk,list_query.dk"
 	#include "website.dkl"
 	do _map_function(@lib_dbr,"induxsoft.Connections.Manager","ResetStorage","reset","void","void")
 	

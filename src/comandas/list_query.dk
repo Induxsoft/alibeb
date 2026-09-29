@@ -199,8 +199,8 @@ module "lista de consultas"
                 inner join venta v on o.iventa=v.sys_pk
                 inner join producto p on d.iproducto=p.sys_pk
                 where v.sys_pk=@sys_pk and p.iclase=2
-                group by d.iproducto, d.precio
-                AND IF(IFNULL(@dorden,0)> 0,d.sys_pk=@dorden,true);"
+                AND IF(IFNULL(@dorden,0)> 0,d.sys_pk=@dorden,true)
+                group by d.sys_pk;"
 
     @totaldventa="select ifnull(sum(dv.precio*dv.cantidad),0) subtotal, ifnull(sum(dv.descuento1),0)d1,ifnull(sum(dv.descuento2),0)d2,ifnull(sum(dv.impuesto1),0)i1,ifnull(sum(dv.impuesto2),0)i2,
                 ifnull(sum(dv.impuesto3),0)i3,ifnull(sum(dv.impuesto4),0)i4 from dventa dv inner join producto p on dv.iproducto=p.sys_pk where dv.fk_venta_detalle=@sys_pk" 
@@ -472,7 +472,15 @@ module "lista de consultas"
                         dorden.cantidad,producto.descripcion,dorden.especificaciones,dorden.precio,dorden.d1,dorden.d2,dorden.tiemposervicio as tiempo, 
                         cfgimpuesto.i1venta,cfgimpuesto.i2venta,cfgimpuesto.i3venta,cfgimpuesto.i4venta,producto.unidad,
                         0 dventa,
-                        dorden.sys_guid as id_dventa
+                        dorden.sys_guid as id_dventa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfgimpuesto.i1venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i1_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfgimpuesto.i2venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i2_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfgimpuesto.i3venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i3_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfgimpuesto.i4venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i4_tasa,
+                        0 impuesto1,
+                        0 impuesto2,
+                        0 impuesto3,
+                        0 impuesto4
                         from (dorden inner join (orden inner join 
                         venta on orden.iventa=venta.sys_pk) on dorden.fk_orden_detalle=orden.sys_pk) 
                         inner join (producto inner join cfgimpuesto on producto.impuestos=cfgimpuesto.sys_pk) on dorden.iproducto=producto.sys_pk 
@@ -497,10 +505,14 @@ module "lista de consultas"
                         p.unidad,
                         dv.sys_pk dventa,
                         dv.sys_guid as id_dventa,
-                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i1venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i1_tasa,
-                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i2venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i2_tasa,
-                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i3venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i3_tasa,
-                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i4venta, '|', #<@zonaImpuesto>),'%',''), DECIMAL(18,6)) / 100) AS i4_tasa
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i1venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i1_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i2venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i2_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i3venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i3_tasa,
+                        (CONVERT(REPLACE(SUBSTRING_INDEX(cfg.i4venta, '|', #<@zonaImpuesto_sub_index>),'%',''), DECIMAL(18,6)) / 100) AS i4_tasa,
+                        dv.impuesto1,
+                        dv.impuesto2,
+                        dv.impuesto3,
+                        dv.impuesto4
                         FROM dventa dv INNER JOIN producto p ON dv.iproducto=p.Sys_PK 
                         INNER JOIN cfgimpuesto cfg ON p.Impuestos=cfg.Sys_PK 
 						left join dorden on dorden.sys_guid=dv.sys_guid

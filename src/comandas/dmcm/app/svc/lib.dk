@@ -2662,6 +2662,10 @@ module "lib.dk"
                 @"i2_tasa":@@(rsource,"#i2_tasa")
                 @"i3_tasa":@@(rsource,"#i3_tasa")
                 @"i4_tasa":@@(rsource,"#i4_tasa")
+                @"impuesto1":@@(rsource,"#impuesto1")
+                @"impuesto2":@@(rsource,"#impuesto2")
+                @"impuesto3":@@(rsource,"#impuesto3")
+                @"impuesto4":@@(rsource,"#impuesto4")
             }
 
             if @@(rsource,"#dventa") < 1 && trim(@@(rsource,"$id_dventa")) !=""
@@ -3708,7 +3712,7 @@ module "lib.dk"
         {
             ref itm_details=@item(details,i)
             ref prodcenter=@@(itm_details,"&prodcenter")
-            
+            // do rise_error(0,to.json(@@(itm_details,"&variables")))
             code_prodcer=trim(@@(prodcenter,"$code"))
             if code_prodcer == ""{code_prodcer=md5(@@(itm_details,"$sku/sku"))}
 
@@ -3745,7 +3749,7 @@ module "lib.dk"
         ref sku=@@(itm_details,"&sku")
         ref order=record.create()
         ref list_dorden=list.create()
-
+        
         @isventa=@false
         ref dorden=table.dorden(db,itm_details,postData)
         if isnull(dorden)
@@ -3757,24 +3761,42 @@ module "lib.dk"
         
         campo=campoPrecioR5(@PrecioVenta)
         dorden<"precio">:dbr.num(db,ftext("select #<campo> from producto where sys_pk=@sys_pk"),sku)
+
         if not(isnull(@@(dic_orders,"&"+clave)))
         {
             ref data=@@(dic_orders,"&"+clave)
             ref details=@@(data,"&dorden")
+            
+            key= @@(sku,"$sys_pk") + "|" + @@(dorden,"$precio") + md5(trim(@@(itm_details,"$notes")))
 
-            key=@@(sku,"$sys_pk")+"|"+@@(dorden,"$precio")+md5(trim(@@(itm_details,"$notes")))
-            // key=@@(sku,"$sys_pk")+"|"+@@(dt_imp,"$total")+md5(trim(@@(itm_details,"$notes")))
+            /*
+             * Summary:
+             * - si contiene variables crear otra dorden
+            */
+            new_key=@count(@@(itm_details,"&options")) > 0
+
+            if not(new_key) && not(isnull(@@(itm_details,"&variables")))
+            {
+                if @count(list.create_from_fields(@@(itm_details,"&variables"))) > 0
+                {
+                    new_key = @true
+                }
+            }
+
+            if new_key { key= key + uuid() }
+            // =======================================
+            
             flag=@false
             for i=0;i<@count(details)
             {
                 ref or=@item(details,i)
                 
-                keyn=@@(or,"$iproducto")+"|"+@@(or,"$precio")+md5(trim(@@(or,"$especificaciones")))
+                keyn=@@(or,"$iproducto") + "|" + @@(or,"$precio") + md5(trim(@@(or,"$especificaciones")))
                 
-                if key==keyn
+                if key == keyn && @count(@@(or,"&adds")) < 1
                 {
                     flag=@true
-                    or<"cantidad">:@@(or,"#cantidad")+@@(itm_details,"#quantity")
+                    or<"cantidad">: @@(or,"#cantidad") + @@(itm_details,"#quantity")
                 }
                 do list.add(list_dorden,or)
             }
@@ -3906,7 +3928,7 @@ module "lib.dk"
             @"D1":0
             @"D2":0
             @"TiempoProduccion":0
-            @"especificaciones":@@(itm_details,"$notes")
+            @"especificaciones":replace(@@(itm_details,"$notes"),"\n",", ")
             @"TiempoServicio":@@(itm_details,"#time")
             @"TipoCambio":dbr.num(db,"select tcambio from divisa where sys_pk=@idivisa",product)
             @"IDivisa":@@(product,"#idivisa")
@@ -4106,7 +4128,7 @@ module "lib.dk"
                         ref add=@item(adds,a)
                         if trim(@@(add,"notes"))!=""
                         {
-                            especifications=especifications + @@(add,"notes")
+                            especifications = ifstr(trim(especifications) != "",especifications + ", ","")  + @@(add,"notes")
                         }
                         else
                         {
@@ -4162,6 +4184,7 @@ module "lib.dk"
         }
         
         ref dtventa=dbr.list(db,@getdorden,dataVenta)
+        
         do insert.dventa(db,record.copy(dventa,"*"),dtventa)
         do insert.dventa(db,record.copy(dventa,"*"),@@(postData,"&dventas"))
 
