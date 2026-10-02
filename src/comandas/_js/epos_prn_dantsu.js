@@ -16,14 +16,12 @@ function dantsu_printer(lineas,meta)
             const linea = lineas[i];
             o.printText(linea);
         }
-        
-        o.printText("\n \n");
-        o.printText("\n \n");
-        o.printText("\n \n");
 
-        setTimeout(() => {
-            o.openCashDrawer();
-        }, 1000);
+        o.printText("\n \n");
+        o.printText("\n \n");
+        o.printText("\n \n");
+        
+        o.openCashDrawer();
     });
 }
 function dantsu_register()
@@ -44,6 +42,7 @@ function createDriver_generic(){
         flag_cut:false,
         flag_cash:false,
         align:"",
+        time_send_print:1000,
         connect:function(device,success,fail)
         {
             if(!dsEscPrn)
@@ -61,7 +60,7 @@ function createDriver_generic(){
                     dsEscPrn.openPrinterUSB(device.dpi, device.printWidth, device.charsPerLine);
                     break;
                 case "bluetooth":
-                    dsEscPrn.openPrinterBluetooth(device.dpi, device.printWidth, device.charsPerLine);
+                    dsEscPrn.openPrinterBluetooth(Number(device.dpi), Number(device.printWidth), Number(device.charsPerLine));
                     break;
             }
             if(success)success("conectado");
@@ -205,16 +204,19 @@ function createDriver_generic(){
         cut:async function(txt="")
         {
             // dsEscPrn.printFormattedText(this.buffer);
-
-            await this.formatOutPrintText(txt);
-            dsEscPrn.printFormattedTextAndCut(this.buffer); //"[L]\n"+
-            this.buffer="";
+            setTimeout(async () => {
+                await this.formatOutPrintText(txt);
+                dsEscPrn.printFormattedTextAndCut(this.buffer); //"[L]\n"+
+                this.buffer="";
+            }, this.time_send_print);
         },
         openCashDrawer:async function(txt="")
         {
-            await this.formatOutPrintText(txt);
-            dsEscPrn.printFormattedTextAndOpenCashBox(this.buffer,0);//"[L]\n"+
-            this.buffer="";
+            setTimeout(async () => {
+                await this.formatOutPrintText(txt);
+                dsEscPrn.printFormattedTextAndOpenCashBox(this.buffer,0);//"[L]\n"+
+                this.buffer="";
+            }, this.time_send_print);
         }
     };
     return o;

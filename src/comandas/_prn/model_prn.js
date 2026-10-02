@@ -318,7 +318,9 @@ var model_prn=
             for (let i = 0; i < data.length; i++) 
             {
                 const element = data[i];
-                html+=`<option value="${element.name}" data-value='${JSON.stringify(element)}'>${element.name} - ${element.type.default??""} </option>`
+                let text=element.name.includes("-") ? element.name : element.name + " - " +  (element.type.default??"");
+
+                html+=`<option value="${element.name}" data-value='${JSON.stringify(element)}'>${text}</option>`
             }
 
             return html;

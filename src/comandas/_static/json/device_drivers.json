@@ -20,5 +20,16 @@
         "dpi":203,
         "printWidth":60,
         "charsPerLine":46
+    },
+    {
+        "name":"Generic - bluetooth",
+        "driver":"generic",
+        "type":{"default":"bluetooth"},
+        "address":"192.168.0.87",
+        "port":9100,
+        "timeout":150,
+        "dpi":203,
+        "printWidth":60,
+        "charsPerLine":46
     }
 ]
