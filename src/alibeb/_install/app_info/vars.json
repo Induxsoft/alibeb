@@ -126,5 +126,42 @@
                 }
             }
         ]
+    },
+    {
+        "id": "alibeb.views",
+        "parent":"alibeb",
+        "caption": "Interfaces / Vistas",
+        "help": "Ajustar el diseño de las vistas",
+        "vars": [
+            {
+                "varname": "alibeb.producto.max_rows",
+                "vardefault": "250",
+                "varvalue": "250",
+                "varcaption": "Mostrar las primeras N recetas",
+                "varhelp": "Máximo de filas a mostrar en: \"Catálogo de recetas\"",
+                "vartype": "int",
+                "varinput": { "control": "number" }
+            },
+            {
+                "varname": "alibeb.producto.pagination",
+                "vardefault": "0",
+                "varvalue": "0",
+                "varcaption": "Paginar lista de recetas",
+                "varhelp": "Habilitar la paginación en: \"Catálogo de recetas\"",
+                "vartype": "bool",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"list",
+                        "values":[
+                            {"val":"1", "text":"Sí"},
+                            {"val":"0", "text":"No"}
+                        ],
+                        "showfield":"text",
+                        "keyfield":"val"
+                    }
+                }
+            }
+        ]
     }
 ]

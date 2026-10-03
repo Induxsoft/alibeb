@@ -20,7 +20,11 @@ module "list.dk"
     new table_definition
     {
         @"datatable*": productos
+        @"pagination": @("#./pagination")
+        @"rows_per_page": @("#./max_rows")
+        @"tableheight": ifstr(@("#./pagination"), "70vh", "75vh")
         @"table_footer": "Mostrando los primeros # productos ordenados por código"
+
         member @"columns"
         {
             member @"codigo" { @"caption":"Código" }
@@ -76,11 +80,12 @@ module "list.dk"
     }
     #$ div(class="container-fluid p-0")
     {
-        #! do uie.printV12FormBar(nav_config)
-
-        #$ div(id="work_area" class="container-section mt-1 p-2 pt-0")
+        // Filtros y acciones
+        section(id="top_area")
         {
-            p{$"#<@('$error/message')>"}
+            #!
+            do uie.printV12FormBar(nav_config)
+            #$
 
             form(action="./" method="GET" id="form_search" class="no-print my-1 d-flex py-1")
             {
@@ -100,8 +105,11 @@ module "list.dk"
                         ){$""}
                     }
                 }
-                
             }
+        }
+
+        div(id="work_area")
+        {
             #! do uie.dbeditable(table_definition, "tbl_recetas")
         }
 

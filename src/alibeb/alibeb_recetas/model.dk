@@ -280,10 +280,18 @@ module "model"
                 AND IF(IFNULL(@s,'')='', true, (p.codigo LIKE CONCAT('%',@s,'%') OR p.descripcion LIKE CONCAT('%',@s,'%')))
                 AND IF(ifnull(@fil_linea,'*')='*' OR ifnull(@fil_linea,'')='',true,l.sys_pk=@fil_linea)
             ORDER BY p.codigo
-            LIMIT #<@default_max_rows>;
         "
+
+        max_rows = trun(parse.num(dbr.vars.get(db,"alibeb.producto.max_rows")))
+        pagination = parse.bool(dbr.vars.get(db,"alibeb.producto.pagination"))
+
+        if max_rows < 1 { max_rows = @default_max_rows }
+        if not(pagination) { query = query + ftext(" LIMIT #<max_rows>;") }
+
         new data
         {
+            @"max_rows": max_rows
+            @"pagination": pagination
             @"productos*":dbr.list(db, ftext(query), params)
             @"list_lineas*":dbr.list(db,"SELECT 
                                 l.sys_pk,l.codigo,l.descripcion
