@@ -683,7 +683,8 @@ var controller=
         model.invoke_service(uri,data,
         function(data)
         {
-          model_prn.print_arqueo(data,(_data)=>{window.location.href="/comandas/?view=login";}); 
+          if(!data.url_redir)data.url_redir="/comandas/?view=login";
+          model_prn.print_arqueo(data,(_data)=>{});  ///comandas/?view=login
         }
         ,function(error)
         {
