@@ -105,6 +105,7 @@ module ""
                 div(class="d-flex gap-2")
                 {
                     button(class="btn-admin bg-danger text-white" type="button" id="btn_del_config" "data-url"="#<url_redir>" onclick="model_prn.view.ClearData()" title="Eliminar configuración"){$"Eliminar configuración"}
+                    button(class="btn-admin bg-danger text-white" type="button" id="btn_test_printer" "data-url"="#<url_redir>" onclick="model_prn.view.test_printer()" title="Prueba de impresión"){$"Probar impresión"}
                     span(class="flex-grow-1"){""}
                     button(class="btn-admin" type="button" id="btn_save_config" "data-url"="#<url_redir>"){$"Aceptar"}
                 }

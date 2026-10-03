@@ -477,12 +477,12 @@ var model_prn=
                 }
             }
         },
-        SaveData()
+        SaveData(return_data = false)
         {
             if(!this.form)return;
             let elements=this.form.elements;
 
-            if(elements["id_device"].value.trim()=="")
+            if(elements["id_device"].value.trim()=="" && !return_data)
             {
                 alert("Debe indicar un ID del dispositivo");
                 elements["id_device"].focus();
@@ -506,6 +506,8 @@ var model_prn=
                 return;
             }
             let data=this.ActionElement("get");
+            if(return_data)return data;
+
             localStorage.setItem(model_prn.name_storage,JSON.stringify(data));
 
             alert("Configuración guardado correctamente.");
@@ -576,6 +578,88 @@ var model_prn=
                 cancelable: true
             });
             element.dispatchEvent(event);
+        },
+        test_printer()
+        {
+            const data=this.SaveData(true);
+            if(!data)return false;
+            
+            const config=data.data??{};
+            var meta={impresora:config}
+
+            this.charsPerLine=Number(config.charsPerLine??32);
+
+            var lineas=[ this.cen('Pagina de prueba'), this.cen("Mi empresa"||''), this.sep(),
+                this.lr('Caja', "Caja de prueba"), this.lr('Ancho', this.charsPerLine+' caracteres'),
+                this.lr('Driver', config.driver), this.lr('Tipo', config.type),
+                this.lr('Direccion', config.address||'—'), this.lr('Puerto', config.port||'—'),
+                this.sep(), '1234567890'.repeat(Math.ceil(this.charsPerLine/10)).slice(0,this.charsPerLine),
+                this.cen('Si esta linea cabe completa,'), this.cen('el ancho es correcto'), '', '' ];
+
+            switch (config.driver??"") 
+            {
+                case "generic":
+                    dantsu_printer(lineas,meta);
+                    break;
+                case "imin":
+                    imin_printer(lineas,meta);
+                    break;
+                default:
+                    if(typeof eposprn === "undefined")
+                    {
+                        console.warn("Controlador no establecido");
+                        return;
+                    }
+                    console.log(" Intentando conectar al controlador indicado ...");
+                    eposprn.connect(config,(status)=>
+                    {
+                        if(status == "failed")
+                        {
+                            console.warn("No se logró conectar al controlador");
+                            return;
+                        }
+
+                        eposprn.printText(" ");
+                        for (let i = 0; i < lineas.length; i++) 
+                        {
+                            const linea = lineas[i];
+                            eposprn.printText(linea);
+                        }
+
+                        eposprn.printText("\n \n");
+                        eposprn.printText("\n \n");
+                        eposprn.printText("\n \n");
+                        eposprn.cut();
+                    },
+                    (fail)=>
+                    {
+                        console.log(fail);
+                    });
+                    break;
+            }
+            console.log(data);
+        },
+        W(){ return this.charsPerLine || 32; },
+        cen(t){
+            var w=this.W();
+            if(t.length>=w) return t.slice(0,w);
+            return ' '.repeat(Math.floor((w-t.length)/2))+t;
+        },
+        lr(a,b)
+        {
+            var w=this.W(), esp=w-a.length-b.length;
+            if(esp<1){ a=a.slice(0,Math.max(1,w-b.length-1)); esp=w-a.length-b.length; }
+            return a+' '.repeat(Math.max(1,esp))+b;
+        },
+        sep(ch){ return (ch||'-').repeat(this.W()); },
+        envolver(t){
+            var w=this.W(), out=[], linea='';
+            t.split(' ').forEach(function(p){
+                if((linea+' '+p).trim().length>w){ out.push(linea.trim()); linea=p; }
+                else linea+=' '+p;
+            });
+            if(linea.trim()) out.push(linea.trim());
+            return out;
         }
     }
 }

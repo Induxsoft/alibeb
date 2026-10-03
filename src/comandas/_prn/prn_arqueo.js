@@ -78,7 +78,27 @@ var prn_arqueo=
         
         eposprn.printText(_detalle.text_footer??"");
 
-        eposprn.printText("\n");
+        eposprn.printText("\n ");
+        // POR LINEAS
+        
+        let lineas = data.lineas??[];
+        if(lineas.length > 0)
+        {
+            eposprn.printText(divider_full);
+            eposprn.setAlign(1); //1 -> center
+            eposprn.printText("- LINEAS -");
+            eposprn.setAlign(0); //1 -> center
+        }
+        for (let i = 0; i < lineas.length; i++) 
+        {
+            const line = lineas[i];
+            eposprn.printText(TextBetween(line.descripcion,views.format(line.total,controller.decimals,".",",",prefix)));
+        }
+        if(lineas.length > 0)
+        {
+            eposprn.printText("\n");
+        }
+        // ==============
 
         let divisa_movcaja=data.divisa_movcaja??[];
         let text_ingreso=data.text_ingreso??""
@@ -90,6 +110,12 @@ var prn_arqueo=
         {
             saldo_inicial=data.saldo_inicial??0;
             eposprn.printText(TextBetween(text_saldoinicial,views.format(saldo_inicial,controller.decimals,".",",",prefix)));
+        }
+        else
+        {
+            eposprn.setAlign(1); //1 -> center
+            eposprn.printText("- POR DIVISA -");
+            eposprn.setAlign(0); //1 -> center
         }
 
         for (let i = 0; i < divisa_movcaja.length; i++) 

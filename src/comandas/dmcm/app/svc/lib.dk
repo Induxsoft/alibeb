@@ -1979,7 +1979,26 @@ module "lib.dk"
         and venta.statusadministrativo>=3) or venta.statusadministrativo<3) 
         order by venta.referencia"
 
+        sql_lineas="SELECT
+            SUM(
+                ((dv.cantidad * dv.precio) - dv.descuento1 - dv.descuento2)
+                + dv.impuesto1 + dv.impuesto2 + dv.impuesto3 + dv.impuesto4
+            ) AS total,
+            l.sys_pk,
+            l.codigo,
+            l.descripcion
+        FROM venta
+        INNER JOIN dventa dv ON venta.sys_pk = dv.fk_venta_detalle
+        INNER JOIN producto p ON dv.iproducto = p.sys_pk
+        INNER JOIN linea l ON p.ilinea = l.sys_pk
+        WHERE venta.documento = 6
+        AND venta.icorte = @corte 
+        AND venta.statusadministrativo = 3
+        GROUP BY l.sys_pk, l.codigo, l.descripcion
+        ORDER BY l.codigo"
+
         ref detalle=dbr.list(db,sql,p)
+        ref lineas = dbr.list(db,sql_lineas,p)
 
         cerrado=@@(corte,"#cerrado")
         estado=ifstr(cerrado,"CERRADO","ABIERTO")
@@ -2008,6 +2027,7 @@ module "lib.dk"
             @"text_egreso":"- EGRESOS -"
             @"divisa_predet":GetDivisaPredet(db)
             @"divisa_movcaja*":GetIngresosEgresosByDivisa(db,pkcorte,@@(corte,"#pkcaja"))
+            @"lineas*":lineas
             @"http*":@http_context
         }
 

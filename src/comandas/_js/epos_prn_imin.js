@@ -13,7 +13,11 @@ function _PrinterException(o,ltimer=5)
                 {
                     o.connection.reconnect =function() {console.warn("Reconexión deshabilitada");}
                     if(interval)clearInterval(interval);
-                    toast("No se logró conectar con el controlador");
+                    
+                    if (typeof toast === "undefined" || typeof toast !== "function") {
+                        console.warn("No se logró conectar con el controlador");
+                    }
+                    else toast("No se logró conectar con el controlador");
                 }
             }
         }

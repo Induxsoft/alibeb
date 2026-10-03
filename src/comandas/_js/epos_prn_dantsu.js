@@ -10,7 +10,7 @@ function dantsu_printer(lineas,meta)
             console.warn("No se logró conectar al controlador");
             return;
         }
-        
+        o.printText(" ");
         for (let i = 0; i < lineas.length; i++) 
         {
             const linea = lineas[i];
@@ -21,7 +21,7 @@ function dantsu_printer(lineas,meta)
         o.printText("\n \n");
         o.printText("\n \n");
         
-        o.openCashDrawer();
+        o.cut();
     });
 }
 function dantsu_register()
@@ -43,14 +43,17 @@ function createDriver_generic(){
         flag_cash:false,
         align:"",
         time_send_print:1000,
+        isConnected:false,
         connect:function(device,success,fail)
         {
-            if(!dsEscPrn)
+            this.isConnected=false;
+            if(typeof dsEscPrn === "undefined")
             {
                 alert("No existe el controlador indicado");
                 if(success)success("failed");
                 return;
             }
+
             switch(device.type)
             {
                 case "ethernet":
@@ -63,6 +66,7 @@ function createDriver_generic(){
                     dsEscPrn.openPrinterBluetooth(Number(device.dpi), Number(device.printWidth), Number(device.charsPerLine));
                     break;
             }
+            this.isConnected=true;
             if(success)success("conectado");
         },
         setAlign:function(align)
