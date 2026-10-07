@@ -135,8 +135,8 @@
         "vars": [
             {
                 "varname": "alibeb.producto.max_rows",
-                "vardefault": "250",
-                "varvalue": "250",
+                "vardefault": "500",
+                "varvalue": "500",
                 "varcaption": "Mostrar las primeras N recetas",
                 "varhelp": "Máximo de filas a mostrar en: \"Catálogo de recetas\"",
                 "vartype": "int",
