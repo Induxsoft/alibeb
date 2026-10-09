@@ -34,7 +34,8 @@ module "index.dkl"
 		else{qname="Connections@Induxsoft/ws"+trim(admin)+"@workspaces"}
 		if not(@accept_qnames) && contains(qname,"@"){do rise_error(99,"No se aceptan nombres cualificados.")}
 		
-		ref db=open.db(qname)
+		ref db=getDatabase(@@(@config,"$connection"))
+		// ref db=open.db(qname)
 
 		switch method
 		{
